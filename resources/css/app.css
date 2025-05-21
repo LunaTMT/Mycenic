@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+
+/* Define your fonts using @font-face */
+@font-face {
+    font-family: 'Aileron_Thin';
+    src: url('/assets/fonts/Aileron-Thin.otf') format('opentype');
+}
+
+@font-face {
+    font-family: 'Aileron_UltraLight';
+    src: url('/assets/fonts/Aileron-UltraLight.otf') format('opentype');
+}
+
+@font-face {
+    font-family: 'Audrey_Normal';
+    src: url('/assets/fonts/Audrey-Normal.otf') format('opentype');
+}
+
+@theme{
+  --font-Poppins: Poppins, "sans-serif";
+  --font-Audrey: Audrey, "sans-serif";
+  --beige-glow: '0 0 10px rgba(245, 245, 220, 0.8), 0 0 20px rgba(245, 245, 220, 0.6)';
+  --slate-glow: '0 0 25px rgba(31, 41, 55, 1), 0 0 45px rgba(31, 41, 55, 0.7), 0 0 60px rgba(55, 65, 81, 1)';
+  --golden-glow: '0 0 5px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.5), 0 0 25px rgba(255, 215, 0, 0.3)';
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+  /* resources/css/fonts.css */
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 100;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-Thin.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 200;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-ExtraLight.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 300;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-Light.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 400;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 500;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 600;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 700;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 800;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-ExtraBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-weight: 900;
+  font-style: normal;
+  src: url('/assets/fonts/Poppins-Black.ttf') format('truetype');
+}
+
+
+@font-face {
+  font-family: 'Audrey';
+  src: url('/assets/fonts/Audrey-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Audrey';
+  src: url('/assets/fonts/Audrey-Normal.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Audrey';
+  src: url('/assets/fonts/Audrey-BoldOblique.otf') format('opentype');
+  font-weight: bold;
+  font-style: oblique;
+}
+
+@font-face {
+  font-family: 'Audrey';
+  src: url('/assets/fonts/Audrey-NormalOblique.otf') format('opentype');
+  font-weight: normal;
+  font-style: oblique;
+}
+
+
+@keyframes shadowPulse {
+  0% {
+    box-shadow: 0 0 10px 3px rgba(245, 245, 220, 0.8); /* smaller beige glow */
+  }
+  50% {
+    box-shadow: 0 0 15px 7px rgba(245, 245, 220, 1); /* brighter white glow */
+  }
+  100% {
+    box-shadow: 0 0 10px 3px rgba(245, 245, 220, 0.8); /* smaller beige glow */
+  }
+}
+.mask-gradient {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0) 0%,  
+    rgba(0, 0, 0, 1) 45%,  
+    rgba(0, 0, 0, 1) 55%,  
+    rgba(0, 0, 0, 0) 100%  
+  );
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0) 0%,  
+    rgba(0, 0, 0, 1) 45%,  
+    rgba(0, 0, 0, 1) 55%,  
+    rgba(0, 0, 0, 0) 100%  
+  );
+}
+
+
+
+
+/* Swiper Slide */
+.swiper-slide {
+text-align: center;
+display: flex;
+justify-content: center;
+align-items: center;
+
+
+}
+
+
+
+
+/* Default swiper-pagination bullet */
+.swiper-pagination-bullet {
+background-color: black !important;  /* Default bullet color for light mode */
+}
+
+/* Dark Mode swiper-pagination bullet */
+.dark .swiper-pagination-bullet {
+background-color: white !important;  /* White bullet in dark mode */
+}
+
+/* Active swiper-pagination bullet */
+.swiper-pagination-bullet-active {
+background-color: rgba(0, 0, 0, 0.50) !important;  /* Semi-transparent black in light mode */
+}
+
+/* Dark Mode active swiper-pagination bullet */
+.dark .swiper-pagination-bullet-active {
+background-color: white !important;  /* White active bullet in dark mode */
+}
+
+/* Swiper buttons (prev/next) */
+.swiper-button-prev,
+.swiper-button-next {
+color: rgba(0, 0, 0, 0.25) !important; /* Black with 50% transparency for light mode */
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+/* Dark Mode swiper buttons */
+.dark .swiper-button-prev,
+.dark .swiper-button-next {
+color: rgba(255, 255, 255, 0.5) !important; /* White with 50% transparency for dark mode */
+}
+
+/* You can also add a dark background to the swiper container */
+.dark .swiper-container {
+background-color: rgba(255, 255, 255, 0.5);  
+}
+
+
+/* Light Mode Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  background-color: white;
+}
+
+::-webkit-scrollbar-track {
+  background: white;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar {
+  background-color: #1e2124; /* scrollbar background (was thumb) */
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e2124; /* scrollbar track (was thumb) */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #424549; /* scrollbar thumb (was background) */
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #5a5e63; /* slightly lighter on hover */
+}

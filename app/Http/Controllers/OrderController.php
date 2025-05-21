@@ -1,0 +1,245 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Inertia\Inertia;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;  // Ensure this is inclu
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
+use Stripe\Stripe;
+use Stripe\Checkout\Session;
+use App\Models\Order;
+use App\Services\ShippoService;
+use App\Models\User;
+use App\Mail\OrderConfirmation;
+
+
+class OrderController extends Controller
+{
+
+    use AuthorizesRequests;
+    protected $shippoService;
+
+    public function __construct(ShippoService $shippoService)
+    {
+        $this->shippoService = $shippoService;
+        Log::info('OrderController initialized.');
+    }
+
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        // Base query, newest first
+        $query = Order::orderBy('created_at', 'desc');
+
+        // If the user is NOT an admin, restrict to their own orders
+        if ($user->role !== 'admin') {
+            $query->where('user_id', $user->id);
+        }
+
+        $orders = $query->get()->map(function (Order $order) {
+            // Update tracking status/history if needed
+            if ($order->tracking_number) {
+                $trackingData = $this->shippoService->trackShipment(
+                    'shippo',                // carrier as a string
+                    'SHIPPO_DELIVERED'       // test tracking number as a string
+                );
+            
+
+                /*
+                CHANGE ON PRODUCTION
+                    carrier shippo
+
+                    SHIPPO_DELIVERED
+                    SHIPPO_TRANSIT
+                    SHIPPO_EXCEPTION
+                    SHIPPO_UNKNOWN
+                    SHIPPO_PENDING
+
+                    $trackingData = $this->shippoService->trackShipment(
+                    $order->carrier,
+                    $order->tracking_number
+                );
+                */
+
+
+                if (! empty($trackingData['tracking_status'])) {
+                    $status = $this->toTitleCase($trackingData['tracking_status']['status']);
+                    $order->update(['shipping_status' => $status]);
+                    Log::info("Updated shipping status for order {$order->id}", ['status' => $status]);
+                }
+
+                if (! empty($trackingData['tracking_history'])) {
+                    $history = array_map(fn($h) => [
+                        'status_date'    => $h['status_date'],
+                        'status_details' => $h['status_details'],
+                        'location'       => $h['location'] ?? null,
+                        'status'         => $h['status'],
+                        'substatus'      => $h['substatus'] ?? null,
+                        'object_id'      => $h['object_id'],
+                    ], $trackingData['tracking_history']);
+
+                    $order->update(['tracking_history' => $history]);
+                    Log::info("Stored tracking history for order {$order->id}");
+                }
+            }
+
+            return array_merge(
+                $order->only([
+                    'id', 'user_id', 'total', 'subtotal', 'delivery_price', 'weight',
+                    'discount', 'payment_status', 'shipping_status', 'carrier',
+                    'tracking_number', 'tracking_url', 'customer_name', 'address',
+                    'city', 'zip', 'country', 'phone', 'email', 'is_completed', 'returnable'
+                ]),
+                [
+                    'created_at'       => $order->created_at->toISOString(),
+                    'updated_at'       => $order->updated_at->toISOString(),
+                    'cart'             => json_decode($order->cart, true),
+                    'tracking_history' => $order->tracking_history ?? [],
+                ]
+            );
+
+        });
+
+        return Inertia::render('Orders/CustomerOrders', [
+            'orders'    => $orders,
+            'message'   => session('message'),
+            'clearCart' => session('clearCart'),
+        ]);
+    }
+
+
+
+    public function create(Request $request)
+    {
+        try {
+            Log::info('Processing order creation');
+            Log::info('Session details', [
+                'total'           => session('total', 0),
+                'subtotal'        => session('subtotal', 0),
+                'weight'          => session('weight', 0),
+                'discount'        => session('discount', 0),
+                'shippingDetails' => session('shippingDetails', []),
+                'legalAgreement'  => session('legalAgreement', null),
+            ]);
+
+            $shippingDetails = session('shippingDetails', []);
+            $legalAgreement = session('legalAgreement', null);
+
+            if (!empty($shippingDetails['email'])) {
+                $user = User::where('email', $shippingDetails['email'])->first();
+                if (!$user) {
+                    Log::error('User not found with shipping email', ['email' => $shippingDetails['email']]);
+                    return redirect()->route('home')->with('flash.error', 'User not found with shipping email.');
+                }
+                Log::info('User found by shipping email', ['user_id' => $user->id]);
+            } else {
+                Log::error('Missing email in shipping details');
+                return redirect()->route('cart')->with('error', 'Missing email in shipping details.');
+            }
+
+            Log::info('Shipping details received', $shippingDetails);
+
+            $order = Order::create([
+                'user_id'         => $user->id,
+                'cart'            => json_encode(session('cart', [])),
+                'total'           => session('total', 0),
+                'subtotal'        => session('subtotal', 0),
+                'weight'          => session('weight', 0),
+                'discount'        => session('discount', 0),
+                'payment_status'  => 'Completed',
+                'customer_name'   => $shippingDetails['name'] ?? 'Unknown',
+                'address'         => $shippingDetails['address'] ?? '',
+                'city'            => $shippingDetails['city'] ?? '',
+                'zip'             => $shippingDetails['zip'] ?? '',
+                'country'         => $shippingDetails['country'] ?? 'GB',
+                'phone'           => $shippingDetails['phone'] ?? null,
+                'email'           => $shippingDetails['email'] ?? null,
+                'legal_agreement' => $legalAgreement,
+            ]);
+
+            Log::info('Order created successfully', ['order' => $order]);
+
+            $order->tracking_number = 'SHIPPO_DELIVERED';
+            $order->carrier = 'shippo';
+            $order->save();
+
+
+            // After completing the order process, empty only the cart and related session data
+            session()->forget(['cart', 'total', 'subtotal', 'weight', 'discount', 'shippingDetails', 'legalAgreement']);
+            Log::info('Session data (cart and order) cleared after order completion');
+
+            // Redirect to orders index or home depending on authentication status
+            if (Auth::check()) {
+                Log::info('Routing to orders.index');
+                return redirect()->route('orders.index')->with('flash.success', 'Order successfully placed.');
+            } else {
+                Log::info('Routing to home');
+                return redirect()->route('home')->with('flash.success', 'Order successfully placed.');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error placing order', [
+                'error' => $e->getMessage(),
+                'stack' => $e->getTraceAsString()
+            ]);
+            return Inertia::render('Shop');
+        }
+    }
+
+    public function toTitleCase(string $string): string
+    {
+        // Convert the string to title case
+        return ucwords(strtolower($string));
+    }
+
+
+
+    public function toggleCompleted(Order $order)
+    {
+        $order->is_completed = !$order->is_completed;
+        $order->save();
+
+        Log::info('Order completion toggled', [
+            'order_id' => $order->id,
+            'new_status' => $order->is_completed,
+            'user_id' => auth()->id() ?? 'guest',
+        ]);
+
+        return back();
+    }
+
+    public function returnInstructions(Order $order)
+    {
+        $this->authorize('view', $order);
+
+        $cartItems = json_decode($order->cart, true) ?? [];
+
+        $items = collect($cartItems)->map(function ($item) {
+            return [
+                'id'       => $item['id'] ?? null,
+                'name'     => $item['name'] ?? 'Unknown Item',
+                'quantity' => $item['quantity'] ?? 1,
+                'price'    => $item['price'] ?? 0,
+                'image'    => $item['image'] ?? null,
+            ];
+        })->toArray();
+
+        return Inertia::render('Orders/ReturnInstructions', [
+            'orderId'        => $order->id,
+            'items'          => $items,
+            'returnLabelUrl' => 'https://example.com/return-label.pdf',
+            'returnStatus'   => 'in_transit', // Replace dynamically as needed
+            'supportEmail'   => 'support@mycenic.com',
+            'subtotal'       => $order->subtotal ?? 0,
+            'discount'       => $order->discount ?? 0,
+            'total'          => $order->total ?? 0,
+        ]);
+    }
+
+
+}
