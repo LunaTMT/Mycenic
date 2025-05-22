@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
+
+
 class ShippingController extends Controller
 {
     protected $shippoService;
@@ -37,6 +39,50 @@ class ShippingController extends Controller
             'message' => 'Shipping rates not available.'
         ], 404);
     }
+
+
+    public function getReturnOptions(Request $request)
+    {
+        $from = $request->input('from', []);
+        
+        // Ensure 'country' is set to 'GB' by default if not provided
+        if (!isset($from['country']) || empty($from['country'])) {
+            $from['country'] = 'GB';
+        }
+        
+        $weight = $request->input('weight');
+
+        // Log the weight value
+        Log::info('Shipping weight received:', ['weight' => $weight]);
+
+        $to = [ 
+            'street1' => '123 Warehouse Ave',
+            'city' => 'London',
+            'zip' => 'E1 6AN',
+            'country' => 'GB',
+        ];
+
+        $parcel = [
+            'length' => 10,
+            'width' => 10,
+            'height' => 10,
+            'distance_unit' => 'cm',
+            'weight' => $weight,
+            'mass_unit' => 'kg',
+        ];
+
+        $rates = $this->shippoService->getShippingRates($from, $to, $parcel);
+
+        return response()->json([
+            'options' => collect($rates)->map(fn($r) => [
+                'id' => $r['object_id'],
+                'label' => "{$r['provider']} - {$r['servicelevel']['name']}",
+                'price' => $r['amount'],
+            ]),
+        ]);
+    }
+
+
 
     /**
      * Purchase shipping label

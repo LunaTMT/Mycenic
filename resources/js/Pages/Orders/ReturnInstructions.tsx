@@ -6,11 +6,19 @@ import Breadcrumb from '@/Components/Nav/Breadcrumb'
 import { ShippingOption } from './ShippingOption'
 import PaymentPage from './PaymentPage'
 import ItemCounter from './ItemCounter'
+import { useCart } from '@/Contexts/CartContext'
 
 interface ReturnInstructionsProps {
   auth: any
   orderId: string
-  items: { id?: number; name: string; quantity: number; image?: string; price?: number }[]
+  items: {
+    id?: number
+    name: string
+    quantity: number
+    image?: string
+    price?: number
+    weight?: number // Add this line
+  }[]
   returnLabelUrl: string
   returnStatus: 'label_generated' | 'in_transit' | 'received' | 'refunded'
   supportEmail: string
@@ -43,12 +51,13 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
   const [selectedShippingOption, setSelectedShippingOption] = useState<string>('') // no default selection
   const [hasContinued, setHasContinued] = useState(false)
   const [currentStep, setCurrentStep] = useState<number>(1)
-
+  const {shippingDetails} = useCart();
   const [isCreatingIntent, setIsCreatingIntent] = useState(false)
   const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null)
   const [returnQuantities, setReturnQuantities] = useState<number[]>(
     items.map(() => 1)
 )
+  console.log(items);
 
   // Find price based on selected option
   const selectedShippingPrice = shippingOptions.find(
@@ -86,6 +95,13 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
     // Handle post-payment logic here, e.g. show confirmation message
   };
 
+  console.log(shippingDetails);
+  const totalWeight = selectedItems.reduce((sum, index) => {
+    const item = items[index];
+    const qty = returnQuantities[index];
+    return sum + ((item.weight ?? 0) * qty);
+  }, 0);
+
   useEffect(() => {
     if (currentStep === 3 && selectedShippingPrice > 0) {
       createPaymentIntent(selectedShippingPrice)
@@ -103,7 +119,12 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
         <ShippingOption
           selectedOption={selectedShippingOption}
           onChange={setSelectedShippingOption}
+          orderId={orderId}
+          fromAddress={shippingDetails}
+          totalWeight={totalWeight}
         />
+
+
       ),
     },
 

@@ -213,9 +213,11 @@ Route::prefix('/shipping')->group(function () {
     Route::post('/purchase', [ShippingController::class, 'purchaseLabel']);
     Route::get('/track/{carrier}/{trackingNumber}', [ShippingController::class, 'trackShipment']);
     Route::post('/validate-address', [ShippingController::class, 'validateAddress'])->name('shipping.validate.address');
+
+    
+    Route::post('/return-{orderId}-options', [ShippingController::class, 'getReturnOptions'])->name('shipping.return.options');
+
 });
-
-
 /**
 |--------------------------------------------------------------------------
 | About / Legal / Help / Info Pages

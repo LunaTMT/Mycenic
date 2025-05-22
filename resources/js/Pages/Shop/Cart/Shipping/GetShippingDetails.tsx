@@ -52,8 +52,12 @@ export default function GetDetails() {
     try {
       const response = await axios.post(route('shipping.validate.address'), data);
       if (response.data.valid) {
-        setShippingDetails(data);
-        await axios.post(route('cart.store.shipping.details'), data);
+        const dataWithCountry = {
+          ...data,
+          country: 'GB',  // default country added here
+        };
+        setShippingDetails(dataWithCountry);
+        await axios.post(route('cart.store.shipping.details'), dataWithCountry);
         router.get(route('cart'));
       } else {
         toast.error('Invalid address: ' + (response.data.messages?.join(', ') || 'Please check your details.'));

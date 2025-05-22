@@ -74,7 +74,6 @@ class ShippoService
 
     public function getRates($order)
     {
-        
 
         $shipment = $this->createShipment($order);
 
@@ -86,6 +85,30 @@ class ShippoService
             return null;
         }
     }
+    public function getShippingRates(array $from, array $to, array $parcel): ?array
+    {
+        try {
+            $shipment = Shippo_Shipment::create([
+                'address_from' => $from,
+                'address_to' => $to,
+                'parcels' => [$parcel],
+                'async' => false,
+            ]);
+
+            if (!empty($shipment['rates'])) {
+                return $shipment['rates'];
+            }
+
+            Log::error('No rates returned from Shippo.', ['shipment' => $shipment]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error fetching shipping rates.', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    
+
 
     public function purchaseLabel($rateId)
     {

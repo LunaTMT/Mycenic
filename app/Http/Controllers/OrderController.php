@@ -228,8 +228,10 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'] ?? 1,
                 'price'    => $item['price'] ?? 0,
                 'image'    => $item['image'] ?? null,
+                'weight'   => $item['weight'] ?? 0, // Include weight here
             ];
         })->toArray();
+
 
         return Inertia::render('Orders/ReturnInstructions', [
             'orderId'        => $order->id,
