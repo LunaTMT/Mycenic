@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { motion } from 'framer-motion'
 import Breadcrumb from '@/Components/Nav/Breadcrumb'
-import StripePaymentForm from './StripePaymentForm'
+import PaymentPage from './PaymentPage'
 
 interface ReturnInstructionsProps {
   auth: any
@@ -93,6 +93,11 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
       setIsCreatingIntent(false)
     }
   }
+  const total = 1000; // e.g. total in cents
+  const handleSuccess = (paymentIntentId: string) => {
+    console.log('Payment successful:', paymentIntentId);
+    // Handle post-payment logic here, e.g. show confirmation message
+  };
 
   useEffect(() => {
     if (currentStep === 3 && selectedShippingPrice > 0) {
@@ -122,14 +127,11 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
             Shipping Cost: £{selectedShippingPrice.toFixed(2)}
           </p>
           {paymentIntentClientSecret ? (
-            <StripePaymentForm
-              paymentIntentClientSecret={paymentIntentClientSecret}
-              total={selectedShippingPrice}
-              onSuccess={(paymentIntentId) => {
-                console.log('Return shipping paid:', paymentIntentId)
-                setCurrentStep(4)
-              }}
-            />
+            <PaymentPage
+                paymentIntentClientSecret={paymentIntentClientSecret}
+                total={total}
+                onSuccess={handleSuccess}
+              />
           ) : (
             <p>Loading payment form...</p>
           )}
@@ -240,7 +242,7 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
                     <td className="px-4 py-3 flex items-center gap-4">
                       {item.image && (
                         <img
-                          src={item.image}
+                          src={'/' + item.image}
                           alt={item.name}
                           className="h-12 w-12 object-cover rounded-md"
                         />

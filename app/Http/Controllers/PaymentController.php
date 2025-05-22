@@ -142,9 +142,10 @@ class PaymentController extends Controller
             ], 400);
         }
     }
-
     public function createPaymentIntent(Request $request)
     {
+        \Log::info('createPaymentIntent called', ['request_data' => $request->all()]);
+
         $request->validate([
             'amount' => 'required|integer|min:1', // amount in cents
         ]);
@@ -155,6 +156,12 @@ class PaymentController extends Controller
             $user = Auth::user();
             $amount = $request->input('amount');
 
+            \Log::info('Creating PaymentIntent', [
+                'user_id' => $user ? $user->id : 'guest',
+                'amount' => $amount,
+                'session_id' => session()->getId(),
+            ]);
+
             $paymentIntent = PaymentIntent::create([
                 'amount' => $amount,
                 'currency' => 'gbp',
@@ -164,17 +171,26 @@ class PaymentController extends Controller
                 ],
             ]);
 
+            \Log::info('PaymentIntent created successfully', [
+                'payment_intent_id' => $paymentIntent->id,
+                'client_secret' => $paymentIntent->client_secret,
+            ]);
+
             return response()->json([
                 'clientSecret' => $paymentIntent->client_secret,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Stripe PaymentIntent creation failed', ['message' => $e->getMessage()]);
+            \Log::error('Stripe PaymentIntent creation failed', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json([
                 'error' => 'Payment initialization failed.',
             ], 500);
         }
     }
+
 
 
   
