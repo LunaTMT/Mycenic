@@ -3,7 +3,9 @@ import { Head, Link } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { motion } from 'framer-motion'
 import Breadcrumb from '@/Components/Nav/Breadcrumb'
+import { ShippingOption } from './ShippingOption'
 import PaymentPage from './PaymentPage'
+import ItemCounter from './ItemCounter'
 
 interface ReturnInstructionsProps {
   auth: any
@@ -32,26 +34,8 @@ interface ShippingOptionProps {
   onChange: (option: string) => void
 }
 
-const ShippingOption = ({ selectedOption, onChange }: ShippingOptionProps) => (
-  <div className="mt-2 text-sm text-gray-700 dark:text-gray-400">
-    <p>Please select your return shipping option:</p>
-    <div className="mt-2 space-y-2">
-      {shippingOptions.map(({ id, label, price }) => (
-        <label key={id} className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="shippingOption"
-            value={id}
-            checked={selectedOption === id}
-            onChange={() => onChange(id)}
-            className="form-radio h-4 w-4 text-green-600"
-          />
-          <span>{label} — £{price.toFixed(2)}</span>
-        </label>
-      ))}
-    </div>
-  </div>
-)
+
+
 
 export default function ReturnInstructions(props: ReturnInstructionsProps) {
   const { orderId, items, returnLabelUrl, returnStatus, supportEmail } = props
@@ -62,6 +46,9 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
 
   const [isCreatingIntent, setIsCreatingIntent] = useState(false)
   const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null)
+  const [returnQuantities, setReturnQuantities] = useState<number[]>(
+    items.map(() => 1)
+)
 
   // Find price based on selected option
   const selectedShippingPrice = shippingOptions.find(
@@ -107,7 +94,7 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
 
   const steps = [
     {
-      text: 'Before proceeding, select the item(s) you wish to return by checking the boxes above.',
+      text: 'Before proceeding, select the item(s) you wish to return by checking the box above and selecting the quantity.',
       component: null,
     },
     {
@@ -119,6 +106,7 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
         />
       ),
     },
+
     {
       text: 'Payment of shipping',
       component: (
@@ -159,13 +147,22 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
   const toggleItem = (index: number) => {
     if (hasContinued) return
     setSelectedItems((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+      prev.includes(index)
+        ? prev.filter((i) => i !== index)
+        : [...prev, index]
     )
+    // Reset to 1 if selecting, or 0 if unselecting
+    setReturnQuantities((prev) => {
+      const newQuantities = [...prev]
+      newQuantities[index] = selectedItems.includes(index) ? 0 : 1
+      return newQuantities
+    })
   }
+
 
   const totalSelected = selectedItems.reduce((sum, index) => {
     const item = items[index]
-    return sum + (item.price ?? 0) * item.quantity
+    return sum + (item.price ?? 0) * returnQuantities[index]
   }, 0)
 
   const canContinue = (step: number) => {
@@ -218,26 +215,28 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
           <div className="absolute inset-0 bg-black/40" />
         </div>
 
+
+
         <div className="relative z-10 w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 text-gray-900 dark:text-gray-300 font-Poppins">
-          <div className="w-full overflow-hidden rounded-xl shadow-lg border border-gray-300 dark:border-white/20 dark:bg-[#424549]/80">
+          <div className="w-full overflow-hidden rounded-xl shadow-lg  border border-black/20  dark:border-white/20 dark:bg-[#424549]/80">
             <table className="w-full">
               <thead className="bg-white dark:bg-[#1e2124] text-gray-900 dark:text-white">
                 <tr>
                   <th className="px-4 py-2 text-left">Item</th>
                   <th className="px-4 py-2 text-center">Quantity</th>
                   <th className="px-4 py-2 text-center">Price</th>
-                  <th className="px-4 py-2 text-center">Select</th>
                   <th className="px-4 py-2 text-center">Total</th>
+                  <th className="px-4 py-2 text-center">Select</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-black/20 dark:divide-white/20">
                 {items.map((item, index) => (
                   <motion.tr
                     key={item.id ?? index}
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="border-t border-gray-200 bg-white/70 dark:bg-[#424549]/20"
+                    className=" bg-white/70  dark:bg-[#424549]/20"
                   >
                     <td className="px-4 py-3 flex items-center gap-4">
                       {item.image && (
@@ -249,9 +248,35 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
                       )}
                       {item.name}
                     </td>
-                    <td className="px-4 py-3 text-center">{item.quantity}</td>
-                    <td className="px-4 py-3 text-center">£{(item.price ?? 0).toFixed(2)}</td>
                     <td className="px-4 py-3 text-center">
+                      {selectedItems.includes(index) ? (
+                        <ItemCounter
+                            quantity={returnQuantities[index]}
+                            onQuantityChange={(val: number) => {
+                              setReturnQuantities((prev) => {
+                                const updated = [...prev];
+                                updated[index] = val;
+                                return updated;
+                              });
+                            }}
+                            
+                            max={item.quantity} // This sets the upper limit
+                            className="mx-auto w-3/4 h-10"
+                            
+                        />
+
+                      ) : (
+                        item.quantity
+                      )}
+                    </td>
+
+
+                    <td className="px-4 py-3 text-center">£{(item.price ?? 0).toFixed(2)}</td>
+
+                    <td className="px-4 py-3 text-center">
+                      £{((item.price ?? 0) * item.quantity).toFixed(2)}
+                    </td>
+                                        <td className="px-4 py-3 text-center">
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(index)}
@@ -260,22 +285,19 @@ export default function ReturnInstructions(props: ReturnInstructionsProps) {
                         className="form-checkbox h-5 w-5 text-green-600"
                       />
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      £{((item.price ?? 0) * item.quantity).toFixed(2)}
-                    </td>
                   </motion.tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="p-4 flex justify-between items-center font-semibold text-lg border-t border-gray-300 dark:border-white/20">
+            <div className="p-4 flex border-t border-black/20  dark:border-white/20 justify-between items-center font-semibold text-lg ">
               <span>Total Selected:</span>
               <span>£{totalSelected.toFixed(2)}</span>
             </div>
           </div>
 
           {/* Step instructions */}
-          <section className="my-8 rounded-lg bg-white/90 dark:bg-[#1e2124]/90 p-6 shadow-lg">
+          <section className="my-8 rounded-lg bg-white dark:bg-[#1e2124] p-6 shadow-lg">
             <p className="mb-4 font-semibold text-lg text-green-600">
               Step {currentStep} of {steps.length}
             </p>

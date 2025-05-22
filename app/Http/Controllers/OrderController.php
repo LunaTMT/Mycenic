@@ -90,10 +90,10 @@ class OrderController extends Controller
 
             return array_merge(
                 $order->only([
-                    'id', 'user_id', 'total', 'subtotal', 'delivery_price', 'weight',
+                    'id', 'user_id', 'total', 'subtotal', 'shipping_cost', 'weight',
                     'discount', 'payment_status', 'shipping_status', 'carrier',
                     'tracking_number', 'tracking_url', 'customer_name', 'address',
-                    'city', 'zip', 'country', 'phone', 'email', 'is_completed', 'returnable'
+                    'city', 'zip', 'country', 'phone', 'email', 'is_completed', 'returnable', 
                 ]),
                 [
                     'created_at'       => $order->created_at->toISOString(),
@@ -123,12 +123,14 @@ class OrderController extends Controller
                 'subtotal'        => session('subtotal', 0),
                 'weight'          => session('weight', 0),
                 'discount'        => session('discount', 0),
+                'shippingCost'    => session('shippingCost', 0), // <-- added
                 'shippingDetails' => session('shippingDetails', []),
                 'legalAgreement'  => session('legalAgreement', null),
             ]);
 
             $shippingDetails = session('shippingDetails', []);
             $legalAgreement = session('legalAgreement', null);
+            $shippingCost = session('shippingCost', 0); // <-- retrieve from session
 
             if (!empty($shippingDetails['email'])) {
                 $user = User::where('email', $shippingDetails['email'])->first();
@@ -151,6 +153,7 @@ class OrderController extends Controller
                 'subtotal'        => session('subtotal', 0),
                 'weight'          => session('weight', 0),
                 'discount'        => session('discount', 0),
+                'shipping_cost'   => $shippingCost, // <-- save to DB
                 'payment_status'  => 'Completed',
                 'customer_name'   => $shippingDetails['name'] ?? 'Unknown',
                 'address'         => $shippingDetails['address'] ?? '',
@@ -168,19 +171,16 @@ class OrderController extends Controller
             $order->carrier = 'shippo';
             $order->save();
 
-
-            // After completing the order process, empty only the cart and related session data
-            session()->forget(['cart', 'total', 'subtotal', 'weight', 'discount', 'shippingDetails', 'legalAgreement']);
+            // Clear session
+            session()->forget([
+                'cart', 'total', 'subtotal', 'weight', 'discount',
+                'shippingDetails', 'legalAgreement', 'shippingCost' // <-- forget shippingCost
+            ]);
             Log::info('Session data (cart and order) cleared after order completion');
 
-            // Redirect to orders index or home depending on authentication status
-            if (Auth::check()) {
-                Log::info('Routing to orders.index');
-                return redirect()->route('orders.index')->with('flash.success', 'Order successfully placed.');
-            } else {
-                Log::info('Routing to home');
-                return redirect()->route('home')->with('flash.success', 'Order successfully placed.');
-            }
+            return Auth::check()
+                ? redirect()->route('orders.index')->with('flash.success', 'Order successfully placed.')
+                : redirect()->route('home')->with('flash.success', 'Order successfully placed.');
 
         } catch (\Exception $e) {
             Log::error('Error placing order', [
@@ -190,6 +190,8 @@ class OrderController extends Controller
             return Inertia::render('Shop');
         }
     }
+
+
 
     public function toTitleCase(string $string): string
     {

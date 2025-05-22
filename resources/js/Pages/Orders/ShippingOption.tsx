@@ -1,4 +1,4 @@
-Oimport React from 'react'
+import React from 'react'
 
 interface ShippingOptionProps {
   selectedOption: string

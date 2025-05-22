@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('delivery_price', 10, 2)->default(0);
             $table->decimal('weight', 8, 2)->default(0); 
             $table->decimal('discount', 10, 2)->default(0);
+            $table->decimal('shipping_cost', 8, 2)->default(0);
 
             $table->string('payment_status')->default('Pending');
             $table->string('customer_name')->nullable();

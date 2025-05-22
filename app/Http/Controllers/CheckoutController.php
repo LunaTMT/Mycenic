@@ -20,31 +20,33 @@ class CheckoutController extends Controller
     {
         $this->log('info', 'Checkout process started', $request->all());
 
-        // Log expected fields including legalAgreement
+        // Log incoming data
         Log::info('Incoming checkout request data:', [
             'total' => $request->input('total'),
             'subtotal' => $request->input('subtotal'),
             'weight' => $request->input('weight'),
             'discount' => $request->input('discount'),
+            'shippingCost' => $request->input('shippingCost'), // <- Added this
             'shippingDetails' => $request->input('shippingDetails'),
             'paymentIntentId' => $request->input('paymentIntentId'),
-            'legalAgreement' => $request->input('legalAgreement'), // new line
+            'legalAgreement' => $request->input('legalAgreement'),
         ]);
 
-        // Validate input, legalAgreement is optional but must be boolean if present
+        // Validate input
         $validated = $request->validate([
             'cart' => 'required|json',
             'total' => 'required|numeric|min:0',
             'subtotal' => 'required|numeric|min:0',
             'weight' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
+            'shippingCost' => 'required|numeric|min:0', // <- Validate shippingCost
             'shippingDetails' => 'required|array',
             'paymentIntentId' => 'required|string',
             'legalAgreement' => 'nullable|boolean',
         ]);
 
-        // Confirm PaymentIntent succeeded
         Stripe::setApiKey(env('STRIPE_SECRET'));
+
         try {
             $intent = PaymentIntent::retrieve($validated['paymentIntentId']);
 
@@ -58,17 +60,17 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            // Store relevant data in session
+            // Store data in session
             session([
                 'cart' => json_decode($validated['cart'], true),
                 'total' => $validated['total'],
                 'subtotal' => $validated['subtotal'],
                 'weight' => $validated['weight'],
                 'discount' => $validated['discount'],
+                'shippingCost' => $validated['shippingCost'], // <- Store shippingCost
                 'shippingDetails' => $validated['shippingDetails'],
             ]);
 
-            // Save legalAgreement only if it's present
             if (isset($validated['legalAgreement'])) {
                 session(['legalAgreement' => $validated['legalAgreement']]);
             }
