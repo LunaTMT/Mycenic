@@ -16,6 +16,8 @@ use App\Services\ShippoService;
 use App\Models\User;
 use App\Mail\OrderConfirmation;
 
+use Shippo;
+use Shippo_Shipment;
 
 class OrderController extends Controller
 {
@@ -237,13 +239,97 @@ class OrderController extends Controller
             'orderId'        => $order->id,
             'items'          => $items,
             'returnLabelUrl' => 'https://example.com/return-label.pdf',
-            'returnStatus'   => 'in_transit', // Replace dynamically as needed
-            'supportEmail'   => 'support@mycenic.com',
-            'subtotal'       => $order->subtotal ?? 0,
-            'discount'       => $order->discount ?? 0,
-            'total'          => $order->total ?? 0,
+            'returnStatus'   => 'in_transit', 
+
         ]);
     }
 
+    public function getReturnOptions(Request $request, $orderId)
+    {
+        \Log::info("getReturnOptions called", ['orderId' => $orderId]);
+
+        $order = Order::find($orderId);
+        if (!$order) {
+            \Log::warning("Order not found", ['orderId' => $orderId]);
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+        \Log::info("Order found", ['orderId' => $orderId, 'order' => $order->toArray()]);
+
+        if (!$order->country || !$order->zip || !$order->city || !$order->address) {
+            \Log::warning("Incomplete shipping address on order", ['orderId' => $orderId, 'address' => $order->only(['country','zip','city','address'])]);
+            return response()->json(['error' => 'Incomplete shipping address on order'], 400);
+        }
+
+        $weight = $order->weight ?? 2;
+        \Log::info("Using weight for shipment", ['weight' => $weight]);
+
+        $parcel = [
+            'length' => '10',
+            'width' => '10',
+            'height' => '5',
+            'distance_unit' => 'in',
+            'weight' => (string)$weight,
+            'mass_unit' => 'lb'
+        ];
+        \Log::info("Parcel details prepared", ['parcel' => $parcel]);
+
+        $toAddress = [
+            'name'    => 'Mycenic',
+            'street1' => '126 Henry Shuttlewood Drive',
+            'city'    => 'Chelmsford',
+            'country' => 'GB',
+            'zip'     => 'CM1 6EQ',
+            'phone'   => '+44 15555555555',
+            'email'   => 'support@mycenic.com'
+        ];
+        
+
+        $fromAddress = [
+            'name'    => $order->customer_name,
+            'street1' => $order->address,
+            'city'    => $order->city,
+            'country' => $order->country,
+            'zip'     => $order->zip,
+            'phone'   => $order->phone ?? '',
+            'email'   => $order->email ?? '',
+        ];
+       
+
+       
+                       
+        $shipment = Shippo_Shipment::create([
+            'address_from' => $fromAddress,
+            'address_to' => $toAddress,
+            'parcels' => [$parcel],
+            'async' => false
+        ]);
+
+         // Parse rates
+        $parsedRates = [];
+      
+                if (!empty($shipment['rates'])) {
+                    foreach ($shipment['rates'] as $rate) {
+                        $parsedRate = [
+                            'amount' => $rate['amount'],
+                            'currency' => $rate['currency'],
+                            'provider' => $rate['provider'],
+                            'service' => $rate['servicelevel']['name'] ?? 'Unknown',
+                            'object_id' => $rate['object_id']
+                        ];
+                        $parsedRates[] = $parsedRate;
+                        Log::info('Rate found', $parsedRate);
+                    }
+                } else {
+                    Log::warning('No rates returned from Shippo');
+                }
+        
+
+        Log::info('Parsed shipping rates successfully');
+
+        return response()->json($parsedRates);
+
+    
+
+    }
 
 }

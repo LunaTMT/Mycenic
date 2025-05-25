@@ -35,7 +35,12 @@ interface PageProps {
 
 
 
-export default function Authenticated({ header, children }: PropsWithChildren<{ header?: ReactNode }>) {
+type AuthenticatedProps = PropsWithChildren<{
+  header?: ReactNode;
+}>;
+
+export default function Authenticated({ header, children }: AuthenticatedProps) {
+
  
     const { auth, flash, url } = usePage<PageProps>().props;
     const safeUrl = url ?? "";

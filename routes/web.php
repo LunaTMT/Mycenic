@@ -193,6 +193,7 @@ Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.c
 Route::post('/orders/{order}/toggle-completed', [OrderController::class, 'toggleCompleted'])->middleware(['auth', 'admin']);
 
 Route::get('/orders/{order}/return', [OrderController::class, 'returnInstructions'])->name('orders.return');
+Route::post('/orders/{order}/return/get-return-options', [OrderController::class, 'getReturnOptions'])->name('orders.return.options');
 
 
 /**
