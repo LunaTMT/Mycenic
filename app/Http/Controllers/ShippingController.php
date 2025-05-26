@@ -89,20 +89,35 @@ class ShippingController extends Controller
      */
     public function purchaseLabel(Request $request)
     {
-        $label = $this->shippoService->purchaseLabel($request->rate_id);
+        $rateId = $request->input('rate_id');
 
-        if ($label) {
+        \Log::info('Purchasing label for rate.', ['rate_id' => $rateId]);
+
+        try {
+            $transaction = Shippo_Transaction::create([
+                'rate'  => $rateId,
+                'async' => false,
+            ]);
+
+            $transactionArray = json_decode(json_encode($transaction), true);
+
+            \Log::info('Purchased Shippo label:', ['transaction' => $transactionArray]);
+
             return response()->json([
                 'status' => 'success',
-                'data' => $label
+                'data' => $transactionArray,
             ]);
-        }
+        } catch (\Exception $e) {
+            \Log::error('Error purchasing Shippo label', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Unable to purchase shipping label.'
-        ], 400);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to purchase shipping label.',
+            ], 500);
+        }
     }
+
+
 
     /**
      * Track a shipment

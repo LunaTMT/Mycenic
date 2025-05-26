@@ -193,8 +193,8 @@ Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.c
 Route::post('/orders/{order}/toggle-completed', [OrderController::class, 'toggleCompleted'])->middleware(['auth', 'admin']);
 
 Route::get('/orders/{order}/return', [OrderController::class, 'returnInstructions'])->name('orders.return');
-Route::post('/orders/{order}/return/get-return-options', [OrderController::class, 'getReturnOptions'])->name('orders.return.options');
-
+Route::post('/orders/{order}/return/fetch-return-options', [OrderController::class, 'fetchReturnOptions'])->name('orders.return.options');
+Route::post('/orders/{order}/return/create-payment-intent', [OrderController::class, 'getPaymentIntent'])->name('orders.return.payment-intent');
 
 /**
 |--------------------------------------------------------------------------
@@ -209,9 +209,12 @@ Route::post('/promo-code/validate', [PromoCodeController::class, 'validatePromoC
 | Shipping Routes
 |--------------------------------------------------------------------------
 */
+
 Route::prefix('/shipping')->group(function () {
     Route::get('/rates/{orderId}', [ShippingController::class, 'getRates']);
     Route::post('/purchase', [ShippingController::class, 'purchaseLabel']);
+
+
     Route::get('/track/{carrier}/{trackingNumber}', [ShippingController::class, 'trackShipment']);
     Route::post('/validate-address', [ShippingController::class, 'validateAddress'])->name('shipping.validate.address');
 

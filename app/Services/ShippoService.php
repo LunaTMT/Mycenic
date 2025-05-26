@@ -7,11 +7,16 @@ use Shippo_Shipment;
 use Shippo_Transaction;
 use Shippo_Track;
 use Shippo;
+use App\Services\ShippoService;
 
 class ShippoService
 {
-    public function __construct()
+
+    protected $shippoService;
+
+    public function __construct(ShippoService $shippoService)
     {
+        $this->shippoService = $shippoService;
         Shippo::setApiKey(config('services.shippo.api_key'));
         Log::info('Shippo API key set.');
     }
@@ -110,22 +115,30 @@ class ShippoService
     
 
 
-    public function purchaseLabel($rateId)
+    public function purchaseLabel(Request $request)
     {
-        Log::info('Purchasing label for rate.', ['rate_id' => $rateId]);
+        $rateId = $request->input('rate_id');
 
-        try {
-            $transaction = Shippo_Transaction::create([
-                'rate'  => $rateId,
-                'async' => false
-            ]);
-            
-     
-            return $transaction;
-        } catch (\Exception $e) {
-            Log::error('Error purchasing Shippo label', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return null;
+        if (!$rateId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'rate_id is required'
+            ], 400);
         }
+
+        $transaction = $this->shippoService->purchaseLabel($rateId);
+
+        if ($transaction) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $transaction,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to purchase shipping label',
+        ], 500);
     }
 
 

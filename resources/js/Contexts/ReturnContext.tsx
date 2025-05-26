@@ -21,10 +21,10 @@ interface ShippingOptionData {
   object_id: string
   provider: string
   service: string
-  amount: string // or number if you parse it
+  amount: string // you can parse it to a number if needed
   currency: string
+  rateId?: string // add rateId if you have it for label purchase
 }
-
 interface Step {
   text: string
   component: React.ReactNode
@@ -38,14 +38,18 @@ interface ReturnContextType {
   shippingOptions: ShippingOptionData[]
   shippingLoading: boolean
   shippingError: string | null
-  selectedShippingOption: string
-  totalWeight: number
+  selectedShippingOption: ShippingOptionData | null
+
+  grandTotal: number
 
   paymentIntentClientSecret: string | null
+  hasPaid: boolean
 
   orderId: string | number | null
   fromAddress: any
   finishLabel: string
+
+  shippingLabelUrl: string | null
 
   currentStep: number
   steps: Step[]
@@ -54,17 +58,18 @@ interface ReturnContextType {
   handlePrevious: () => void
   handleContinue: () => void
 
-  totalSelected: number
-
   toggleItem: (index: number) => void
   updateQuantity: (index: number, qty: number) => void
   fetchShippingOptions: () => Promise<void>
-  chooseShippingOption: (opt: string) => void
+  fetchShippingLabel: () => Promise<void>
+
   setPaymentIntentClientSecret: (secret: string | null) => void
+  setHasPaid: (paid: boolean) => void
 
   setOrderId: (id: string | number | null) => void
   setFromAddress: (addr: any) => void
   setFinishLabel: (label: string) => void
+  setSelectedShippingOption: (option: ShippingOptionData | null) => void
 }
 
 const ReturnContext = createContext<ReturnContextType | undefined>(undefined)
@@ -77,7 +82,7 @@ export const ReturnProvider = ({
 }: {
   children: ReactNode
   initialItems: ReturnItem[]
-  orderID: string
+  orderID: string | number
   returnLabelUrl: string
 }) => {
   const [items] = useState(initialItems)
@@ -87,28 +92,30 @@ export const ReturnProvider = ({
   )
 
   const [currentStep, setCurrentStep] = useState<number>(1)
-  
+
   const [shippingOptions, setShippingOptions] = useState<ShippingOptionData[]>([])
   const [shippingLoading, setShippingLoading] = useState(false)
   const [shippingError, setShippingError] = useState<string | null>(null)
-  const [selectedShippingOption, setSelectedShippingOption] = useState<string>('')
+  const [selectedShippingOption, setSelectedShippingOption] = useState<ShippingOptionData | null>(null)
 
   const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null)
+  const [hasPaid, setHasPaid] = useState(true) //change to false
 
   const [orderId, setOrderId] = useState<string | number | null>(orderID)
   const [fromAddress, setFromAddress] = useState<any>(null)
   const [finishLabel, setFinishLabel] = useState<string>('Finish')
 
-  const totalSelected = useMemo(() => selectedItems.length, [selectedItems])
+  const [shippingLabelUrl, setShippingLabelUrl] = useState<string | null>(returnLabelUrl || null)
 
-  const totalWeight = useMemo(() => {
-    return selectedItems.reduce(
-      (sum, i) => sum + (items[i].weight ?? 0) * returnQuantities[i],
-      0
-    )
-  }, [selectedItems, returnQuantities, items])
+  const grandTotal = useMemo(() => {
+    const itemTotal = selectedItems.reduce((sum, idx) => {
+      const itemPrice = items[idx].price ?? 0
+      const qty = returnQuantities[idx]
+      return sum + itemPrice * qty
+    }, 0)
 
-
+    return itemTotal
+  }, [selectedItems, returnQuantities, items, selectedShippingOption])
 
   const toggleItem = (idx: number) => {
     setSelectedItems((prev) => {
@@ -135,11 +142,9 @@ export const ReturnProvider = ({
     setShippingLoading(true)
     setShippingError(null)
     try {
-      const resp = await axios.post<ShippingOptionData[]>( // Note: just ShippingOptionData[] because response data is array
-        `/orders/${orderId}/return/get-return-options`,
+      const resp = await axios.post<ShippingOptionData[]>(
+        `/orders/${orderId}/return/fetch-return-options`,
       )
-      console.log(resp.data)
-      // resp.data is the array of options
       setShippingOptions(resp.data)
     } catch (err) {
       setShippingError('Failed to load shipping options.')
@@ -148,13 +153,30 @@ export const ReturnProvider = ({
     }
   }
 
+  // New function to fetch shipping label URL from backend
+  const fetchShippingLabel = async () => {
+    if (!orderId || !selectedShippingOption) return
 
-  const chooseShippingOption = (opt: string) => {
-    setSelectedShippingOption(opt)
+    try {
+      const response = await axios.post(`/orders/${orderId}/return/create-shipping-label`, {
+        rateId: selectedShippingOption.rateId,
+      })
+      setShippingLabelUrl(response.data.labelUrl)
+    } catch (error) {
+      console.error('Failed to get shipping label:', error)
+      alert('Failed to retrieve shipping label, please try again.')
+    }
   }
 
+  // Optionally fetch label automatically after payment
+  useEffect(() => {
+    if (hasPaid) {
+      fetchShippingLabel()
+    }
+  }, [hasPaid])
+
   const totalSteps = 4
-  const steps: Step[] = [] // You can populate this array with your actual steps
+  const steps: Step[] = [] // populate as needed
 
   const changeStep = (newStep: number) => {
     if (newStep >= 1 && newStep <= totalSteps) {
@@ -184,21 +206,28 @@ export const ReturnProvider = ({
         shippingLoading,
         shippingError,
         selectedShippingOption,
-        totalWeight,
+
+        grandTotal,
         paymentIntentClientSecret,
         orderId,
         fromAddress,
         finishLabel,
-        totalSelected,
+
+        hasPaid,
+        setHasPaid,
+
+        shippingLabelUrl,
 
         toggleItem,
         updateQuantity,
         fetchShippingOptions,
-        chooseShippingOption,
+        fetchShippingLabel,
+
         setPaymentIntentClientSecret,
         setOrderId,
         setFromAddress,
         setFinishLabel,
+        setSelectedShippingOption,
 
         currentStep,
         steps,

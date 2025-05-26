@@ -10,16 +10,11 @@ export default function ReturnItemTable() {
     toggleItem,
     updateQuantity,
     currentStep,
+    grandTotal,
+    selectedShippingOption
   } = useReturn()
 
   const isActive = currentStep === 1
-
-  // Calculate total of all selected items
-  const grandTotal = selectedItems.reduce((sum, idx) => {
-    const itemPrice = items[idx].price ?? 0
-    const qty = returnQuantities[idx]
-    return sum + itemPrice * qty
-  }, 0)
 
   return (
     <div className="w-full overflow-hidden rounded-xl shadow-lg border border-black/20 dark:border-white/20 dark:bg-[#424549]/80 mb-8">
@@ -83,11 +78,12 @@ export default function ReturnItemTable() {
         </tbody>
 
         <tfoot>
+
           <tr className="bg-gray-100 dark:bg-[#323537] font-semibold text-lg">
-            <td className="px-4 py-3 text-right" colSpan={3}>
-              Total:
+            <td className="px-4  py-2 text-right" colSpan={3}>
+              Total Return:
             </td>
-            <td className="px-4 py-3 text-center">
+            <td className="px-4  text-center">
               £{grandTotal.toFixed(2)}
             </td>
             <td />

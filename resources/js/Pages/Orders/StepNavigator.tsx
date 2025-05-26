@@ -1,7 +1,9 @@
-import React, { isValidElement, ReactElement } from 'react'
+import React, { isValidElement, ReactElement, useState } from 'react'
 import { useReturn } from '@/Contexts/ReturnContext'
 import { ShippingOption } from './Test/ShippingOption'
 import PaymentPage from './Test/PaymentPage'
+import { useEffect } from 'react'
+import { ShippingLabelFetcher } from './ShippingLabelFetcher'
 
 interface Step {
   text: string
@@ -10,14 +12,15 @@ interface Step {
 
 export default function StepNavigator() {
   const {
-    currentStep, // number, 1-based index
+    currentStep,
     handlePrevious,
     handleContinue,
-
-    paymentIntentClientSecret,
-   
-    setPaymentIntentClientSecret,
+    selectedItems,
+    selectedShippingOption,
+    hasPaid,
   } = useReturn()
+
+
 
   const steps: Step[] = [
     {
@@ -30,19 +33,11 @@ export default function StepNavigator() {
     },
     {
       text: 'Payment of shipping',
-      component: paymentIntentClientSecret ? (
-        <PaymentPage
-          paymentIntentClientSecret={paymentIntentClientSecret}
-          total={0}
-          onSuccess={setPaymentIntentClientSecret}
-        />
-      ) : (
-        <p>Loading payment form…</p>
-      ),
+      component: <PaymentPage />,
     },
     {
-      text: 'Print the shipping label using the button below.',
-      component: null,
+    text: 'Print the shipping label using the button below.',
+    component: <ShippingLabelFetcher  />,
     },
     {
       text: 'Carefully repackage the item(s) securely.',
@@ -59,12 +54,22 @@ export default function StepNavigator() {
   ]
 
   const total = steps.length
-  // get current step object by adjusting for 1-based index
   const step = steps[currentStep - 1]
 
-  // Replace this with your real validation logic
-  function canContinue(step: Step) {
-    return step.text.trim().length > 0
+  function canContinue(step: Step): boolean {
+    if (currentStep === 1) {
+      return selectedItems.length > 0
+    }
+
+    if (currentStep === 2) {
+      return !!selectedShippingOption
+    }
+
+    if (currentStep === 3) {
+      return hasPaid
+    }
+
+    return true
   }
 
   const disabled = !canContinue(step)
@@ -72,6 +77,8 @@ export default function StepNavigator() {
   const renderedComponent = isValidElement(step.component)
     ? React.cloneElement(step.component as ReactElement, { isActive: true })
     : step.component
+
+
 
   return (
     <div className="rounded-lg bg-white dark:bg-[#1e2124] p-6 shadow-lg">
@@ -87,22 +94,27 @@ export default function StepNavigator() {
         <button
           onClick={handlePrevious}
           disabled={currentStep === 1}
-          className={`rounded-md px-5 py-2 font-semibold transition-colors duration-200 ${
-            currentStep === 1
-              ? 'bg-blue-200 text-blue-400 cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
+          className={`rounded-lg px-6 py-2 font-medium transition-all duration-200 shadow-sm
+            ${
+              currentStep === 1
+                ? 'bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+            }
+          `}
         >
           Previous
         </button>
+
         <button
           onClick={handleContinue}
           disabled={disabled}
-          className={`rounded-md px-6 py-2 font-semibold transition-colors duration-200 ${
-            disabled
-              ? 'bg-green-300 text-green-700 cursor-not-allowed'
-              : 'bg-green-600 text-white hover:bg-green-700 shadow-md'
-          }`}
+          className={`rounded-lg px-6 py-2 font-medium transition-all duration-200 shadow-sm
+            ${
+              disabled
+                ? 'bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+            }
+          `}
         >
           {currentStep === total ? 'Finish' : 'Continue'}
         </button>

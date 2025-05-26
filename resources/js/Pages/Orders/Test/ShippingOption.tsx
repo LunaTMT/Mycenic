@@ -5,46 +5,56 @@ export const ShippingOption = () => {
   const {
     shippingOptions,
     selectedShippingOption,
-    chooseShippingOption,
+    setSelectedShippingOption,
     currentStep,
     orderId,
     fetchShippingOptions,
   } = useReturn()
 
   useEffect(() => {
-    console.log(currentStep);
-    if (currentStep === 2 ) {
-      console.log("getting shipping");
+    if (currentStep === 2 && !selectedShippingOption) {
       fetchShippingOptions()
     }
-  }, [currentStep, orderId, ])
+  }, [currentStep, orderId, selectedShippingOption])
 
-  // If not on step 2 or shippingOptions not ready, don't render options
-  if (currentStep !== 2) {
+  useEffect(() => {
+    if (currentStep === 2 && shippingOptions.length > 0 && !selectedShippingOption) {
+      const cheapestOption = shippingOptions.reduce((prev, curr) =>
+        parseFloat(curr.amount) < parseFloat(prev.amount) ? curr : prev
+      , shippingOptions[0])
+
+      setSelectedShippingOption(cheapestOption)
+      
+    }
+  }, [currentStep, shippingOptions, selectedShippingOption])
+
+  if (currentStep !== 2 || shippingOptions.length === 0) {
     return null
   }
-  console.log(shippingOptions)
+ 
+  const handleShippingOptionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value
+    const selected = shippingOptions.find(option => option.object_id === selectedId) || null
+    setSelectedShippingOption(selected)
+    console.log(selected)
+  }
 
   return (
     <div className="mt-2 text-sm">
       <p>Please select your return shipping option:</p>
-      <div className="mt-2 space-y-2">
-        {(shippingOptions || []).map(({ object_id, provider, service, amount, currency }) => (
-          <label key={object_id} className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="shippingOption"
-              value={object_id}
-              checked={selectedShippingOption === object_id}
-              onChange={() => chooseShippingOption(object_id)}
-              className="form-radio h-4 w-4 text-green-600"
-            />
-            <span>
-              {provider} {service} — £{parseFloat(amount).toFixed(2)} {currency}
-            </span>
-          </label>
-        ))}
-
+      <div className="mt-2">
+        <select
+          id="shipping-option"
+          className="w-full p-2 border border-gray-300 dark:border-white/30 rounded bg-white dark:bg-[#2c2f33] dark:text-white"
+          onChange={handleShippingOptionChange}
+          value={selectedShippingOption?.object_id || ''}
+        >
+          {shippingOptions.map(({ object_id, provider, service, amount }) => (
+            <option key={object_id} value={object_id}>
+              {provider} {service} — £{parseFloat(amount).toFixed(2)}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   )

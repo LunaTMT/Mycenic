@@ -244,7 +244,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function getReturnOptions(Request $request, $orderId)
+    public function fetchReturnOptions(Request $request, $orderId)
     {
         \Log::info("getReturnOptions called", ['orderId' => $orderId]);
 
@@ -331,5 +331,62 @@ class OrderController extends Controller
     
 
     }
+
+
+    public function getPaymentIntent(Request $request)
+    {
+        // Log the full incoming request
+        Log::info('Incoming getPaymentIntent request', [
+            'request_data' => $request->all(),
+        ]);
+
+        // Get 'total' and 'order_id' from the request input
+        $amount = $request->input('total');        // total amount to charge
+        $orderId = $request->input('order_id');    // order ID for metadata
+
+        // Log the parsed values
+        Log::info('Parsed input', [
+            'total' => $amount,
+            'order_id' => $orderId,
+        ]);
+
+        // Validate amount is numeric and positive
+        if (!is_numeric($amount) || $amount <= 0) {
+            Log::warning('Invalid amount provided', ['amount' => $amount]);
+            return response()->json(['error' => 'Invalid amount'], 400);
+        }
+
+        $amountInCents = (int) ($amount * 100);
+
+        // Set Stripe API key
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+        // Create PaymentIntent
+        try {
+            $paymentIntent = \Stripe\PaymentIntent::create([
+                'amount' => $amountInCents,
+                'currency' => 'gbp',
+                'metadata' => [
+                    'order_id' => $orderId ?? 'unknown',
+                ],
+            ]);
+
+            Log::info('PaymentIntent created', [
+                'id' => $paymentIntent->id,
+                'amount' => $amountInCents,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Stripe PaymentIntent creation failed', [
+                'message' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => 'Failed to create payment intent'], 500);
+        }
+
+        return response()->json([
+            'clientSecret' => $paymentIntent->client_secret,
+            'amount' => $amount,
+        ]);
+    }
+
 
 }
