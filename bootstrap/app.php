@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\Authenticate;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,8 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        // Register route middleware aliases here
+        // ✅ Register route middleware aliases here
         $middleware->alias([
+            'auth' => Authenticate::class, // 👈 Register your alias here
             'admin' => AdminMiddleware::class,
         ]);
     })

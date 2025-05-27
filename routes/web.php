@@ -177,13 +177,13 @@ Route::post('/create-payment-intent', [PaymentController::class, 'createPaymentI
 | Orders (Authenticated)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
-    Route::get('/orders/track/{carrier}/{tracking_id}', [ShippingController::class, 'trackShipment']);
-});
+//dont forget need auth here 
+Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
+Route::get('/orders/track/{carrier}/{tracking_id}', [ShippingController::class, 'trackShipment']);
 
 
+Route::get('/orders-test', fn () => 'working');
 /**
 |--------------------------------------------------------------------------
 | Orders (Public/Admin)

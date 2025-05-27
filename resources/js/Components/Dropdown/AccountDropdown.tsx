@@ -3,6 +3,7 @@ import Dropdown from '@/Components/Dropdown/Dropdown';
 import { Inertia } from '@inertiajs/inertia';
 
 const AccountDropdown = () => {
+
     const menuItems = [
         { label: "Profile", onClick: () => Inertia.get('/profile') },
         { label: "Orders", onClick: () => Inertia.get('/orders') },
@@ -16,11 +17,11 @@ const AccountDropdown = () => {
             </Dropdown.Trigger>
 
             <Dropdown.Content>
-                <ul className="relative text-right w-full -mt-1 bg-white dark:bg-[#424549] shadow-lg  z-50">
+                <ul className="relative text-right w-full -mt-1 bg-white dark:bg-[#424549] shadow-lg z-50">
                     {menuItems.map((item, index) => (
                         <li
                             key={index}
-                            className={`cursor-pointer px-4 py-2 font-Poppins hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70 text-gray-700 dark:text-gray-300`}
+                            className="cursor-pointer px-4 py-2 font-Poppins hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70 text-gray-700 dark:text-gray-300"
                             onClick={item.onClick}
                         >
                             {item.label}

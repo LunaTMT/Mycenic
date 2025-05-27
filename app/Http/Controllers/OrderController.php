@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;  // Ensure this is inclu
+use Illuminate\Support\Facades\Mail;  
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -22,7 +22,7 @@ use Shippo_Shipment;
 class OrderController extends Controller
 {
 
-    use AuthorizesRequests;
+   
     protected $shippoService;
 
     public function __construct(ShippoService $shippoService)
@@ -31,26 +31,33 @@ class OrderController extends Controller
         Log::info('OrderController initialized.');
     }
 
+
+
     public function index(Request $request)
     {
         $user = $request->user();
+        Log::info("Orders index accessed by user ID: {$user->id}, role: {$user->role}");
 
         // Base query, newest first
         $query = Order::orderBy('created_at', 'desc');
 
         // If the user is NOT an admin, restrict to their own orders
         if ($user->role !== 'admin') {
+            Log::info("Restricting orders to user ID: {$user->id}");
             $query->where('user_id', $user->id);
         }
 
         $orders = $query->get()->map(function (Order $order) {
+            Log::info("Processing order ID: {$order->id}");
+
             // Update tracking status/history if needed
             if ($order->tracking_number) {
+                Log::info("Tracking shipment for order ID: {$order->id} with tracking number: {$order->tracking_number}");
+
                 $trackingData = $this->shippoService->trackShipment(
                     'shippo',                // carrier as a string
                     'SHIPPO_DELIVERED'       // test tracking number as a string
                 );
-            
 
                 /*
                 CHANGE ON PRODUCTION
@@ -68,14 +75,13 @@ class OrderController extends Controller
                 );
                 */
 
-
-                if (! empty($trackingData['tracking_status'])) {
+                if (!empty($trackingData['tracking_status'])) {
                     $status = $this->toTitleCase($trackingData['tracking_status']['status']);
                     $order->update(['shipping_status' => $status]);
                     Log::info("Updated shipping status for order {$order->id}", ['status' => $status]);
                 }
 
-                if (! empty($trackingData['tracking_history'])) {
+                if (!empty($trackingData['tracking_history'])) {
                     $history = array_map(fn($h) => [
                         'status_date'    => $h['status_date'],
                         'status_details' => $h['status_details'],
@@ -104,8 +110,9 @@ class OrderController extends Controller
                     'tracking_history' => $order->tracking_history ?? [],
                 ]
             );
-
         });
+
+        Log::info("Returning " . $orders->count() . " orders to view");
 
         return Inertia::render('Orders/CustomerOrders', [
             'orders'    => $orders,
@@ -113,6 +120,7 @@ class OrderController extends Controller
             'clearCart' => session('clearCart'),
         ]);
     }
+
 
 
 
