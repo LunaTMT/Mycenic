@@ -37,7 +37,6 @@ interface Order {
   delivery_price: number;
   weight: number;
   discount: number;
-  shipping_cost: number;
 
   payment_status: "Pending" | "Shipped" | "Delivered" | "Cancelled" | "Completed";
 
@@ -166,7 +165,7 @@ export default function CustomerOrders({ auth }: { auth: { user?: any } }) {
               initial={{ height: "auto" }}
               animate={{ height: "auto" }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="w-full h-full overflow-hidden rounded-xl shadow-lg border border-black/20  dark:border-white/20 dark:bg-[#424549]/80 text-gray-800 dark:text-gray-200"
+              className="w-full h-full overflow-hidden rounded-xl shadow-lg border border-black/20 dark:bg-[#424549]/80 dark:border-white/20 text-gray-800 dark:text-gray-200"
             >
               <table className="w-full ">
 
@@ -177,8 +176,6 @@ export default function CustomerOrders({ auth }: { auth: { user?: any } }) {
                     <th className="py-3">Shipping status</th>
                     <th className="py-3">Payment status</th>
                     <th className="py-3">Date</th>
-           
-
                     {auth?.user?.role === 'admin' && <th className="py-3">Completed</th>}
                     <th className="py-3 text-center align-middle"></th>
                   </tr>
@@ -249,8 +246,6 @@ export default function CustomerOrders({ auth }: { auth: { user?: any } }) {
                               day: "numeric",
                             })}
                           </td>
-                          
-
                           {auth?.user?.role === 'admin' && (
                           <td className="px-6 py-4 text-center flex justify-center items-center h-16">
                             <input
@@ -334,11 +329,6 @@ export default function CustomerOrders({ auth }: { auth: { user?: any } }) {
                                                 <span>-£{discountAmount}</span>
                                               </div>
                                             )}
-                                            <div className="mt-2 pt-2 border-t border-black/30 flex justify-between text-md dark:border-white/40 dark:text-white font-semibold">
-                                                <span>Delivery</span>
-                                                <span>£{Number(order.shipping_cost).toFixed(2)}</span>
-                                              </div>
-                                          
                                             <div className="mt-2 pt-2 border-t border-black/30 flex justify-between text-md dark:border-white/40 dark:text-white font-semibold">
                                               <span>Grand Total:</span>
                                               <span>£{order.total}</span>

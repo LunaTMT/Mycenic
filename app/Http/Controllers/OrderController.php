@@ -22,7 +22,7 @@ use Shippo_Shipment;
 class OrderController extends Controller
 {
 
-   
+    use AuthorizesRequests;
     protected $shippoService;
 
     public function __construct(ShippoService $shippoService)

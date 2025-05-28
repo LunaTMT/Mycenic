@@ -2,26 +2,22 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Shippo;
 use Shippo_Shipment;
 use Shippo_Transaction;
 use Shippo_Track;
-use Shippo;
-use App\Services\ShippoService;
+use Shippo_Address;
 
 class ShippoService
 {
+    private $allowedCountries = ['GB'];
 
-    protected $shippoService;
-
-    public function __construct(ShippoService $shippoService)
+    public function __construct()
     {
-        $this->shippoService = $shippoService;
-        Shippo::setApiKey(config('services.shippo.api_key'));
-        Log::info('Shippo API key set.');
+        \Shippo::setApiKey(config('services.shippo.key'));
     }
-
-    private $allowedCountries = ['GB']; 
 
     public function createShipment($order)
     {
@@ -37,7 +33,7 @@ class ShippoService
             'street1' => '126 Henry Shuttlewood Drive',
             'city'    => 'Chelmsford',
             'country' => 'GB',
-            'zip' => 'CM1 6EQ',
+            'zip'     => 'CM1 6EQ',
             'phone'   => '+44 15555555555',
             'email'   => 'support@mycenic.com'
         ];
@@ -69,27 +65,25 @@ class ShippoService
                 'async'        => false
             ]);
 
-            
             return $shipment;
         } catch (\Exception $e) {
-            
+            Log::error('Error creating shipment: ' . $e->getMessage());
             return null;
         }
     }
 
     public function getRates($order)
     {
-
         $shipment = $this->createShipment($order);
 
         if ($shipment) {
-           
             return $shipment['rates'];
         } else {
             Log::error('Failed to fetch shipping rates.', ['order_id' => $order->id]);
             return null;
         }
     }
+
     public function getShippingRates(array $from, array $to, array $parcel): ?array
     {
         try {
@@ -112,9 +106,6 @@ class ShippoService
         }
     }
 
-    
-
-
     public function purchaseLabel(Request $request)
     {
         $rateId = $request->input('rate_id');
@@ -126,32 +117,54 @@ class ShippoService
             ], 400);
         }
 
-        $transaction = $this->shippoService->purchaseLabel($rateId);
-
-        if ($transaction) {
-            return response()->json([
-                'status' => 'success',
-                'data' => $transaction,
+        try {
+            $transaction = Shippo_Transaction::create([
+                'rate' => $rateId,
+                'label_file_type' => 'PDF',
+                'async' => false
             ]);
+
+            if ($transaction['status'] === 'SUCCESS') {
+                return response()->json([
+                    'status' => 'success',
+                    'data' => [
+                        'label_url' => $transaction['label_url'],
+                        'tracking_number' => $transaction['tracking_number'],
+                        'carrier' => $transaction['carrier'],
+                        'shipment_id' => $transaction['shipment'],
+                        'transaction_id' => $transaction['object_id']
+                    ],
+                ]);
+            }
+
+            Log::error('Label purchase failed.', ['transaction' => $transaction]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Label purchase failed',
+                'details' => $transaction
+            ], 500);
+
+        } catch (\Exception $e) {
+            Log::error('Exception during label purchase: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Exception occurred while purchasing label',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to purchase shipping label',
-        ], 500);
     }
-
 
     public function trackShipment($carrier, $trackingNumber)
     {
         try {
             \Shippo::setApiKey(env('SHIPPO_API_KEY'));
-    
-            $tracking = \Shippo_Track::create([
+
+            $tracking = Shippo_Track::create([
                 'carrier' => $carrier,
                 'tracking_number' => $trackingNumber
             ]);
-    
 
             return $tracking;
         } catch (\Exception $e) {
@@ -161,7 +174,7 @@ class ShippoService
                 'error_message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-    
+
             return null;
         }
     }
@@ -169,9 +182,9 @@ class ShippoService
     public function validateAddress(array $addressData): array
     {
         Log::info('Validating shipping address', ['input' => $addressData]);
-    
+
         try {
-            $address = \Shippo_Address::create([
+            $address = Shippo_Address::create([
                 'name' => $addressData['name'],
                 'street1' => $addressData['address'],
                 'city' => $addressData['city'],
@@ -180,17 +193,17 @@ class ShippoService
                 'email' => $addressData['email'],
                 'validate' => true,
             ]);
-    
+
             Log::info('Shippo address response', ['address' => $address]);
-    
+
             if (!empty($address['validation_results']) && $address['validation_results']['is_valid']) {
                 Log::info('Address validation passed.');
                 return ['valid' => true];
             }
-    
+
             $messages = $address['validation_results']['messages'] ?? [];
             Log::warning('Address validation failed', ['messages' => $messages]);
-    
+
             return [
                 'valid' => false,
                 'messages' => $messages,
@@ -203,6 +216,4 @@ class ShippoService
             ];
         }
     }
- 
-    
 }

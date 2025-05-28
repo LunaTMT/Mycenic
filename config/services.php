@@ -60,8 +60,9 @@ return [
     ],
     
     'shippo' => [
-        'api_key' => env('SHIPPO_API_KEY'),
+        'key' => env('SHIPPO_API_KEY'),
     ],
+
 
     
     'recaptcha' => [
