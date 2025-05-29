@@ -84,31 +84,37 @@ class ShippingController extends Controller
 
 
 
-    /**
-     * Purchase shipping label
-     */
     public function purchaseLabel(Request $request)
     {
         $rateId = $request->input('rate_id');
 
-        \Log::info('Purchasing label for rate.', ['rate_id' => $rateId]);
+        \Log::info('Received purchaseLabel request', [
+            'rate_id' => $rateId,
+            'user_id' => auth()->id(), // assuming authentication
+            'ip' => $request->ip(),
+        ]);
 
         try {
-            $transaction = Shippo_Transaction::create([
-                'rate'  => $rateId,
-                'async' => false,
+            \Log::info('Attempting to purchase label via ShippoService', [
+                'rate_id' => $rateId,
             ]);
 
-            $transactionArray = json_decode(json_encode($transaction), true);
+            $transaction = $this->shippoService->purchaseLabel($rateId);
 
-            \Log::info('Purchased Shippo label:', ['transaction' => $transactionArray]);
+            \Log::info('Shippo label purchase successful', [
+                'transaction' => $transaction,
+            ]);
 
             return response()->json([
                 'status' => 'success',
-                'data' => $transactionArray,
+                'data' => $transaction
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error purchasing Shippo label', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Log::error('Error purchasing Shippo label', [
+                'rate_id' => $rateId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json([
                 'status' => 'error',
@@ -116,7 +122,6 @@ class ShippingController extends Controller
             ], 500);
         }
     }
-
 
 
     /**

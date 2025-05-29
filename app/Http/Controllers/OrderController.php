@@ -7,10 +7,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;  
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
+use Stripe\PaymentIntent;
+
 use App\Models\Order;
 use App\Services\ShippoService;
 use App\Models\User;
@@ -18,6 +21,11 @@ use App\Mail\OrderConfirmation;
 
 use Shippo;
 use Shippo_Shipment;
+
+use Carbon\Carbon;
+
+
+
 
 class OrderController extends Controller
 {
@@ -124,7 +132,7 @@ class OrderController extends Controller
 
 
 
-    public function create(Request $request)
+    public function create(Request $request, ShippoService $shippoService)
     {
         try {
             Log::info('Processing order creation');
@@ -133,14 +141,14 @@ class OrderController extends Controller
                 'subtotal'        => session('subtotal', 0),
                 'weight'          => session('weight', 0),
                 'discount'        => session('discount', 0),
-                'shippingCost'    => session('shippingCost', 0), // <-- added
+                'shippingCost'    => session('shippingCost', 0),
                 'shippingDetails' => session('shippingDetails', []),
                 'legalAgreement'  => session('legalAgreement', null),
             ]);
 
             $shippingDetails = session('shippingDetails', []);
             $legalAgreement = session('legalAgreement', null);
-            $shippingCost = session('shippingCost', 0); // <-- retrieve from session
+            $shippingCost = session('shippingCost', 0);
 
             if (!empty($shippingDetails['email'])) {
                 $user = User::where('email', $shippingDetails['email'])->first();
@@ -163,7 +171,7 @@ class OrderController extends Controller
                 'subtotal'        => session('subtotal', 0),
                 'weight'          => session('weight', 0),
                 'discount'        => session('discount', 0),
-                'shipping_cost'   => $shippingCost, // <-- save to DB
+                'shipping_cost'   => $shippingCost,
                 'payment_status'  => 'Completed',
                 'customer_name'   => $shippingDetails['name'] ?? 'Unknown',
                 'address'         => $shippingDetails['address'] ?? '',
@@ -177,16 +185,34 @@ class OrderController extends Controller
 
             Log::info('Order created successfully', ['order' => $order]);
 
-            $order->tracking_number = 'SHIPPO_DELIVERED';
-            $order->carrier = 'shippo';
-            $order->save();
+            // Use Shippo to create shipment and purchase label
+            $shipment = $shippoService->createShipment($order);
+            if (!empty($shipment['rates'])) {
+                $cheapestRate = collect($shipment['rates'])->sortBy('amount')->first();
+                $label = $shippoService->purchaseLabel($cheapestRate['object_id']);
+
+                $order->tracking_number = $label['tracking_number'];
+                $order->carrier = $label['carrier'];
+                $order->shipment_id = $label['shipment_id'];
+                $order->label_url = $label['label_url'];
+
+                $order->tracking_number = 'SHIPPO_DELIVERED';
+                $order->carrier = 'shippo';
+                $order->save();
+
+                $order->save();
+
+                Log::info('Label purchased and tracking added', ['tracking' => $label]);
+            } else {
+                Log::error('No shipping rates available from Shippo');
+            }
 
             // Clear session
             session()->forget([
                 'cart', 'total', 'subtotal', 'weight', 'discount',
-                'shippingDetails', 'legalAgreement', 'shippingCost' // <-- forget shippingCost
+                'shippingDetails', 'legalAgreement', 'shippingCost'
             ]);
-            Log::info('Session data (cart and order) cleared after order completion');
+            Log::info('Session data cleared after order completion');
 
             return Auth::check()
                 ? redirect()->route('orders.index')->with('flash.success', 'Order successfully placed.')
@@ -243,11 +269,10 @@ class OrderController extends Controller
         })->toArray();
 
 
-        return Inertia::render('Orders/ReturnInstructions', [
+        return Inertia::render('Orders/Return/ReturnInstructions', [
             'orderId'        => $order->id,
             'items'          => $items,
-            'returnLabelUrl' => 'https://example.com/return-label.pdf',
-            'returnStatus'   => 'in_transit', 
+          
 
         ]);
     }
@@ -394,6 +419,45 @@ class OrderController extends Controller
             'clientSecret' => $paymentIntent->client_secret,
             'amount' => $amount,
         ]);
+    }
+
+    public function finishReturn(Request $request, $orderId)
+    {
+        Log::info('finishReturn reached', ['orderId' => $orderId]);
+        $request->validate([
+            'paymentIntentClientSecret' => 'required|string',
+        ]);
+
+        // Verify Stripe payment
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+
+            // Extract the ID from the client_secret
+            $clientSecret = $request->paymentIntentClientSecret;
+            $paymentIntentId = explode('_secret', $clientSecret)[0];
+            $intent = PaymentIntent::retrieve($paymentIntentId);
+
+            if ($intent->status !== 'succeeded') {
+                return response()->json(['error' => 'Payment not completed.'], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Payment verification failed.', 'message' => $e->getMessage()], 500);
+        }
+
+        // Lookup the order
+        $order = Order::findOrFail($orderId);
+
+        // Record the return
+        $order->return_finished_at = $request->input('finishedAt', Carbon::now());
+        $order->return_shipping_option = $request->input('shippingOption');
+        $order->return_shipping_label_url = $request->input('shippingLabelUrl');
+        $order->return_items = $request->input('selectedItems'); // You should cast this column to JSON in your model
+        $order->save();
+
+        Log::info('Return finished for order', ['order_id' => $order->id, 'updated_order' => $order->toArray()]);
+
+        return Redirect::route('orders.index')
+            ->with('flash.success', 'Return finalized successfully.');
     }
 
 

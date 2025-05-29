@@ -6,8 +6,8 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import GuestLayout from "@/Layouts/GuestLayout";
 
 import VideoPlayer from "@/Components/Video/VideoPlayer";
-import CustomerReviews from "./Home/CustomerReviews";
-import Products from "./Home/Products";
+import CustomerReviews from "./CustomerReviews";
+import Products from "./Products";
 
 import { useDarkMode } from "@/Contexts/DarkModeContext";
 import "react-toastify/dist/ReactToastify.css";

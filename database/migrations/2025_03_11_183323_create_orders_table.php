@@ -35,12 +35,27 @@ return new class extends Migration
             $table->string('carrier')->nullable();
             $table->string('tracking_number')->nullable();
             $table->string('tracking_url')->nullable();
-
             $table->json('tracking_history')->nullable();
+            
+            $table->text('label_url')->nullable();
+             $table->string('shipment_id')->nullable();
 
-            $table->boolean('legalAgreement')->nullable()->default(false);
+            $table->boolean('legal_agreement')->nullable()->default(false);
             $table->boolean('is_completed')->nullable()->default(false);
             $table->boolean('returnable')->default(true);
+
+
+
+            $table->timestamp('return_finished_at')->nullable();
+            $table->string('return_shipping_option')->nullable();
+            $table->text('return_shipping_label_url')->nullable();
+            $table->string('return_tracking_number')->nullable();
+            $table->string('return_tracking_url')->nullable();
+            $table->json('return_tracking_history')->nullable();
+            $table->string('return_status')->default('UNKNOWN');
+
+
+            $table->json('return_items')->nullable();
 
 
         

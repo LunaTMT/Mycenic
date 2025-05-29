@@ -42,7 +42,7 @@ use App\Mail\OrderConfirmation;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
+    return Inertia::render('Home/Welcome', [
         'canLogin'       => Route::has('login'),
         'canRegister'    => Route::has('register'),
         'laravelVersion' => Application::VERSION,
@@ -195,7 +195,7 @@ Route::post('/orders/{order}/toggle-completed', [OrderController::class, 'toggle
 Route::get('/orders/{order}/return', [OrderController::class, 'returnInstructions'])->name('orders.return');
 Route::post('/orders/{order}/return/fetch-return-options', [OrderController::class, 'fetchReturnOptions'])->name('orders.return.options');
 Route::post('/orders/{order}/return/create-payment-intent', [OrderController::class, 'getPaymentIntent'])->name('orders.return.payment-intent');
-
+Route::post('/orders/{order}/return/finish', [OrderController::class, 'finishReturn']);
 /**
 |--------------------------------------------------------------------------
 | Promo Code Routes
@@ -213,7 +213,7 @@ Route::post('/promo-code/validate', [PromoCodeController::class, 'validatePromoC
 Route::prefix('/shipping')->group(function () {
     Route::get('/rates/{orderId}', [ShippingController::class, 'getRates']);
     Route::post('/purchase', [ShippingController::class, 'purchaseLabel']);
-
+    
 
     Route::get('/track/{carrier}/{trackingNumber}', [ShippingController::class, 'trackShipment']);
     Route::post('/validate-address', [ShippingController::class, 'validateAddress'])->name('shipping.validate.address');

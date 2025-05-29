@@ -1,9 +1,9 @@
 import React, { isValidElement, ReactElement, useState } from 'react'
 import { useReturn } from '@/Contexts/ReturnContext'
-import { ShippingOption } from './Test/ShippingOption'
-import PaymentPage from './Test/PaymentPage'
-import { useEffect } from 'react'
-import { ShippingLabelFetcher } from './ShippingLabelFetcher'
+import { ShippingOption } from './Steps/ShippingOption'
+import PaymentPage from './PaymentPage'
+
+import { ShippingLabelFetcher } from './Steps/ShippingLabelFetcher'
 
 interface Step {
   text: string
@@ -15,43 +15,38 @@ export default function StepNavigator() {
     currentStep,
     handlePrevious,
     handleContinue,
+    handleFinish,
     selectedItems,
     selectedShippingOption,
     hasPaid,
+    shippingLabelUrl
   } = useReturn()
 
 
 
-  const steps: Step[] = [
-    {
+const steps: Step[] = [
+  {
       text: 'Before proceeding, select the item(s) you wish to return by checking the box above and selecting the quantity.',
       component: null,
     },
     {
-      text: 'Select return shipping option',
+      text: 'Select a return shipping option.',
       component: <ShippingOption />,
     },
     {
-      text: 'Payment of shipping',
+      text: 'Make the payment for the shipping.',
       component: <PaymentPage />,
     },
     {
-    text: 'Print the shipping label using the button below.',
-    component: <ShippingLabelFetcher  />,
+      text: 'Print the shipping label using the button below.',
+      component: <ShippingLabelFetcher />,
     },
     {
-      text: 'Carefully repackage the item(s) securely.',
-      component: null,
-    },
-    {
-      text: 'Attach the label to the outside of the package.',
-      component: null,
-    },
-    {
-      text: 'Drop the package at your nearest courier location.',
+      text: 'Carefully repackage the item(s), attach the shipping label, and drop the package at your nearest courier location.',
       component: null,
     },
   ]
+
 
   const total = steps.length
   const step = steps[currentStep - 1]
@@ -67,6 +62,11 @@ export default function StepNavigator() {
 
     if (currentStep === 3) {
       return hasPaid
+    }
+
+    if (currentStep === 4) {
+      console.log(!!shippingLabelUrl)
+      return !!shippingLabelUrl
     }
 
     return true
@@ -106,7 +106,7 @@ export default function StepNavigator() {
         </button>
 
         <button
-          onClick={handleContinue}
+          onClick={currentStep === total ? handleFinish : handleContinue}
           disabled={disabled}
           className={`rounded-lg px-6 py-2 font-medium transition-all duration-200 shadow-sm
             ${
@@ -118,6 +118,7 @@ export default function StepNavigator() {
         >
           {currentStep === total ? 'Finish' : 'Continue'}
         </button>
+
       </div>
     </div>
   )

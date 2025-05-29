@@ -19,6 +19,7 @@ class ShippoService
         \Shippo::setApiKey(config('services.shippo.key'));
     }
 
+
     public function createShipment($order)
     {
         Log::info('Creating shipment for order:', $order->toArray());
@@ -106,15 +107,10 @@ class ShippoService
         }
     }
 
-    public function purchaseLabel(Request $request)
+    public function purchaseLabel(string $rateId)
     {
-        $rateId = $request->input('rate_id');
-
         if (!$rateId) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'rate_id is required'
-            ], 400);
+            throw new \InvalidArgumentException('rate_id is required');
         }
 
         try {
@@ -124,37 +120,24 @@ class ShippoService
                 'async' => false
             ]);
 
-            if ($transaction['status'] === 'SUCCESS') {
-                return response()->json([
-                    'status' => 'success',
-                    'data' => [
-                        'label_url' => $transaction['label_url'],
-                        'tracking_number' => $transaction['tracking_number'],
-                        'carrier' => $transaction['carrier'],
-                        'shipment_id' => $transaction['shipment'],
-                        'transaction_id' => $transaction['object_id']
-                    ],
-                ]);
+            if ($transaction['status'] !== 'SUCCESS') {
+                \Log::error('Label purchase failed.', ['transaction' => $transaction]);
+                throw new \Exception('Label purchase failed');
             }
 
-            Log::error('Label purchase failed.', ['transaction' => $transaction]);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Label purchase failed',
-                'details' => $transaction
-            ], 500);
-
+            return [
+                'label_url' => $transaction['label_url'],
+                'tracking_number' => $transaction['tracking_number'],
+                'carrier' => $transaction['carrier'],
+                'shipment_id' => $transaction['shipment'],
+                'transaction_id' => $transaction['object_id']
+            ];
         } catch (\Exception $e) {
-            Log::error('Exception during label purchase: ' . $e->getMessage());
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Exception occurred while purchasing label',
-                'error' => $e->getMessage()
-            ], 500);
+            \Log::error('Exception during label purchase: ' . $e->getMessage());
+            throw $e;  // Let controller handle the exception
         }
     }
+
 
     public function trackShipment($carrier, $trackingNumber)
     {

@@ -3,8 +3,8 @@ import { Head } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import Breadcrumb from '@/Components/Nav/Breadcrumb'
 import { useCart } from '@/Contexts/CartContext'
-import StepNavigator from './StepNavigator'
-import ReturnItemTable from './ReturnItemTable'
+import StepNavigator from './StepNavigator/StepNavigator'
+import ReturnItemTable from './StepNavigator/Steps/Table/ReturnItemTable'
 import { ReturnProvider, useReturn } from '@/Contexts/ReturnContext'
 
 interface ReturnInstructionsProps {
@@ -18,16 +18,14 @@ interface ReturnInstructionsProps {
     price: number // required
     weight: number // required
   }[]
-  returnLabelUrl: string
-  returnStatus: 'label_generated' | 'in_transit' | 'received' | 'refunded'
-  supportEmail: string
+
 }
 
 
 export default function ReturnInstructions({
   orderId,
   items,
-  returnLabelUrl,
+
 }: ReturnInstructionsProps) {
   
 //orderId={orderId} returnLabelUrl={returnLabelUrl} fromAddress={shippingDetails}
@@ -36,7 +34,6 @@ export default function ReturnInstructions({
     <ReturnProvider
         initialItems={items}
         orderID={orderId}
-        returnLabelUrl={returnLabelUrl}
       >
 
       <AuthenticatedLayout
