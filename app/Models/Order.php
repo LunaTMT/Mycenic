@@ -30,7 +30,13 @@ class Order extends Model
         'returnable' => 'boolean',
     ];
 
-
-
     protected $dates = ['created_at', 'updated_at'];
+
+    public function isReturnable()
+    {
+        // Return true if shipping_status is 'DELIVERED' (case-insensitive check)
+        // and returnable column is true (assuming boolean column)
+        return $this->returnable && strcasecmp($this->shipping_status, 'DELIVERED') === 0;
+    }
+
 }

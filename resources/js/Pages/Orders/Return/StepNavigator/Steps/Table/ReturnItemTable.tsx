@@ -1,6 +1,6 @@
 import React from 'react'
 import ItemCounter from './ItemCounter'
-import { useReturn } from '@/Contexts/ReturnContext'
+import { useReturn } from '@/Contexts/ReturnInstructionContext'
 
 export default function ReturnItemTable() {
   const {
@@ -28,8 +28,8 @@ export default function ReturnItemTable() {
           </tr>
         </thead>
         <tbody className="divide-y divide-black/20 dark:divide-white/20">
-          {items.map((item, index) => (
-            <tr key={item.id ?? index} className="bg-white/70 dark:bg-[#424549]/20">
+          {items.map((item) => (
+            <tr key={item.id} className="bg-white/70 dark:bg-[#424549]/20">
               <td className="px-4 py-3 flex items-center gap-4">
                 {item.image && (
                   <img
@@ -42,10 +42,10 @@ export default function ReturnItemTable() {
               </td>
 
               <td className="px-4 py-3 text-center">
-                {selectedItems.includes(index) ? (
+                {selectedItems.includes(item.id) ? (
                   <ItemCounter
-                    quantity={returnQuantities[index]}
-                    onQuantityChange={(val) => updateQuantity(index, val)}
+                    quantity={returnQuantities[item.id] ?? 1}
+                    onQuantityChange={(val) => updateQuantity(item.id, val)}
                     max={item.quantity}
                     disabled={!isActive}
                     className="h-8"
@@ -60,14 +60,14 @@ export default function ReturnItemTable() {
               </td>
 
               <td className="px-4 py-3 text-center">
-                £{((item.price ?? 0) * returnQuantities[index]).toFixed(2)}
+                £{((item.price ?? 0) * (returnQuantities[item.id] ?? 0)).toFixed(2)}
               </td>
 
               <td className="px-4 py-3 text-center">
                 <input
                   type="checkbox"
-                  checked={selectedItems.includes(index)}
-                  onChange={() => toggleItem(index)}
+                  checked={selectedItems.includes(item.id)}
+                  onChange={() => toggleItem(item.id)}
                   className="form-checkbox h-5 w-5 text-green-600"
                   disabled={!isActive}
                 />
@@ -77,14 +77,9 @@ export default function ReturnItemTable() {
         </tbody>
 
         <tfoot>
-
           <tr className="bg-gray-100 dark:bg-[#323537] font-semibold text-lg">
-            <td className="px-4  py-2 text-right" colSpan={3}>
-              
-            </td>
-            <td className="px-4  py-2 text-center">
-              £{grandTotal.toFixed(2)}
-            </td>
+            <td className="px-4 py-2 text-right" colSpan={3}></td>
+            <td className="px-4 py-2 text-center">£{grandTotal.toFixed(2)}</td>
             <td />
           </tr>
         </tfoot>

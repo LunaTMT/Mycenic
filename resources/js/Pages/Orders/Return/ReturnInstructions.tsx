@@ -5,7 +5,7 @@ import Breadcrumb from '@/Components/Nav/Breadcrumb'
 import { useCart } from '@/Contexts/CartContext'
 import StepNavigator from './StepNavigator/StepNavigator'
 import ReturnItemTable from './StepNavigator/Steps/Table/ReturnItemTable'
-import { ReturnProvider, useReturn } from '@/Contexts/ReturnContext'
+import { ReturnInstructionProvider, useReturn } from '@/Contexts/ReturnInstructionContext'
 
 interface ReturnInstructionsProps {
   auth: any
@@ -31,7 +31,7 @@ export default function ReturnInstructions({
 //orderId={orderId} returnLabelUrl={returnLabelUrl} fromAddress={shippingDetails}
 
   return (
-    <ReturnProvider
+    <ReturnInstructionProvider
         initialItems={items}
         orderID={orderId}
       >
@@ -53,7 +53,7 @@ export default function ReturnInstructions({
         <Head title="Return Instructions" />
         <Content  />
       </AuthenticatedLayout>
-    </ReturnProvider>
+    </ReturnInstructionProvider>
   )
 }
 

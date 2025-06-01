@@ -11,6 +11,8 @@ use App\Models\{Item, Order};
 
 // Controllers
 use App\Http\Controllers\{
+
+    ReturnController,
     AboutController,
     CartController,
     CheckoutController,
@@ -177,25 +179,61 @@ Route::post('/create-payment-intent', [PaymentController::class, 'createPaymentI
 | Orders (Authenticated)
 |--------------------------------------------------------------------------
 */
-//dont forget need auth here 
-Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
+
+    // Routes related to returns should be protected by auth as well:
+    Route::get('/orders/{order}/return', [OrderController::class, 'returnInstructions'])->name('orders.return');
+    Route::post('/orders/{order}/return/fetch-return-options', [OrderController::class, 'fetchReturnOptions'])->name('orders.return.options');
+    Route::post('/orders/{order}/return/create-payment-intent', [OrderController::class, 'getPaymentIntent'])->name('orders.return.payment-intent');
+    Route::post('/orders/{order}/return/finish', [OrderController::class, 'finishReturn']);
+    
+    Route::get('/orders/{order}/is-returnable', [OrderController::class, 'isReturnable']);
+
+    // Test route can be inside or outside auth, depending on use case. If private:
+    Route::get('/orders-test', fn () => 'working');
+});
+
+/**
+|--------------------------------------------------------------------------
+| Orders (Admin only)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::post('/orders/{order}/toggle-completed', [OrderController::class, 'toggleCompleted']);
+});
+
+/**
+|--------------------------------------------------------------------------
+| Public Orders (if any publicly accessible routes)
+|--------------------------------------------------------------------------
+*/
+// If /orders/create is truly public, leave it outside middleware, otherwise protect it
+Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
+
+// The shipment tracking can be public or protected based on your app logic, here left public:
 Route::get('/orders/track/{carrier}/{tracking_id}', [ShippingController::class, 'trackShipment']);
 
 
-Route::get('/orders-test', fn () => 'working');
-/**
-|--------------------------------------------------------------------------
-| Orders (Public/Admin)
-|--------------------------------------------------------------------------
-*/
-Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
-Route::post('/orders/{order}/toggle-completed', [OrderController::class, 'toggleCompleted'])->middleware(['auth', 'admin']);
 
-Route::get('/orders/{order}/return', [OrderController::class, 'returnInstructions'])->name('orders.return');
-Route::post('/orders/{order}/return/fetch-return-options', [OrderController::class, 'fetchReturnOptions'])->name('orders.return.options');
-Route::post('/orders/{order}/return/create-payment-intent', [OrderController::class, 'getPaymentIntent'])->name('orders.return.payment-intent');
-Route::post('/orders/{order}/return/finish', [OrderController::class, 'finishReturn']);
+Route::middleware(['auth'])->group(function () {
+    // List all returns (admin sees all, users see theirs)
+    Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
+
+    // Show a single return
+    Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('returns.show');
+
+    // Create or update a return
+    Route::post('/returns', [ReturnController::class, 'store'])->name('returns.store');
+
+    // Update return status or approval (admin only)
+    Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('returns.update');
+});
+
+
+
+
 /**
 |--------------------------------------------------------------------------
 | Promo Code Routes

@@ -52,16 +52,7 @@ export default function Login({
     });
   };
 
-  useEffect(() => {
-    if (flash?.error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Access Denied',
-        text: flash.error,
-        confirmButtonColor: '#d33',
-      });
-    }
-  }, [flash]);
+
 
   return (
     <GuestLayout

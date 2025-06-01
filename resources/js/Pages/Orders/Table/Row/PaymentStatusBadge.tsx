@@ -1,15 +1,18 @@
-export default function PaymentStatusBadge({ status, toTitleCase }: { status: string, toTitleCase: (s: string) => string }) {
+export default function PaymentStatusBadge({ status }: { status: string }) {
+  const upperStatus = status.toUpperCase();
+
   const statusColor = {
-    Pending: "bg-yellow-500",
-    Shipped: "bg-blue-500",
-    Delivered: "bg-green-500",
-    Completed: "bg-green-500",
-    Cancelled: "bg-red-500",
-  }[status] || "bg-red-500";
+    "PRE-RETURN": "bg-purple-500",
+    PENDING: "bg-yellow-500",
+    SHIPPED: "bg-blue-500",
+    DELIVERED: "bg-green-500",
+    COMPLETED: "bg-green-500",
+    CANCELLED: "bg-red-500",
+  }[upperStatus] || "bg-red-500";
 
   return (
-    <span className={`px-3 py-1 text-sm font-semibold rounded-full text-white ${statusColor}`}>
-      {toTitleCase(status)}
+    <span className={`px-3 py-1 text-sm font-semibold rounded-full text-white uppercase ${statusColor}`}>
+      {upperStatus}
     </span>
   );
 }

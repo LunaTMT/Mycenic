@@ -1,8 +1,7 @@
-import React, { isValidElement, ReactElement, useState } from 'react'
-import { useReturn } from '@/Contexts/ReturnContext'
+import React, { isValidElement, ReactElement } from 'react'
+import { useReturn } from '@/Contexts/ReturnInstructionContext'
 import { ShippingOption } from './Steps/ShippingOption'
 import PaymentPage from './PaymentPage'
-
 import { ShippingLabelFetcher } from './Steps/ShippingLabelFetcher'
 
 interface Step {
@@ -22,10 +21,8 @@ export default function StepNavigator() {
     shippingLabelUrl
   } = useReturn()
 
-
-
-const steps: Step[] = [
-  {
+  const steps: Step[] = [
+    {
       text: 'Before proceeding, select the item(s) you wish to return by checking the box above and selecting the quantity.',
       component: null,
     },
@@ -47,7 +44,6 @@ const steps: Step[] = [
     },
   ]
 
-
   const total = steps.length
   const step = steps[currentStep - 1]
 
@@ -65,7 +61,8 @@ const steps: Step[] = [
     }
 
     if (currentStep === 4) {
-      console.log(!!shippingLabelUrl)
+      // Only allow continue if shipping label URL is set,
+      // which happens only after user presses the button
       return !!shippingLabelUrl
     }
 
@@ -77,8 +74,6 @@ const steps: Step[] = [
   const renderedComponent = isValidElement(step.component)
     ? React.cloneElement(step.component as ReactElement, { isActive: true })
     : step.component
-
-
 
   return (
     <div className="rounded-lg bg-white dark:bg-[#1e2124] p-6 shadow-lg">
@@ -118,7 +113,6 @@ const steps: Step[] = [
         >
           {currentStep === total ? 'Finish' : 'Continue'}
         </button>
-
       </div>
     </div>
   )

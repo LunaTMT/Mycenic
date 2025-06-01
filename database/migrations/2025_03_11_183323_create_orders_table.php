@@ -23,7 +23,7 @@ return new class extends Migration
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('shipping_cost', 8, 2)->default(0);
 
-            $table->string('payment_status')->default('Pending');
+            $table->string('payment_status')->default('PENDING'); //When the order is created it is set to completed so doesnt matter
             $table->string('customer_name')->nullable();
             $table->string('address')->nullable();
             $table->string('city')->nullable();
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('country')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
-            $table->string('shipping_status')->default('UNKNOWN');
+            $table->string('shipping_status')->default('PRE-TRANSIT');
             $table->string('carrier')->nullable();
             $table->string('tracking_number')->nullable();
             $table->string('tracking_url')->nullable();
@@ -44,18 +44,9 @@ return new class extends Migration
             $table->boolean('is_completed')->nullable()->default(false);
             $table->boolean('returnable')->default(true);
 
-
-
-            $table->timestamp('return_finished_at')->nullable();
-            $table->string('return_shipping_option')->nullable();
-            $table->text('return_shipping_label_url')->nullable();
-            $table->string('return_tracking_number')->nullable();
-            $table->string('return_tracking_url')->nullable();
-            $table->json('return_tracking_history')->nullable();
             $table->string('return_status')->default('UNKNOWN');
 
 
-            $table->json('return_items')->nullable();
 
 
         

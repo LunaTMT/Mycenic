@@ -1,253 +1,54 @@
-  import React, {
-    createContext,
-    useContext,
-    useState,
-    useMemo,
-    useEffect,
-    ReactNode,
-  } from 'react'
-  import axios from 'axios'
+import { createContext, useContext, useState, ReactNode } from "react";
 
-  import { Inertia } from '@inertiajs/inertia'
+export type ReturnStatus = "pending" | "approved" | "rejected" | "completed"; // example statuses
 
-  export type ReturnItem = {
-    id?: number
-    name: string
-    quantity: number
-    image?: string
-    weight?: number
-    price: number
-  }
+export type Return = {
+  id: number;
+  status: ReturnStatus;
+  updated_at: string; // ISO date string
+  productId?: number;
+  created_at?: string;
+};
 
-  interface ShippingOptionData {
-    object_id: string
-    provider: string
-    service: string
-    amount: string // you can parse it to a number if needed
-    currency: string
-    rateId?: string // add rateId if you have it for label purchase
-  }
-  interface Step {
-    text: string
-    component: React.ReactNode
-  }
+// 1. Define context shape
+type ReturnContextType = {
+  returns: Return[];
+  updateReturnStatus: (id: number, status: Return["status"]) => void;
+};
 
-  interface ReturnContextType {
-    items: ReturnItem[]
-    selectedItems: number[]
-    returnQuantities: number[]
+// 2. Create the context
+export const ReturnContext = createContext<ReturnContextType | undefined>(undefined);
 
-    shippingOptions: ShippingOptionData[]
-    shippingLoading: boolean
-    shippingError: string | null
-    selectedShippingOption: ShippingOptionData | null
+// 3. Hook to access the context
+export const useReturnContext = () => {
+  const context = useContext(ReturnContext);
+  if (!context) throw new Error("useReturnContext must be used within ReturnProvider");
+  return context;
+};
 
-    grandTotal: number
+// 4. Provider props type with initialReturns and children
+type ReturnProviderProps = {
+  initialReturns: Return[];
+  children?: ReactNode;
+};
 
-    paymentIntentClientSecret: string | null
-    hasPaid: boolean
+// 5. Provider component
+export function ReturnProvider({ initialReturns, children }: ReturnProviderProps) {
+  const [returns, setReturns] = useState<Return[]>(initialReturns);
 
-    orderId: string | number | null
-    fromAddress: any
-    finishLabel: string
+  const updateReturnStatus = (id: number, status: Return["status"]) => {
+    setReturns((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status, updated_at: new Date().toISOString() } : r
+      )
+    );
 
-    shippingLabelUrl: string | null
+    // Optional: backend call to persist the status update can go here
+  };
 
-
-    currentStep: number
-    steps: Step[]
-
-    changeStep: (newStep: number) => void
-    handlePrevious: () => void
-    handleContinue: () => void
-    handleFinish: () => Promise<void>
-
-    toggleItem: (index: number) => void
-    updateQuantity: (index: number, qty: number) => void
-    fetchShippingOptions: () => Promise<void>
-    fetchShippingLabel: () => Promise<void>
-
-    setPaymentIntentClientSecret: (secret: string | null) => void
-    setHasPaid: (paid: boolean) => void
-
-    setOrderId: (id: string | number | null) => void
-    setFromAddress: (addr: any) => void
-    setFinishLabel: (label: string) => void
-    setSelectedShippingOption: (option: ShippingOptionData | null) => void
-    setShippingLabelUrl: (url: string | null) => void
-  }
-
-  const ReturnContext = createContext<ReturnContextType | undefined>(undefined)
-
-  export const ReturnProvider = ({
-    children,
-    initialItems,
-    orderID,
-
-  }: {
-    children: ReactNode
-    initialItems: ReturnItem[]
-    orderID: string | number
-
-  }) => {
-    const [items] = useState(initialItems)
-    const [selectedItems, setSelectedItems] = useState<number[]>([])
-    const [returnQuantities, setReturnQuantities] = useState<number[]>(
-      initialItems.map(() => 1)
-    )
-
-    const [currentStep, setCurrentStep] = useState<number>(1)
-
-    const [shippingOptions, setShippingOptions] = useState<ShippingOptionData[]>([])
-    const [shippingLoading, setShippingLoading] = useState(false)
-    const [shippingError, setShippingError] = useState<string | null>(null)
-    const [selectedShippingOption, setSelectedShippingOption] = useState<ShippingOptionData | null>(null)
-
-    const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null)
-    const [hasPaid, setHasPaid] = useState(false) //change to false
-
-    const [orderId, setOrderId] = useState<string | number | null>(orderID)
-    const [fromAddress, setFromAddress] = useState<any>(null)
-    const [finishLabel, setFinishLabel] = useState<string>('Finish')
-
-    const [shippingLabelUrl, setShippingLabelUrl] = useState<string | null>(null)
-
-    const grandTotal = useMemo(() => {
-      const itemTotal = selectedItems.reduce((sum, idx) => {
-        const itemPrice = items[idx].price ?? 0
-        const qty = returnQuantities[idx]
-        return sum + itemPrice * qty
-      }, 0)
-
-      return itemTotal
-    }, [selectedItems, returnQuantities, items, selectedShippingOption])
-
-    const toggleItem = (idx: number) => {
-      setSelectedItems((prev) => {
-        const isSelected = prev.includes(idx)
-        return isSelected ? prev.filter((i) => i !== idx) : [...prev, idx]
-      })
-
-      setReturnQuantities((prev) => {
-        const copy = [...prev]
-        copy[idx] = selectedItems.includes(idx) ? 0 : 1
-        return copy
-      })
-    }
-
-    const updateQuantity = (idx: number, qty: number) => {
-      setReturnQuantities((prev) => {
-        const copy = [...prev]
-        copy[idx] = qty
-        return copy
-      })
-    }
-
-    const fetchShippingOptions = async () => {
-      setShippingLoading(true)
-      setShippingError(null)
-      try {
-        const resp = await axios.post<ShippingOptionData[]>(
-          `/orders/${orderId}/return/fetch-return-options`,
-        )
-        setShippingOptions(resp.data)
-      } catch (err) {
-        setShippingError('Failed to load shipping options.')
-      } finally {
-        setShippingLoading(false)
-      }
-    }
-
-
-
-
-
-    const totalSteps = 7
-
-
-    const changeStep = (newStep: number) => {
-      if (newStep >= 1 && newStep <= totalSteps) {
-        setCurrentStep(newStep)
-      }
-    }
-
-    const handlePrevious = () => {
-      if (currentStep > 1) {
-        changeStep(currentStep - 1)
-      }
-    }
-
-    const handleContinue = () => {
-      if (currentStep < totalSteps) {
-        changeStep(currentStep + 1)
-      }
-    }
-
-  const handleFinish = () => {
-    if (!orderId) return
-
-    const payload = {
-      paymentIntentClientSecret,
-      selectedShippingOption,
-      shippingLabelUrl,
-      selectedItems,
-      finishedAt: new Date().toISOString(),
-    }
-
-    Inertia.post(`/orders/${orderId}/return/finish`, payload)
-  }
-
-
-
-    return (
-      <ReturnContext.Provider
-        value={{
-          items,
-          selectedItems,
-          returnQuantities,
-          shippingOptions,
-          shippingLoading,
-          shippingError,
-          selectedShippingOption,
-
-          grandTotal,
-          paymentIntentClientSecret,
-          orderId,
-          fromAddress,
-          finishLabel,
-
-          hasPaid,
-          setHasPaid,
-
-          shippingLabelUrl,
-          setShippingLabelUrl, 
-
-          toggleItem,
-          updateQuantity,
-          fetchShippingOptions,
-          
-
-          setPaymentIntentClientSecret,
-          setOrderId,
-          setFromAddress,
-          setFinishLabel,
-          setSelectedShippingOption,
-
-          currentStep,
-    
-          changeStep,
-          handlePrevious,
-          handleContinue,
-          handleFinish
-        }}
-      >
-        {children}
-      </ReturnContext.Provider>
-    )
-  }
-
-  export const useReturn = () => {
-    const ctx = useContext(ReturnContext)
-    if (!ctx) throw new Error('useReturn must be used inside ReturnProvider')
-    return ctx
-  }
+  return (
+    <ReturnContext.Provider value={{ returns, updateReturnStatus }}>
+      {children}
+    </ReturnContext.Provider>
+  );
+}

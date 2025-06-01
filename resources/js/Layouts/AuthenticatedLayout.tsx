@@ -55,10 +55,29 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
         setMounted(true);   
     }, []);
     
-      useEffect(() => {
-    if (flash?.success) toast.success(flash.success);
-    if (flash?.error) toast.error(flash.error);
-  }, [flash]);
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
+
+    // 👇 Add this block below the flash useEffect
+    useEffect(() => {
+    const handleInertiaError = (event: any) => {
+        const status = event.detail?.response?.status;
+
+        if (status === 401) {
+        toast.error("You must be logged in to view this page.");
+        router.visit("/login");
+        }
+
+        if (status === 403) {
+        toast.error("You are not authorized to access this resource.");
+        }
+    };
+
+    window.addEventListener("inertia:error", handleInertiaError);
+    return () => window.removeEventListener("inertia:error", handleInertiaError);
+    }, []);
 
 
 

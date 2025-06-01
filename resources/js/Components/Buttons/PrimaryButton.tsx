@@ -12,7 +12,7 @@ export default function PrimaryButton({
             {...props}
             
             className={`
-                 font-medium py-3 px-8 rounded-full 
+                 font-medium py-3 px-8 rounded-xl 
                 transform 
                 font-Poppins text-white 
                 text-center flex justify-center items-center

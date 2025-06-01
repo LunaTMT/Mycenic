@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import axios from 'axios'
-import { useReturn } from '@/Contexts/ReturnContext'
+import { useReturn } from '@/Contexts/ReturnInstructionContext'
 
 export function ShippingLabelFetcher() {
   const {
     selectedShippingOption,
-    currentStep,
     setShippingLabelUrl,
     shippingLabelUrl,
   } = useReturn()
@@ -30,13 +29,15 @@ export function ShippingLabelFetcher() {
       )
 
       const { status, data, message } = response.data
-      console.log(status, data);
+
       if (status === 'success') {
-        console.log(1)
         const labelUrl = data?.label_url || data?.url || null
         setShippingLabelUrl(labelUrl)
+
+        if (labelUrl) {
+          openAndPrintLabel(labelUrl)
+        }
       } else {
-        console.log(1)
         setError(message || 'Failed to purchase shipping label')
       }
     } catch (err: any) {
@@ -59,12 +60,6 @@ export function ShippingLabelFetcher() {
       alert('Pop-up blocked! Please allow pop-ups for this site to print the label.')
     }
   }
-
-  useEffect(() => {
-    if (currentStep === 4 && !shippingLabelUrl && !loading) {
-      fetchShippingLabel()
-    }
-  }, [currentStep, shippingLabelUrl])
 
   return (
     <div>

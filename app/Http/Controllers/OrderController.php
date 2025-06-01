@@ -15,8 +15,9 @@ use Stripe\Checkout\Session;
 use Stripe\PaymentIntent;
 
 use App\Models\Order;
-use App\Services\ShippoService;
+use App\Models\ReturnModel;
 use App\Models\User;
+use App\Services\ShippoService;
 use App\Mail\OrderConfirmation;
 
 use Shippo;
@@ -44,6 +45,18 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
+        if (!$user) {
+            return Inertia::render('Auth/Login/Login', [
+                'flash' => [
+                    'error' => 'You must be logged in to view this.'
+                ]
+            ]);
+
+        }
+
+        
+
         Log::info("Orders index accessed by user ID: {$user->id}, role: {$user->role}");
 
         // Base query, newest first
@@ -63,28 +76,18 @@ class OrderController extends Controller
                 Log::info("Tracking shipment for order ID: {$order->id} with tracking number: {$order->tracking_number}");
 
                 $trackingData = $this->shippoService->trackShipment(
-                    'shippo',                // carrier as a string
-                    'SHIPPO_DELIVERED'       // test tracking number as a string
+                    $order->carrier,          // carrier string (adjust for production)
+                    $order->tracking_number   // test tracking number string (adjust for production)
                 );
 
                 /*
-                CHANGE ON PRODUCTION
-                    carrier shippo
-
-                    SHIPPO_DELIVERED
-                    SHIPPO_TRANSIT
-                    SHIPPO_EXCEPTION
-                    SHIPPO_UNKNOWN
-                    SHIPPO_PENDING
-
-                    $trackingData = $this->shippoService->trackShipment(
-                    $order->carrier,
-                    $order->tracking_number
-                );
+                    CHANGE ON PRODUCTION
+                    carrier: $order->carrier
+                    tracking number: $order->tracking_number
                 */
 
                 if (!empty($trackingData['tracking_status'])) {
-                    $status = $this->toTitleCase($trackingData['tracking_status']['status']);
+                    $status = strtoupper($trackingData['tracking_status']['status']);
                     $order->update(['shipping_status' => $status]);
                     Log::info("Updated shipping status for order {$order->id}", ['status' => $status]);
                 }
@@ -109,7 +112,7 @@ class OrderController extends Controller
                     'id', 'user_id', 'total', 'subtotal', 'shipping_cost', 'weight',
                     'discount', 'payment_status', 'shipping_status', 'carrier',
                     'tracking_number', 'tracking_url', 'customer_name', 'address',
-                    'city', 'zip', 'country', 'phone', 'email', 'is_completed', 'returnable', 
+                    'city', 'zip', 'country', 'phone', 'email', 'is_completed', 'returnable', 'return_status'
                 ]),
                 [
                     'created_at'       => $order->created_at->toISOString(),
@@ -149,18 +152,12 @@ class OrderController extends Controller
             $shippingDetails = session('shippingDetails', []);
             $legalAgreement = session('legalAgreement', null);
             $shippingCost = session('shippingCost', 0);
+            
 
-            if (!empty($shippingDetails['email'])) {
-                $user = User::where('email', $shippingDetails['email'])->first();
-                if (!$user) {
-                    Log::error('User not found with shipping email', ['email' => $shippingDetails['email']]);
-                    return redirect()->route('home')->with('flash.error', 'User not found with shipping email.');
-                }
-                Log::info('User found by shipping email', ['user_id' => $user->id]);
-            } else {
-                Log::error('Missing email in shipping details');
-                return redirect()->route('cart')->with('error', 'Missing email in shipping details.');
-            }
+    
+            $user = Auth::check()
+                ? Auth::user()
+                : User::where('email', $shippingDetails['email'] ?? null)->first();
 
             Log::info('Shipping details received', $shippingDetails);
 
@@ -172,7 +169,7 @@ class OrderController extends Controller
                 'weight'          => session('weight', 0),
                 'discount'        => session('discount', 0),
                 'shipping_cost'   => $shippingCost,
-                'payment_status'  => 'Completed',
+                'payment_status'  => 'COMPLETED',
                 'customer_name'   => $shippingDetails['name'] ?? 'Unknown',
                 'address'         => $shippingDetails['address'] ?? '',
                 'city'            => $shippingDetails['city'] ?? '',
@@ -253,8 +250,10 @@ class OrderController extends Controller
 
     public function returnInstructions(Order $order)
     {
+
         $this->authorize('view', $order);
 
+        // Your normal authorized logic here, e.g.:
         $cartItems = json_decode($order->cart, true) ?? [];
 
         $items = collect($cartItems)->map(function ($item) {
@@ -264,18 +263,16 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'] ?? 1,
                 'price'    => $item['price'] ?? 0,
                 'image'    => $item['image'] ?? null,
-                'weight'   => $item['weight'] ?? 0, // Include weight here
+                'weight'   => $item['weight'] ?? 0,
             ];
         })->toArray();
 
-
         return Inertia::render('Orders/Return/ReturnInstructions', [
-            'orderId'        => $order->id,
-            'items'          => $items,
-          
-
+            'orderId' => $order->id,
+            'items'   => $items,
         ]);
     }
+
 
     public function fetchReturnOptions(Request $request, $orderId)
     {
@@ -421,9 +418,13 @@ class OrderController extends Controller
         ]);
     }
 
+
+
+
     public function finishReturn(Request $request, $orderId)
     {
         Log::info('finishReturn reached', ['orderId' => $orderId]);
+
         $request->validate([
             'paymentIntentClientSecret' => 'required|string',
         ]);
@@ -432,7 +433,6 @@ class OrderController extends Controller
         try {
             Stripe::setApiKey(config('services.stripe.secret'));
 
-            // Extract the ID from the client_secret
             $clientSecret = $request->paymentIntentClientSecret;
             $paymentIntentId = explode('_secret', $clientSecret)[0];
             $intent = PaymentIntent::retrieve($paymentIntentId);
@@ -444,20 +444,35 @@ class OrderController extends Controller
             return response()->json(['error' => 'Payment verification failed.', 'message' => $e->getMessage()], 500);
         }
 
-        // Lookup the order
         $order = Order::findOrFail($orderId);
 
-        // Record the return
-        $order->return_finished_at = $request->input('finishedAt', Carbon::now());
-        $order->return_shipping_option = $request->input('shippingOption');
-        $order->return_shipping_label_url = $request->input('shippingLabelUrl');
-        $order->return_items = $request->input('selectedItems'); // You should cast this column to JSON in your model
-        $order->save();
+        $return = ReturnModel::create([
+            'order_id' => $order->id,
+            'user_id' => $request->user()->id,
+            'completed_at' => $request->input('finishedAt', Carbon::now()),
+            'shipping_option' => $request->input('shippingOption'),
+            'shipping_label_url' => $request->input('shippingLabelUrl'),
+            'items' => $request->input('selectedItems'),
+            'status' => 'PRE-RETURN',
+            'approved' => false,
+        ]);
 
-        Log::info('Return finished for order', ['order_id' => $order->id, 'updated_order' => $order->toArray()]);
+        Log::info('Return created for order', ['order_id' => $order->id, 'return_id' => $return->id]);
+
+        // Update order status to PRE-RETURN
+        $order->return_status = 'PRE-RETURN';
+        $order->save();
 
         return Redirect::route('orders.index')
             ->with('flash.success', 'Return finalized successfully.');
+    }
+
+    public function isReturnable(Order $order)
+    {
+        // Assuming your Order model has the isReturnable() method defined
+        return response()->json([
+            'is_returnable' => $order->isReturnable(),
+        ]);
     }
 
 

@@ -7,6 +7,7 @@ const AccountDropdown = () => {
     const menuItems = [
         { label: "Profile", onClick: () => Inertia.get('/profile') },
         { label: "Orders", onClick: () => Inertia.get('/orders') },
+        { label: "Returns", onClick: () => Inertia.get('/returns') },
         { label: "Log out", onClick: () => Inertia.post('/logout', {}, { preserveScroll: true }) },
     ];
 

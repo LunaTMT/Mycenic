@@ -52,3 +52,6 @@ createInertiaApp({
           
     },
 });
+
+
+//move cart provider closer to component 

@@ -1,21 +1,53 @@
+import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "@inertiajs/react";
 import { Inertia } from "@inertiajs/inertia";
+import { useEffect, useState } from "react";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
+import { useOrderContext } from "@/Contexts/OrdersContext";
 
 export default function OrderRowDropdown({
   order,
   auth,
   isExpanded,
 }: {
-  order: any; // ideally type with your Order type
+  order: any;
   auth: any;
   isExpanded: boolean;
 }) {
-  if (!isExpanded) return null;
-
+  const { hasReturnStatus } = useOrderContext();
+  const [isReturnable, setIsReturnable] = useState(false);
   const discountAmount =
     order.discount > 0 ? ((order.discount / 100) * order.subtotal).toFixed(2) : "0.00";
+
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const source = axios.CancelToken.source();
+
+    async function fetchReturnable() {
+      try {
+        const { data } = await axios.get(`/orders/${order.id}/is-returnable`, {
+          cancelToken: source.token,
+        });
+        console.log(data.is_returnable)
+        setIsReturnable(data.is_returnable);
+      } catch (error: any) {
+        if (!axios.isCancel(error)) {
+          console.error("Error fetching returnable status:", error);
+          setIsReturnable(false);
+        }
+      }
+    }
+
+    fetchReturnable();
+
+    return () => {
+      source.cancel("Request canceled due to component unmounting or dependency change.");
+    };
+  }, [isExpanded, order.id]);
+
+  if (!isExpanded) return null;
 
   return (
     <AnimatePresence>
@@ -27,7 +59,9 @@ export default function OrderRowDropdown({
           transition={{ duration: 0.5, ease: "easeInOut" }}
         >
           <td
-            colSpan={auth?.user?.role === "admin" ? 7 : 6}
+            colSpan={
+              6 + (auth?.user?.role === "admin" ? 1 : 0) + (hasReturnStatus ? 1 : 0)
+            }
             className="bg-white w-full dark:bg-[#1e2124]"
           >
             <div className="p-4 flex gap-10">
@@ -100,8 +134,7 @@ export default function OrderRowDropdown({
                       {order.tracking_number && order.tracking_url && (
                         <div className="mb-4">
                           <p className="text-sm text-gray-600 dark:text-gray-300">
-                            <strong>Tracking Number:</strong>{" "}
-                            {order.tracking_number}
+                            <strong>Tracking Number:</strong> {order.tracking_number}
                           </p>
                           <a
                             href={order.tracking_url}
@@ -124,9 +157,7 @@ export default function OrderRowDropdown({
                             <div key={index} className="mt-3">
                               <p className="text-sm text-gray-600 dark:text-gray-300">
                                 <strong>
-                                  {new Date(event.status_date).toLocaleDateString(
-                                    "en-GB"
-                                  )}
+                                  {new Date(event.status_date).toLocaleDateString("en-GB")}
                                 </strong>
                                 : {event.status_details} {event.location}
                               </p>
@@ -152,7 +183,8 @@ export default function OrderRowDropdown({
                       <p>{order.email}</p>
                     </div>
 
-                    {Boolean(Number(order.returnable)) && (
+                    {/* Show return button only if returnable AND delivered */}
+                    {isReturnable &&  (
                       <PrimaryButton
                         className="ml-auto w-1/2"
                         onClick={() =>

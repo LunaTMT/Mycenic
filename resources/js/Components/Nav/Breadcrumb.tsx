@@ -7,7 +7,7 @@ interface BreadcrumbProps {
 
 const Breadcrumb: React.FC<BreadcrumbProps> = ({ items }) => {
     return (
-        <nav className="flex items-center space-x-2 w-full h-full  text-md text-gray-600 dark:text-gray-300 font-Poppins">
+        <nav className="flex items-center space-x-2 w-full h-full text-md text-gray-600 dark:text-gray-300 font-Poppins">
             {items.map((item, index) => (
                 <span key={index} className="flex items-center">
                     {item.link ? (

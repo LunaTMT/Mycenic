@@ -1,18 +1,28 @@
 import { FaChevronRight } from "react-icons/fa";
-import { AnimatePresence } from "framer-motion";
 import { Fragment } from "react";
-import OrderRowDropdown from "./OrderRowDropdown";  // Import your dropdown here
-import TrackingStatusBadge from "./TrackingStatusBadge";
-import PaymentStatusBadge from "./PaymentStatusBadge";
+import OrderRowDropdown from "./OrderRowDropdown";
+import { usePage } from "@inertiajs/react";
+import { useOrderContext } from "@/Contexts/OrdersContext";
 
-export default function OrderRow({
-  order,
-  auth,
-  expandedOrderId,
-  toggleExpandedOrder,
-  toTitleCase,
-  handleToggleCompleted,
-}: any) {
+import PaymentStatusBadge from "./PaymentStatusBadge";
+import ShippingStatusBadge from "./ShippingStatusBadge";
+import ReturnStatusBadge from "./ReturnStatusBadge";
+
+export default function OrderRow({ orderId }: { orderId: number }) {
+  const {
+    orders,
+    hasReturnStatus,
+    expandedOrderId,
+    toggleExpandedOrder,
+    handleToggleCompleted,
+  } = useOrderContext();
+
+  const { props } = usePage();
+  const auth = props.auth;
+
+  const order = orders.find((o: any) => o.id === orderId);
+  if (!order) return null;
+
   const isExpanded = expandedOrderId === order.id;
 
   return (
@@ -28,39 +38,16 @@ export default function OrderRow({
         <td className="px-6 py-4 text-center h-16">{order.id}</td>
         <td className="px-6 py-4 text-center h-16">£{order.total}</td>
         <td className="px-6 py-4 text-center h-16">
-          <span
-            className={`px-3 py-1 text-sm font-semibold rounded-full text-white ${
-              order.shipping_status === "Pre_transit"
-                ? "bg-gray-400"
-                : order.shipping_status === "Transit"
-                ? "bg-yellow-500"
-                : order.shipping_status === "Delivered"
-                ? "bg-green-500"
-                : order.shipping_status === "Returned"
-                ? "bg-blue-500"
-                : order.shipping_status === "Failure"
-                ? "bg-red-500"
-                : "bg-gray-600"
-            }`}
-          >
-            {toTitleCase(order.shipping_status)}
-          </span>
+          <ShippingStatusBadge status={order.shipping_status} />
         </td>
         <td className="px-6 py-4 text-center h-16">
-          <span
-            className={`px-3 py-1 text-sm font-semibold rounded-full text-white ${
-              order.payment_status === "Pending"
-                ? "bg-yellow-500"
-                : order.payment_status === "Shipped"
-                ? "bg-blue-500"
-                : order.payment_status === "Delivered" || order.payment_status === "Completed"
-                ? "bg-green-500"
-                : "bg-red-500"
-            }`}
-          >
-            {toTitleCase(order.payment_status)}
-          </span>
+          <PaymentStatusBadge status={order.payment_status} />
         </td>
+        {hasReturnStatus && (
+          <td className="px-6 py-4 text-center h-16">
+            <ReturnStatusBadge status={order.return_status} />
+          </td>
+        )}
         <td className="px-6 py-4 text-center h-16">
           {new Date(order.created_at).toLocaleDateString("en-GB", {
             year: "numeric",
@@ -75,7 +62,7 @@ export default function OrderRow({
               checked={order.is_completed}
               onChange={() => handleToggleCompleted(order.id)}
               className="form-checkbox h-6 w-6 text-green-600"
-              onClick={e => e.stopPropagation()} // Prevent toggle on checkbox click
+              onClick={(e) => e.stopPropagation()}
             />
           </td>
         )}
@@ -87,8 +74,6 @@ export default function OrderRow({
           />
         </td>
       </tr>
-
-      {/* Replace the previous AnimatePresence content with your dropdown */}
       <OrderRowDropdown order={order} auth={auth} isExpanded={isExpanded} />
     </Fragment>
   );
