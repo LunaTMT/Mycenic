@@ -13,7 +13,7 @@ class Order extends Model
     public $timestamps = true;
 
     protected $fillable = [
-        'user_id', 'cart', 'total', 'subtotal', 'weight', 'payment_status',
+        'user_id', 'cart', 'returnable_cart', 'total', 'subtotal', 'weight', 'payment_status',
         'customer_name', 'address', 'city', 'zip', 'country', 'phone', 'email',
         'shipping_status', 'tracking_number', 'tracking_url', 'discount', 'carrier', 'tracking_history',
         'legal_agreement', 'is_completed', 'returnable', 'shipping_cost', 'delivery_price',

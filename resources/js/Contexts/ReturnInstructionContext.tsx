@@ -35,8 +35,7 @@ interface Step {
 interface ReturnContextType {
   items: ReturnItem[]
   returnableItems: ReturnItem[]
-  selectedItems: number[]
-  returnQuantities: Record<number, number>
+  selectedItems: Array<[number, number]> // [id, qty]
   shippingOptions: ShippingOptionData[]
   shippingLoading: boolean
   shippingError: string | null
@@ -95,6 +94,8 @@ export const ReturnInstructionProvider = ({
     }
   }, [alreadyReturnedItemIds])
 
+  
+
   useEffect(() => {
     setAlreadyReturnedItemIds([])
     if (typeof window !== 'undefined') {
@@ -106,15 +107,12 @@ export const ReturnInstructionProvider = ({
     return items.filter(item => !alreadyReturnedItemIds.includes(item.id))
   }, [items, alreadyReturnedItemIds])
 
-  const [selectedItems, setSelectedItems] = useState<number[]>([])
+  // selectedItems: [id, qty], initially empty (nothing selected)
+  const [selectedItems, setSelectedItems] = useState<Array<[number, number]>>([])
 
-  const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>(() => {
-    const initQty: Record<number, number> = {}
-    items.forEach(item => {
-      initQty[item.id] = 1
-    })
-    return initQty
-  })
+  useEffect(() => {
+    console.log('Selected Items:', selectedItems)
+  }, [selectedItems])
 
   const [shippingOptions, setShippingOptions] = useState<ShippingOptionData[]>([])
   const [shippingLoading, setShippingLoading] = useState(false)
@@ -133,36 +131,44 @@ export const ReturnInstructionProvider = ({
   const steps: Step[] = []
 
   const grandTotal = useMemo(() => {
-    return selectedItems.reduce((sum, id) => {
+    return selectedItems.reduce((sum, [id, qty]) => {
       const item = items.find(i => i.id === id)
-      const qty = returnQuantities[id] ?? 0
       if (!item) return sum
       return sum + item.price * qty
     }, 0)
-  }, [selectedItems, returnQuantities, items])
+  }, [selectedItems, items])
 
   const toggleItem = (id: number) => {
     setSelectedItems(prev => {
-      if (prev.includes(id)) return prev.filter(itemId => itemId !== id)
-      return [...prev, id]
-    })
-
-    setReturnQuantities(prev => {
-      const copy = { ...prev }
-      if (selectedItems.includes(id)) {
-        copy[id] = 0
+      const index = prev.findIndex(([itemId]) => itemId === id)
+      if (index >= 0) {
+        // Remove the item
+        const newSelected = [...prev]
+        newSelected.splice(index, 1)
+        return newSelected
       } else {
-        if (!copy[id] || copy[id] === 0) copy[id] = 1
+        // Add item with qty 1
+        return [...prev, [id, 1]]
       }
-      return copy
     })
   }
 
   const updateQuantity = (id: number, qty: number) => {
-    setReturnQuantities(prev => ({
-      ...prev,
-      [id]: qty,
-    }))
+    setSelectedItems(prev => {
+      const index = prev.findIndex(([itemId]) => itemId === id)
+      if (index >= 0) {
+        const newSelected = [...prev]
+        if (qty <= 0) {
+          newSelected.splice(index, 1)
+        } else {
+          newSelected[index] = [id, qty]
+        }
+        return newSelected
+      } else {
+        // Add if qty > 0
+        return qty > 0 ? [...prev, [id, qty]] : prev
+      }
+    })
   }
 
   const fetchShippingOptions = async () => {
@@ -203,19 +209,14 @@ export const ReturnInstructionProvider = ({
       selectedItems,
       finishedAt: new Date().toISOString(),
     }
-
+    console.log(selectedItems)
     await Inertia.post(`/orders/${orderId}/return/finish`, payload)
 
-    setAlreadyReturnedItemIds(prev => [...new Set([...prev, ...selectedItems])])
+    setAlreadyReturnedItemIds(prev =>
+      [...new Set([...prev, ...selectedItems.map(([id]) => id)])]
+    )
 
     setSelectedItems([])
-    setReturnQuantities(() => {
-      const resetQty: Record<number, number> = {}
-      items.forEach(item => {
-        resetQty[item.id] = 1
-      })
-      return resetQty
-    })
   }
 
   return (
@@ -224,7 +225,6 @@ export const ReturnInstructionProvider = ({
         items,
         returnableItems,
         selectedItems,
-        returnQuantities,
         shippingOptions,
         shippingLoading,
         shippingError,

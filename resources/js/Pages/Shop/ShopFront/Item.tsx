@@ -98,7 +98,7 @@ const Item: React.FC<ItemProps> = ({ auth, item }) => {
       </div>
 
       <div className="relative w-full h-[85vh] py-6 flex gap-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div className="flex w-full h-full gap-6">
+        <div className="flex w-full h-full gap-6 bg-white rounded-lg">
           {/* Product Info Panel */}
           <div className="w-[35%] h-full p-6 flex flex-col justify-between font-Poppins
                          border-black/20 bg-white dark:bg-[#424549] dark:border-white/20
@@ -169,11 +169,11 @@ const Item: React.FC<ItemProps> = ({ auth, item }) => {
           {/* Main Image */}
           <div className="w-[65%] h-full flex items-center justify-center
                           bg-white  border border-black/20 dark:bg-[#424549]/80 dark:border-white/20
-                          rounded-2xl overflow-hidden">
+                           overflow-hidden">
             <img
               src={`/${selectedImage}`}
               alt="Selected"
-              className="object-cover w-full h-full"
+              className="object-cover w-full h-full p-20"
             />
           </div>
         </div>

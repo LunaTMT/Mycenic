@@ -1,8 +1,10 @@
-import { Link, usePage } from "@inertiajs/react";
+import { Fragment, useState } from "react";
+import { FaChevronRight } from "react-icons/fa";
+import { usePage } from "@inertiajs/react";
 import ShippingStatusBadge from "@/Pages/Orders/Table/Row/ShippingStatusBadge";
-
 import PaymentStatusBadge from "./PaymentStatusBadge";
 import ReturnStatusBadge from "@/Pages/Orders/Table/Row/ReturnStatusBadge";
+import ReturnRowDropdown from "./ReturnRowDropdown";
 
 type ReturnRowProps = {
   returnData: {
@@ -20,60 +22,55 @@ type ReturnRowProps = {
 };
 
 export default function ReturnRow({ returnData }: ReturnRowProps) {
-  const { props } = usePage();
+  const { props } = usePage<any>();
   const auth = props.auth;
   const isAdmin = auth?.user?.role === "admin";
 
-  const {
-    id,
-    status,
-    approved,
-    completed_at,
-    order_id,
-    shipping_label_url,
-    shipping_status,
-    payment_status,
-  } = returnData;
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition">
-      <td className="py-3 px-2 text-center">{id}</td>
-      <td className="py-3 px-2 text-center">
-        <ReturnStatusBadge status={status} />
-      </td>
-      <td className="py-3 px-2 text-center">
-        <ShippingStatusBadge status={shipping_status ?? "UNKNOWN"} />
-      </td>
-      <td className="py-3 px-2 text-center">
-        <PaymentStatusBadge status={payment_status} />
-      </td>
-      <td className="py-3 px-2 text-center">
-        {completed_at ? new Date(completed_at).toLocaleDateString() : "—"}
-      </td>
-      <td className="py-3 px-2 text-center">
-        {shipping_label_url ? (
-          <a
-            href={shipping_label_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:underline"
-          >
-            Label
-          </a>
-        ) : (
-          "—"
-        )}
-      </td>
-      {isAdmin && (
-        <td className="py-3 px-2 text-center">
-          {/* Admin-only info can go here */}
+    <Fragment key={returnData.id}>
+      <tr
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`cursor-pointer rounded-full ${
+          returnData.approved && isAdmin
+            ? "bg-green-400 dark:bg-green-900"
+            : "bg-white/70 dark:bg-[#424549]/10"
+        }`}
+      >
+        <td className="px-6 py-4 text-center h-16">{returnData.id}</td>
+        <td className="px-6 py-4 text-center h-16">
+          <ReturnStatusBadge status={returnData.status} />
         </td>
-      )}
-      <td className="py-3 px-2 text-center">
-        <Link href={`/returns/${id}`} className="text-blue-500 hover:underline">
-          View
-        </Link>
-      </td>
-    </tr>
+        <td className="px-6 py-4 text-center h-16">
+          <ShippingStatusBadge status={returnData.shipping_status ?? "UNKNOWN"} />
+        </td>
+        <td className="px-6 py-4 text-center h-16">
+          <PaymentStatusBadge status={returnData.payment_status ?? "UNKNOWN"} />
+        </td>
+        <td className="px-6 py-4 text-center h-16">
+          {returnData.completed_at
+            ? new Date(returnData.completed_at).toLocaleDateString("en-GB", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "—"}
+        </td>
+        <td className="p-3 mx-auto h-16">
+          <FaChevronRight
+            className={`dark:text-white transition-transform duration-200 ${
+              isExpanded ? "rotate-90" : ""
+            }`}
+          />
+        </td>
+      </tr>
+
+      <ReturnRowDropdown
+        returnData={returnData}
+
+        isExpanded={isExpanded}
+      />
+    </Fragment>
   );
 }

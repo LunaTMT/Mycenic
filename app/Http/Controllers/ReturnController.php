@@ -6,17 +6,26 @@ use App\Models\ReturnModel;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;  
+
 
 class ReturnController extends Controller
 {
-    // List all returns (admin or user-specific)
     public function index(Request $request)
     {
         $user = $request->user();
 
         $returns = $user->role === 'admin'
-        ? ReturnModel::latest()->get()
-        : ReturnModel::where('user_id', $user->id)->latest()->get();
+            ? ReturnModel::latest()->get()
+            : ReturnModel::where('user_id', $user->id)->latest()->get();
+
+        // Log the fetched returns
+        Log::info('Fetched returns', [
+            'user_id' => $user->id,
+            'is_admin' => $user->role === 'admin',
+            'returns' => $returns->toArray(),
+        ]);
 
         return inertia('Returns/CustomerReturns', [
             'returns' => $returns,
@@ -33,9 +42,17 @@ class ReturnController extends Controller
         ]);
     }
 
-    // Create or update a return for a given order
     public function store(Request $request)
     {
+        \Log::info('Return store request received', [
+            'user_id' => $request->user()->id,
+            'order_id' => $request->input('order_id'),
+            'selected_items' => $request->input('selectedItems'),
+            'shipping_option' => $request->input('shippingOption'),
+            'shipping_label_url' => $request->input('shippingLabelUrl'),
+            'finished_at' => $request->input('finishedAt'),
+        ]);
+
         $request->validate([
             'order_id' => 'required|exists:orders,id',
             'selectedItems' => 'required|array',
@@ -46,15 +63,20 @@ class ReturnController extends Controller
 
         $order = Order::findOrFail($request->input('order_id'));
 
-        // You can check authorization here if needed
         if ($request->user()->id !== $order->user_id && $request->user()->role !== 'admin') {
+            \Log::warning('Unauthorized return store attempt', [
+                'user_id' => $request->user()->id,
+                'order_user_id' => $order->user_id,
+                'role' => $request->user()->role,
+                'order_id' => $order->id,
+            ]);
             abort(403, 'Unauthorized');
         }
 
         $return = ReturnModel::updateOrCreate(
             ['order_id' => $order->id],
             [
-                'completed_at' => $request->input('finishedAt', Carbon::now()),
+                'completed_at' => $request->input('finishedAt', \Carbon\Carbon::now()),
                 'shipping_option' => $request->input('shippingOption'),
                 'shipping_label_url' => $request->input('shippingLabelUrl'),
                 'items' => $request->input('selectedItems'),
@@ -63,11 +85,20 @@ class ReturnController extends Controller
             ]
         );
 
+        \Log::info('Return created or updated', [
+            'return_id' => $return->id,
+            'order_id' => $return->order_id,
+            'items' => $return->items,
+            'status' => $return->status,
+            'approved' => $return->approved,
+        ]);
+
         return response()->json([
             'message' => 'Return submitted successfully.',
             'return' => $return,
         ]);
     }
+
 
     // Update status or approval (admin)
     public function update(Request $request, $id)
@@ -83,4 +114,47 @@ class ReturnController extends Controller
             'return' => $return,
         ]);
     }
+
+    public function details($id)
+    {
+        $user = Auth::user();
+
+        $return = ReturnModel::where('id', $id)
+            ->when(!$user->isAdmin(), function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->first();
+
+        if (!$return) {
+            return response()->json(['message' => 'Return not found'], 404);
+        }
+
+        // Decode items JSON into a collection (or array)
+        $items = collect($return->items ?? []);
+        Log::info('Return items:', [
+            'return_id' => $return->id,
+            'items' => $items->toArray(),
+        ]);
+
+        return response()->json([
+            'id' => $return->id,
+            'order_id' => $return->order_id,
+            'status' => $return->status,
+            'approved' => $return->approved,
+            'completed_at' => $return->completed_at,
+            'shipping_label_url' => $return->shipping_label_url,
+            'payment_status' => $return->payment_status,
+            'shipping_status' => $return->shipping_status,
+            'items' => $items->map(function ($item) {
+                return [
+                    'id' => $item['id'] ?? null,
+                    'name' => $item['name'] ?? '',
+                    'image' => $item['image_url'] ?? '',
+                    'quantity' => $item['quantity'] ?? 0,
+                    'price' => $item['price'] ?? 0,
+                ];
+            }),
+        ]);
+    }
+
 }

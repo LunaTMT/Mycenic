@@ -17,13 +17,12 @@ export default function ReturnTable({ returns }: ReturnTableProps) {
       <table className="w-full">
         <thead className="text-black bg-white dark:bg-[#1e2124] dark:text-white">
           <tr>
-            <th className="py-3">Return ID</th>
-            <th className="py-3">Return Status</th>
-            <th className="py-3">Shipping Status</th>
-            <th className="py-3">Payment Status</th>
+            <th className="py-3">ID</th>
+            <th className="py-3">Verdict</th>
+            <th className="py-3">Shipping </th>
+            <th className="py-3">Payment </th>
             <th className="py-3">Completed At</th>
-            {auth?.user?.role === "admin" && <th className="py-3">Customer</th>}
-            <th className="py-3 text-center align-middle"></th>
+            <th className="py-3"></th>
           </tr>
         </thead>
 

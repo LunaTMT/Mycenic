@@ -22,6 +22,7 @@ export function ShippingLabelFetcher() {
     setError(null)
 
     try {
+      console.log("test ", selectedShippingOption);
       const response = await axios.post(
         '/shipping/purchase',
         { rate_id: selectedShippingOption.object_id },

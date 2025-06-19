@@ -229,6 +229,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Update return status or approval (admin only)
     Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('returns.update');
+
+
+    Route::get('/returns/{id}/details', [ReturnController::class, 'details'])->name('returns.details');
 });
 
 

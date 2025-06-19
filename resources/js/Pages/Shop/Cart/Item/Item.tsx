@@ -12,6 +12,7 @@ const Item: React.FC<CartItemProps> = ({ item }) => {
 
   return (
     <div className="relative flex gap-4 items-center p-4  w-full  rounded-xl border border-gray-400/60 dark:border-white/20 bg-white dark:bg-[#424549] shadow-sm hover:shadow-md transition ">
+      
       {/* Image */}
       <div className="w-18 h-18 flex-shrink-0 relative group">
         <Link href={route("item", { id: item.id })}>

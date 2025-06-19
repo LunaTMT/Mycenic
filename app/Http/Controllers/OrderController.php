@@ -8,11 +8,15 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Arr;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use Stripe\PaymentIntent;
+
+
 
 use App\Models\Order;
 use App\Models\ReturnModel;
@@ -164,6 +168,7 @@ class OrderController extends Controller
             $order = Order::create([
                 'user_id'         => $user->id,
                 'cart'            => json_encode(session('cart', [])),
+                'returnable_cart' => json_encode(session('cart', [])),
                 'total'           => session('total', 0),
                 'subtotal'        => session('subtotal', 0),
                 'weight'          => session('weight', 0),
@@ -250,13 +255,12 @@ class OrderController extends Controller
 
     public function returnInstructions(Order $order)
     {
-
         $this->authorize('view', $order);
 
-        // Your normal authorized logic here, e.g.:
-        $cartItems = json_decode($order->cart, true) ?? [];
+        // Use returnable_cart instead of cart
+        $returnableCartItems = json_decode($order->returnable_cart, true) ?? [];
 
-        $items = collect($cartItems)->map(function ($item) {
+        $items = collect($returnableCartItems)->map(function ($item) {
             return [
                 'id'       => $item['id'] ?? null,
                 'name'     => $item['name'] ?? 'Unknown Item',
@@ -272,6 +276,7 @@ class OrderController extends Controller
             'items'   => $items,
         ]);
     }
+
 
 
     public function fetchReturnOptions(Request $request, $orderId)
@@ -425,9 +430,34 @@ class OrderController extends Controller
     {
         Log::info('finishReturn reached', ['orderId' => $orderId]);
 
-        $request->validate([
-            'paymentIntentClientSecret' => 'required|string',
-        ]);
+        // Log raw input for debugging
+        Log::info('Raw request input', $request->all());
+
+        try {
+            Log::info('Starting request validation...');
+            $request->validate([
+                'paymentIntentClientSecret' => 'required|string',
+                'selectedShippingOption' => 'nullable|array',
+                'selectedShippingOption.amount' => 'required_with:selectedShippingOption|numeric',
+                'selectedShippingOption.currency' => 'required_with:selectedShippingOption|string',
+                'selectedShippingOption.provider' => 'required_with:selectedShippingOption|string',
+                'selectedShippingOption.service' => 'required_with:selectedShippingOption|string',
+                'selectedShippingOption.object_id' => 'required_with:selectedShippingOption|string',
+                'shippingLabelUrl' => 'nullable|url',
+                'selectedItems' => 'required|array',
+                'selectedItems.*' => 'array',
+                'selectedItems.*.0' => 'required|integer|min:1',
+                'selectedItems.*.1' => 'required|integer|min:1',
+                'finishedAt' => 'nullable|date',
+            ]);
+            Log::info('Validation passed');
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            Log::error('Validation failed in finishReturn', [
+                'orderId' => $orderId,
+                'errors' => $ve->errors(),
+            ]);
+            return response()->json(['errors' => $ve->errors()], 422);
+        }
 
         // Verify Stripe payment
         try {
@@ -435,37 +465,127 @@ class OrderController extends Controller
 
             $clientSecret = $request->paymentIntentClientSecret;
             $paymentIntentId = explode('_secret', $clientSecret)[0];
+            Log::info('Retrieving PaymentIntent', ['payment_intent_id' => $paymentIntentId]);
+
             $intent = PaymentIntent::retrieve($paymentIntentId);
 
+            Log::info('PaymentIntent retrieved', ['status' => $intent->status]);
+
             if ($intent->status !== 'succeeded') {
+                Log::warning('Payment not completed', ['payment_intent_id' => $paymentIntentId]);
                 return response()->json(['error' => 'Payment not completed.'], 400);
             }
         } catch (\Exception $e) {
+            Log::error('Payment verification failed', [
+                'orderId' => $orderId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['error' => 'Payment verification failed.', 'message' => $e->getMessage()], 500);
         }
 
+        Log::info('Fetching order from DB', ['orderId' => $orderId]);
         $order = Order::findOrFail($orderId);
+        Log::info('Order retrieved', ['order_status' => $order->status]);
 
-        $return = ReturnModel::create([
+        $selectedItemsRaw = $request->input('selectedItems');
+        Log::info('Raw selected items for return', [
             'order_id' => $order->id,
             'user_id' => $request->user()->id,
-            'completed_at' => $request->input('finishedAt', Carbon::now()),
-            'shipping_option' => $request->input('shippingOption'),
-            'shipping_label_url' => $request->input('shippingLabelUrl'),
-            'items' => $request->input('selectedItems'),
-            'status' => 'PRE-RETURN',
-            'approved' => false,
+            'selected_items_raw' => $selectedItemsRaw,
         ]);
 
-        Log::info('Return created for order', ['order_id' => $order->id, 'return_id' => $return->id]);
+        $returnableCart = json_decode($order->returnable_cart ?? '[]', true);
+        Log::info('Current returnable cart', ['returnable_cart' => $returnableCart]);
 
-        // Update order status to PRE-RETURN
-        $order->return_status = 'PRE-RETURN';
-        $order->save();
+        // Build full item info from selectedItems
+        $selectedItemsFull = collect($selectedItemsRaw)->map(function ($pair) use ($returnableCart) {
+            [$id, $quantity] = $pair;
 
-        return Redirect::route('orders.index')
+            $matched = collect($returnableCart)->firstWhere('id', $id);
+
+            if (!$matched) {
+                Log::warning('Selected item ID not found in returnable_cart', ['missing_id' => $id]);
+                return null;
+            }
+
+            return array_merge($matched, ['return_quantity' => $quantity]);
+        })->filter()->values()->all();
+
+        Log::info('Selected items full (with return quantity)', ['items' => $selectedItemsFull]);
+
+        // Remove selected items from returnable_cart
+        $selectedItemIds = array_column($selectedItemsRaw, 0);
+        Log::info('Parsed selected item IDs', ['selected_item_ids' => $selectedItemIds]);
+
+        $updatedCart = collect($returnableCart)->reject(function ($item) use ($selectedItemIds) {
+            return in_array($item['id'], $selectedItemIds);
+        })->values()->all();
+
+        Log::info('Updated returnable cart after filtering selected items', ['updated_cart' => $updatedCart]);
+
+        $order->returnable_cart = json_encode($updatedCart);
+
+        // If returnable_cart is empty, mark the order as non-returnable
+        if (empty($updatedCart)) {
+            $order->returnable = false;
+            Log::info('Returnable cart is now empty. Setting order.returnable = false', ['order_id' => $order->id]);
+        }
+
+        $shippingOption = $request->input('selectedShippingOption');
+        Log::info('Shipping option received', ['shipping_option' => $shippingOption]);
+        $shippingOptionJson = $shippingOption ? json_encode($shippingOption) : null;
+        Log::info('Shipping option JSON', ['shipping_option_json' => $shippingOptionJson]);
+
+        try {
+            $return = ReturnModel::create([
+                'order_id' => $order->id,
+                'user_id' => $request->user()->id,
+                'completed_at' => $request->input('finishedAt', now()),
+                'shipping_option' => $shippingOptionJson,
+                'shipping_label_url' => $request->input('shippingLabelUrl'),
+                'items' => $selectedItemsFull,
+                'status' => 'PRE-RETURN',
+                'approved' => false,
+            ]);
+
+            Log::info('Return created successfully', [
+                'return_id' => $return->id,
+                'order_id' => $order->id,
+                'items' => $return->items,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create ReturnModel', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => 'Could not create return record.'], 500);
+        }
+
+        try {
+            $order->return_status = 'PRE-RETURN';
+            $order->save();
+
+            Log::info('Order updated and saved', ['order_id' => $order->id]);
+        } catch (\Exception $e) {
+            Log::error('Failed to update and save order return_status', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => 'Could not update order return status.'], 500);
+        }
+
+        Log::info('Redirecting to returns.index');
+        return Redirect::route('returns.index')
             ->with('flash.success', 'Return finalized successfully.');
     }
+
+
+
+
+
+
 
     public function isReturnable(Order $order)
     {

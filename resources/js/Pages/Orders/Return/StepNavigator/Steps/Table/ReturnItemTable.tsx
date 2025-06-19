@@ -6,7 +6,6 @@ export default function ReturnItemTable() {
   const {
     items,
     selectedItems,
-    returnQuantities,
     toggleItem,
     updateQuantity,
     currentStep,
@@ -14,6 +13,15 @@ export default function ReturnItemTable() {
   } = useReturn()
 
   const isActive = currentStep === 1
+
+  // Helper to get quantity from selectedItems by id
+  const getSelectedQuantity = (id: number) => {
+    const found = selectedItems.find(([itemId]) => itemId === id)
+    return found ? found[1] : 0
+  }
+
+  // Helper to check if item is selected
+  const isSelected = (id: number) => selectedItems.some(([itemId]) => itemId === id)
 
   return (
     <div className="w-full overflow-hidden rounded-xl shadow-lg border border-black/20 dark:border-white/20 dark:bg-[#424549]/80 mb-8">
@@ -28,52 +36,55 @@ export default function ReturnItemTable() {
           </tr>
         </thead>
         <tbody className="divide-y divide-black/20 dark:divide-white/20">
-          {items.map((item) => (
-            <tr key={item.id} className="bg-white/70 dark:bg-[#424549]/20">
-              <td className="px-4 py-3 flex items-center gap-4">
-                {item.image && (
-                  <img
-                    src={'/' + item.image}
-                    alt={item.name}
-                    className="h-12 w-12 object-cover rounded-md"
-                  />
-                )}
-                <span>{item.name}</span>
-              </td>
+          {items.map((item) => {
+            const qty = getSelectedQuantity(item.id)
+            return (
+              <tr key={item.id} className="bg-white/70 dark:bg-[#424549]/20">
+                <td className="px-4 py-3 flex items-center gap-4">
+                  {item.image && (
+                    <img
+                      src={'/' + item.image}
+                      alt={item.name}
+                      className="h-12 w-12 object-cover rounded-md"
+                    />
+                  )}
+                  <span>{item.name}</span>
+                </td>
 
-              <td className="px-4 py-3 text-center">
-                {selectedItems.includes(item.id) ? (
-                  <ItemCounter
-                    quantity={returnQuantities[item.id] ?? 1}
-                    onQuantityChange={(val) => updateQuantity(item.id, val)}
-                    max={item.quantity}
+                <td className="px-4 py-3 text-center">
+                  {isSelected(item.id) ? (
+                    <ItemCounter
+                      quantity={qty}
+                      onQuantityChange={(val) => updateQuantity(item.id, val)}
+                      max={item.quantity}
+                      disabled={!isActive}
+                      className="h-8"
+                    />
+                  ) : (
+                    <span>{item.quantity}</span>
+                  )}
+                </td>
+
+                <td className="px-4 py-3 text-center">
+                  £{(item.price ?? 0).toFixed(2)}
+                </td>
+
+                <td className="px-4 py-3 text-center">
+                  £{((item.price ?? 0) * qty).toFixed(2)}
+                </td>
+
+                <td className="px-4 py-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={isSelected(item.id)}
+                    onChange={() => toggleItem(item.id)}
+                    className="form-checkbox h-5 w-5 text-green-600"
                     disabled={!isActive}
-                    className="h-8"
                   />
-                ) : (
-                  <span>{item.quantity}</span>
-                )}
-              </td>
-
-              <td className="px-4 py-3 text-center">
-                £{(item.price ?? 0).toFixed(2)}
-              </td>
-
-              <td className="px-4 py-3 text-center">
-                £{((item.price ?? 0) * (returnQuantities[item.id] ?? 0)).toFixed(2)}
-              </td>
-
-              <td className="px-4 py-3 text-center">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.includes(item.id)}
-                  onChange={() => toggleItem(item.id)}
-                  className="form-checkbox h-5 w-5 text-green-600"
-                  disabled={!isActive}
-                />
-              </td>
-            </tr>
-          ))}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
 
         <tfoot>

@@ -17,7 +17,7 @@ export default function CustomerReturns({ returns }: CustomerReturnsProps) {
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [searchId, setSearchId] = useState("");
-  console.log(returns);
+  console.log("CUSTOMER RETURNS", returns);
   return (
     <ReturnProvider initialReturns={returns}>
       <Layout
