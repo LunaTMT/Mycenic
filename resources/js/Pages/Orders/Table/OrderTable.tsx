@@ -25,7 +25,6 @@ export default function OrderTable({ orders }: OrderTableProps) {
             <th className="py-3">Shipping </th>
             <th className="py-3">Payment </th>
 
-            {hasReturnStatus && <th className="py-3">Return </th>}
             
             <th className="py-3">Date</th>
             

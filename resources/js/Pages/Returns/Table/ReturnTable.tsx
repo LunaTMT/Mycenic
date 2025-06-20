@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { usePage } from "@inertiajs/react";
 import ReturnRow from "./Row/ReturnRow";
 
-import type { Return } from "@/types"; // Adjust this import to match your project
 
 type ReturnTableProps = {
   returns: Return[];

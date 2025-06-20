@@ -43,11 +43,7 @@ export default function OrderRow({ orderId }: { orderId: number }) {
         <td className="px-6 py-4 text-center h-16">
           <PaymentStatusBadge status={order.payment_status} />
         </td>
-        {hasReturnStatus && (
-          <td className="px-6 py-4 text-center h-16">
-            <ReturnStatusBadge status={order.return_status} />
-          </td>
-        )}
+
         <td className="px-6 py-4 text-center h-16">
           {new Date(order.created_at).toLocaleDateString("en-GB", {
             year: "numeric",

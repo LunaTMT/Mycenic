@@ -426,15 +426,13 @@ class OrderController extends Controller
 
 
 
-    public function finishReturn(Request $request, $orderId)
+   public function finishReturn(Request $request, $orderId)
     {
         Log::info('finishReturn reached', ['orderId' => $orderId]);
-
-        // Log raw input for debugging
         Log::info('Raw request input', $request->all());
 
+        // Step 1: Validate
         try {
-            Log::info('Starting request validation...');
             $request->validate([
                 'paymentIntentClientSecret' => 'required|string',
                 'selectedShippingOption' => 'nullable|array',
@@ -452,134 +450,98 @@ class OrderController extends Controller
             ]);
             Log::info('Validation passed');
         } catch (\Illuminate\Validation\ValidationException $ve) {
-            Log::error('Validation failed in finishReturn', [
-                'orderId' => $orderId,
-                'errors' => $ve->errors(),
-            ]);
+            Log::error('Validation failed', ['errors' => $ve->errors()]);
             return response()->json(['errors' => $ve->errors()], 422);
         }
 
-        // Verify Stripe payment
+        // Step 2: Stripe Verification
         try {
             Stripe::setApiKey(config('services.stripe.secret'));
-
-            $clientSecret = $request->paymentIntentClientSecret;
-            $paymentIntentId = explode('_secret', $clientSecret)[0];
-            Log::info('Retrieving PaymentIntent', ['payment_intent_id' => $paymentIntentId]);
-
+            $paymentIntentId = explode('_secret', $request->paymentIntentClientSecret)[0];
             $intent = PaymentIntent::retrieve($paymentIntentId);
-
-            Log::info('PaymentIntent retrieved', ['status' => $intent->status]);
-
             if ($intent->status !== 'succeeded') {
                 Log::warning('Payment not completed', ['payment_intent_id' => $paymentIntentId]);
                 return response()->json(['error' => 'Payment not completed.'], 400);
             }
         } catch (\Exception $e) {
-            Log::error('Payment verification failed', [
-                'orderId' => $orderId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Payment verification failed', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Payment verification failed.', 'message' => $e->getMessage()], 500);
         }
 
-        Log::info('Fetching order from DB', ['orderId' => $orderId]);
+        // Step 3: Load order and cart
         $order = Order::findOrFail($orderId);
-        Log::info('Order retrieved', ['order_status' => $order->status]);
-
-        $selectedItemsRaw = $request->input('selectedItems');
-        Log::info('Raw selected items for return', [
-            'order_id' => $order->id,
-            'user_id' => $request->user()->id,
-            'selected_items_raw' => $selectedItemsRaw,
-        ]);
-
         $returnableCart = json_decode($order->returnable_cart ?? '[]', true);
+        $selectedItemsRaw = $request->input('selectedItems');
         Log::info('Current returnable cart', ['returnable_cart' => $returnableCart]);
+        Log::info('Raw selected items for return', ['selected_items_raw' => $selectedItemsRaw]);
 
-        // Build full item info from selectedItems
+        // Step 4: Build full item info for record
         $selectedItemsFull = collect($selectedItemsRaw)->map(function ($pair) use ($returnableCart) {
-            [$id, $quantity] = $pair;
-
-            $matched = collect($returnableCart)->firstWhere('id', $id);
-
-            if (!$matched) {
-                Log::warning('Selected item ID not found in returnable_cart', ['missing_id' => $id]);
-                return null;
-            }
-
-            return array_merge($matched, ['return_quantity' => $quantity]);
+            [$id, $qty] = $pair;
+            $item = collect($returnableCart)->firstWhere('id', $id);
+            return $item ? array_merge($item, ['return_quantity' => $qty]) : null;
         })->filter()->values()->all();
 
         Log::info('Selected items full (with return quantity)', ['items' => $selectedItemsFull]);
 
-        // Remove selected items from returnable_cart
-        $selectedItemIds = array_column($selectedItemsRaw, 0);
-        Log::info('Parsed selected item IDs', ['selected_item_ids' => $selectedItemIds]);
+        // Step 5: Subtract return quantities from returnableCart
+        $qtyMap = collect($selectedItemsRaw)->mapWithKeys(fn($pair) => [$pair[0] => $pair[1]]);
+        $updatedCart = collect($returnableCart)->map(function ($item) use ($qtyMap) {
+            if ($qtyMap->has($item['id'])) {
+                $returnedQty = $qtyMap[$item['id']];
+                $remainingQty = $item['quantity'] - $returnedQty;
+                if ($remainingQty > 0) {
+                    $item['quantity'] = $remainingQty;
+                    $item['total'] = $remainingQty * $item['price'];
+                    return $item;
+                }
+                return null; // Fully returned
+            }
+            return $item; // Not part of this return
+        })->filter()->values()->all();
 
-        $updatedCart = collect($returnableCart)->reject(function ($item) use ($selectedItemIds) {
-            return in_array($item['id'], $selectedItemIds);
-        })->values()->all();
+        Log::info('Updated returnable cart after quantity subtraction', ['updated_cart' => $updatedCart]);
 
-        Log::info('Updated returnable cart after filtering selected items', ['updated_cart' => $updatedCart]);
-
+        // Step 6: Update order
         $order->returnable_cart = json_encode($updatedCart);
-
-        // If returnable_cart is empty, mark the order as non-returnable
         if (empty($updatedCart)) {
             $order->returnable = false;
-            Log::info('Returnable cart is now empty. Setting order.returnable = false', ['order_id' => $order->id]);
+            Log::info('Returnable cart is empty. Setting order.returnable = false', ['order_id' => $order->id]);
         }
 
-        $shippingOption = $request->input('selectedShippingOption');
-        Log::info('Shipping option received', ['shipping_option' => $shippingOption]);
-        $shippingOptionJson = $shippingOption ? json_encode($shippingOption) : null;
-        Log::info('Shipping option JSON', ['shipping_option_json' => $shippingOptionJson]);
-
+        // Step 7: Create return record
         try {
             $return = ReturnModel::create([
                 'order_id' => $order->id,
                 'user_id' => $request->user()->id,
                 'completed_at' => $request->input('finishedAt', now()),
-                'shipping_option' => $shippingOptionJson,
+                'shipping_option' => json_encode($request->input('selectedShippingOption')),
                 'shipping_label_url' => $request->input('shippingLabelUrl'),
                 'items' => $selectedItemsFull,
                 'status' => 'PRE-RETURN',
                 'approved' => false,
             ]);
-
-            Log::info('Return created successfully', [
-                'return_id' => $return->id,
-                'order_id' => $order->id,
-                'items' => $return->items,
-            ]);
+            Log::info('Return created successfully', ['return_id' => $return->id]);
         } catch (\Exception $e) {
-            Log::error('Failed to create ReturnModel', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Failed to create ReturnModel', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Could not create return record.'], 500);
         }
 
+        // Step 8: Save order changes
         try {
             $order->return_status = 'PRE-RETURN';
             $order->save();
-
-            Log::info('Order updated and saved', ['order_id' => $order->id]);
+            Log::info('Order updated', ['order_id' => $order->id]);
         } catch (\Exception $e) {
-            Log::error('Failed to update and save order return_status', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Failed to update order return_status', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Could not update order return status.'], 500);
         }
 
-        Log::info('Redirecting to returns.index');
-        return Redirect::route('returns.index')
-            ->with('flash.success', 'Return finalized successfully.');
+        // Step 9: Done
+        return Redirect::route('returns.index')->with('flash.success', 'Return finalized successfully.');
     }
+
+
 
 
 
