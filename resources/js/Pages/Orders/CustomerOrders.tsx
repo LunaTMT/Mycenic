@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import GuestLayout from "@/Layouts/GuestLayout";
 import Breadcrumb from "@/Components/Nav/Breadcrumb";
 import OrderTable from "./Table/OrderTable";
+import OrderRow from "./Table/Row/OrderRow"; // ✅ You need this!
 import { OrderProvider, useOrderContext } from "@/Contexts/OrdersContext";
 import type { Order } from "@/Contexts/OrdersContext";
 
@@ -17,7 +18,6 @@ export default function CustomerOrders({ orders }: CustomerOrdersProps) {
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // State for search input
   const [searchId, setSearchId] = useState("");
 
   return (
@@ -28,27 +28,21 @@ export default function CustomerOrders({ orders }: CustomerOrdersProps) {
             <div className="w-1/3 h-full flex justify-start">
               <Breadcrumb items={[{ label: "ACCOUNT" }, { label: "ORDERS" }]} />
             </div>
-           
-            <div className="w-2/3 h-full flex gap-4 justify-end">
-              <div className="flex items-center gap-4 h-full"> 
-             
-              </div>
-                {auth?.user?.role === 'admin' && (
-                  <input
-                    type="text"
-                    placeholder="Search by Order ID"
-                    className="pl-2 max-w-64 w-full h-[80%] rounded border border-gray-400 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-gray-200"
-                    value={searchId}
-                    onChange={(e) => setSearchId(e.target.value)}
-                  />
-                )}
 
-          
+            <div className="w-2/3 h-full flex gap-4 justify-end">
+              <div className="flex items-center gap-4 h-full"></div>
+              {auth?.user?.role === "admin" && (
+                <input
+                  type="text"
+                  placeholder="Search by Order ID"
+                  className="pl-2 max-w-64 w-full h-[80%] rounded border border-gray-400 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-gray-200"
+                  value={searchId}
+                  onChange={(e) => setSearchId(e.target.value)}
+                />
+              )}
             </div>
           </div>
         }
-
-
       >
         <video
           ref={videoRef}
@@ -60,8 +54,8 @@ export default function CustomerOrders({ orders }: CustomerOrdersProps) {
         >
           <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
         </video>
-        
-        <div className="relative z-10 w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 dark:text-gray-300 flex gap-5 justify-center items-start font-Poppins">
+
+        <div className="relative z-10 w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
           <OrderContent searchId={searchId} />
         </div>
       </Layout>
@@ -71,7 +65,7 @@ export default function CustomerOrders({ orders }: CustomerOrdersProps) {
 
 function OrderContent({ searchId }: { searchId: string }) {
   const { orders, loading } = useOrderContext();
-
+  console.log(orders);
   const filteredOrders = useMemo(() => {
     if (!searchId.trim()) return orders;
     return orders.filter((order) =>
@@ -95,6 +89,11 @@ function OrderContent({ searchId }: { searchId: string }) {
     );
   }
 
-  return <OrderTable orders={filteredOrders} />;
+  return (
+    <div className="w-full h-[85vh] rounded-lg flex flex-col gap-4">
+      {filteredOrders.map((order) => (
+        <OrderRow key={order.id} orderId={order.id} />
+      ))}
+    </div>
+  );
 }
-

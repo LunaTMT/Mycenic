@@ -1,12 +1,7 @@
 import { FaChevronRight } from "react-icons/fa";
-import { Fragment } from "react";
-import OrderRowDropdown from "./OrderRowDropdown";
 import { usePage } from "@inertiajs/react";
+import OrderRowDropdown from "./Dropdown/OrderRowDropdown";
 import { useOrderContext } from "@/Contexts/OrdersContext";
-
-import PaymentStatusBadge from "./PaymentStatusBadge";
-import ShippingStatusBadge from "./ShippingStatusBadge";
-import ReturnStatusBadge from "./ReturnStatusBadge";
 
 export default function OrderRow({ orderId }: { orderId: number }) {
   const {
@@ -25,52 +20,41 @@ export default function OrderRow({ orderId }: { orderId: number }) {
 
   const isExpanded = expandedOrderId === order.id;
 
+  // Format the order date
+  const orderDate = new Date(order.created_at).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
-    <Fragment key={order.id}>
-      <tr
+    <div className="pb-2">
+      {/* Bubble container - click toggles dropdown */}
+      <div
         onClick={() => toggleExpandedOrder(order.id)}
-        className={`cursor-pointer rounded-full ${
-          order.is_completed && auth?.user?.role === "admin"
-            ? "bg-green-400 dark:bg-green-900"
-            : "bg-white/70 dark:bg-[#424549]/10"
+        className={`w-full h-15 bg-white dark:bg-[#24272a] shadow-md border border-gray-300 dark:border-gray-700 p-4 flex items-center transition hover:shadow-lg cursor-pointer ${
+          isExpanded ? "rounded-t-lg" : "rounded-lg"
         }`}
       >
-        <td className="px-6 py-4 text-center h-16">{order.id}</td>
-        <td className="px-6 py-4 text-center h-16">£{order.total}</td>
-        <td className="px-6 py-4 text-center h-16">
-          <ShippingStatusBadge status={order.shipping_status} />
-        </td>
-        <td className="px-6 py-4 text-center h-16">
-          <PaymentStatusBadge status={order.payment_status} />
-        </td>
 
-        <td className="px-6 py-4 text-center h-16">
-          {new Date(order.created_at).toLocaleDateString("en-GB", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </td>
-        {auth?.user?.role === "admin" && (
-          <td className="px-6 py-4 text-center flex justify-center items-center h-16">
-            <input
-              type="checkbox"
-              checked={order.is_completed}
-              onChange={() => handleToggleCompleted(order.id)}
-              className="form-checkbox h-6 w-6 text-green-600"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </td>
-        )}
-        <td className="p-3 mx-auto h-16">
-          <FaChevronRight
-            className={`dark:text-white transition-transform duration-200 ${
-              isExpanded ? "rotate-90" : ""
-            }`}
-          />
-        </td>
-      </tr>
+        {/* Order ID */}
+        <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">#{order.id}</div>
+
+        {/* Chevron */}
+        <FaChevronRight
+          className={`mx-4 text-gray-600 dark:text-gray-300 transform transition-transform duration-200 ${
+            isExpanded ? "rotate-90" : ""
+          }`}
+        />
+
+
+
+        {/* Order Date aligned right */}
+        <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">{orderDate}</div>
+      </div>
+
+      {/* Dropdown shown when expanded */}
       <OrderRowDropdown order={order} auth={auth} isExpanded={isExpanded} />
-    </Fragment>
+    </div>
   );
 }

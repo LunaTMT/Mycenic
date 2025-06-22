@@ -22,6 +22,7 @@ class Order extends Model
     protected $casts = [
         'tracking_history' => 'array',
         'cart' => 'array',
+        'returnable_cart' => 'array',
         'return_items' => 'array',
         'return_tracking_history' => 'array',
         'return_finished_at' => 'datetime',

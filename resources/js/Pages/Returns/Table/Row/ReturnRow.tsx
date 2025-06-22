@@ -1,9 +1,9 @@
 import { Fragment, useState } from "react";
 import { FaChevronRight } from "react-icons/fa";
 import { usePage } from "@inertiajs/react";
-import ShippingStatusBadge from "@/Pages/Orders/Table/Row/ShippingStatusBadge";
+import ShippingStatusBadge from "@/Pages/Orders/Table/Row/Badges/ShippingStatusBadge";
 import PaymentStatusBadge from "./PaymentStatusBadge";
-import ReturnStatusBadge from "@/Pages/Orders/Table/Row/ReturnStatusBadge";
+import ReturnStatusBadge from "@/Pages/Orders/Table/Row/Badges/ReturnStatusBadge";
 import ReturnRowDropdown from "./ReturnRowDropdown";
 
 type ReturnRowProps = {

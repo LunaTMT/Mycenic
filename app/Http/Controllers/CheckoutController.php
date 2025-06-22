@@ -20,26 +20,13 @@ class CheckoutController extends Controller
     {
         $this->log('info', 'Checkout process started', $request->all());
 
-        // Log incoming data
-        Log::info('Incoming checkout request data:', [
-            'total' => $request->input('total'),
-            'subtotal' => $request->input('subtotal'),
-            'weight' => $request->input('weight'),
-            'discount' => $request->input('discount'),
-            'shippingCost' => $request->input('shippingCost'), // <- Added this
-            'shippingDetails' => $request->input('shippingDetails'),
-            'paymentIntentId' => $request->input('paymentIntentId'),
-            'legalAgreement' => $request->input('legalAgreement'),
-        ]);
-
-        // Validate input
         $validated = $request->validate([
             'cart' => 'required|json',
             'total' => 'required|numeric|min:0',
             'subtotal' => 'required|numeric|min:0',
             'weight' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
-            'shippingCost' => 'required|numeric|min:0', // <- Validate shippingCost
+            'shippingCost' => 'required|numeric|min:0',
             'shippingDetails' => 'required|array',
             'paymentIntentId' => 'required|string',
             'legalAgreement' => 'nullable|boolean',
@@ -60,15 +47,24 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            // Store data in session
+            // ✅ Pull payment metadata
+            $charge = $intent->charges->data[0] ?? null;
+
+            // ✅ Store data in session
             session([
-                'cart' => json_decode($validated['cart'], true),
-                'total' => $validated['total'],
-                'subtotal' => $validated['subtotal'],
-                'weight' => $validated['weight'],
-                'discount' => $validated['discount'],
-                'shippingCost' => $validated['shippingCost'], // <- Store shippingCost
-                'shippingDetails' => $validated['shippingDetails'],
+                'cart'                 => json_decode($validated['cart'], true),
+                'total'                => $validated['total'],
+                'subtotal'             => $validated['subtotal'],
+                'weight'               => $validated['weight'],
+                'discount'             => $validated['discount'],
+                'shippingCost'         => $validated['shippingCost'],
+                'shippingDetails'      => $validated['shippingDetails'],
+                'payment_intent_id'    => $intent->id,
+                'payment_method'       => $intent->payment_method_types[0] ?? 'card',
+                'payment_provider'     => 'Stripe',
+                'payment_completed_at' => now(),
+                'payment_last4'        => $charge?->payment_method_details?->card?->last4 ?? null,
+                'payment_receipt_url'  => $charge?->receipt_url ?? null,
             ]);
 
             if (isset($validated['legalAgreement'])) {
@@ -84,6 +80,7 @@ class CheckoutController extends Controller
             ]);
         }
     }
+
 
 
     public function success(Request $request)

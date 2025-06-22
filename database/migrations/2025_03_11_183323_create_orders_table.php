@@ -21,7 +21,7 @@ return new class extends Migration
 
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->default(0);
-            $table->decimal('delivery_price', 10, 2)->default(0);
+         
             $table->decimal('weight', 8, 2)->default(0); 
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('shipping_cost', 8, 2)->default(0);
@@ -49,6 +49,8 @@ return new class extends Migration
 
             $table->string('return_status')->default('UNKNOWN');
 
+
+            
 
 
 

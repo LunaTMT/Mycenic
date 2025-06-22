@@ -121,7 +121,10 @@ class OrderController extends Controller
                 [
                     'created_at'       => $order->created_at->toISOString(),
                     'updated_at'       => $order->updated_at->toISOString(),
-                    'cart'             => json_decode($order->cart, true),
+                    'cart'             => $order->cart,
+                    'returnable_cart'  => $order->returnable_cart,
+
+
                     'tracking_history' => $order->tracking_history ?? [],
                 ]
             );
@@ -167,8 +170,8 @@ class OrderController extends Controller
 
             $order = Order::create([
                 'user_id'         => $user->id,
-                'cart'            => json_encode(session('cart', [])),
-                'returnable_cart' => json_encode(session('cart', [])),
+                'cart'            => session('cart', []),
+                'returnable_cart' => session('cart', []),
                 'total'           => session('total', 0),
                 'subtotal'        => session('subtotal', 0),
                 'weight'          => session('weight', 0),
@@ -258,9 +261,8 @@ class OrderController extends Controller
         $this->authorize('view', $order);
 
         // Use returnable_cart instead of cart
-        $returnableCartItems = json_decode($order->returnable_cart, true) ?? [];
 
-        $items = collect($returnableCartItems)->map(function ($item) {
+        $items = collect($order->returnable_cart)->map(function ($item) {
             return [
                 'id'       => $item['id'] ?? null,
                 'name'     => $item['name'] ?? 'Unknown Item',
@@ -426,7 +428,7 @@ class OrderController extends Controller
 
 
 
-   public function finishReturn(Request $request, $orderId)
+    public function finishReturn(Request $request, $orderId)
     {
         Log::info('finishReturn reached', ['orderId' => $orderId]);
         Log::info('Raw request input', $request->all());
@@ -470,17 +472,17 @@ class OrderController extends Controller
 
         // Step 3: Load order and cart
         $order = Order::findOrFail($orderId);
-        $returnableCart = json_decode($order->returnable_cart ?? '[]', true);
+        $returnableCart = $order->returnable_cart;
         $selectedItemsRaw = $request->input('selectedItems');
         Log::info('Current returnable cart', ['returnable_cart' => $returnableCart]);
         Log::info('Raw selected items for return', ['selected_items_raw' => $selectedItemsRaw]);
 
-        // Step 4: Build full item info for record
         $selectedItemsFull = collect($selectedItemsRaw)->map(function ($pair) use ($returnableCart) {
             [$id, $qty] = $pair;
             $item = collect($returnableCart)->firstWhere('id', $id);
-            return $item ? array_merge($item, ['return_quantity' => $qty]) : null;
+            return $item ? array_merge($item, ['quantity' => $qty]) : null;
         })->filter()->values()->all();
+
 
         Log::info('Selected items full (with return quantity)', ['items' => $selectedItemsFull]);
 
@@ -502,11 +504,21 @@ class OrderController extends Controller
 
         Log::info('Updated returnable cart after quantity subtraction', ['updated_cart' => $updatedCart]);
 
-        // Step 6: Update order
-        $order->returnable_cart = json_encode($updatedCart);
+        
+        $order->returnable_cart = $updatedCart;
+      
         if (empty($updatedCart)) {
             $order->returnable = false;
             Log::info('Returnable cart is empty. Setting order.returnable = false', ['order_id' => $order->id]);
+        }
+
+        // Save the updated order immediately
+        try {
+            $order->save();
+            Log::info('Order saved after updating returnable_cart', ['order_id' => $order->id, 'returnable_cart' => $order->returnable_cart]);
+        } catch (\Exception $e) {
+            Log::error('Failed to save order after updating returnable_cart', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Could not save order updates.'], 500);
         }
 
         // Step 7: Create return record
@@ -527,11 +539,11 @@ class OrderController extends Controller
             return response()->json(['error' => 'Could not create return record.'], 500);
         }
 
-        // Step 8: Save order changes
+        // Step 8: Save return_status update on order
         try {
             $order->return_status = 'PRE-RETURN';
             $order->save();
-            Log::info('Order updated', ['order_id' => $order->id]);
+            Log::info('Order updated with return_status', ['order_id' => $order->id]);
         } catch (\Exception $e) {
             Log::error('Failed to update order return_status', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Could not update order return status.'], 500);
