@@ -16,6 +16,7 @@ use App\Http\Controllers\{
     AboutController,
     CartController,
     CheckoutController,
+    CustomerController,
     EmailController,
     ItemController,
     OrderController,
@@ -23,6 +24,7 @@ use App\Http\Controllers\{
     ProfileController,
     PromoCodeController,
     ShippingController,
+    
     Auth\AuthenticatedSessionController,
     Auth\SocialAuthController,
     Auth\GoogleController // Only needed if used elsewhere
@@ -167,12 +169,11 @@ Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('c
 Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
 Route::controller(PaymentController::class)->prefix('payment')->name('payment.')->group(function () {
-    Route::get('/', 'index')->name('index');
     Route::get('/details', 'get')->name('get');
     Route::post('/store', 'store')->name('store');
 });
-Route::post('/create-payment-intent', [PaymentController::class, 'createPaymentIntent']);
 
+Route::post('/payment/intent', [PaymentController::class, 'createPaymentIntent'])->name('payment.intent');
 
 /**
 |--------------------------------------------------------------------------
@@ -315,3 +316,7 @@ Route::get('/test-email', function () {
 Route::get('/welcome', function () {
     return view('emails.transactional');
 })->name('welcome');
+
+
+
+Route::middleware('auth')->get('/customers/{id}', [CustomerController::class, 'show']);

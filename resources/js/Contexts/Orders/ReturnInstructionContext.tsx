@@ -209,7 +209,8 @@ export const ReturnInstructionProvider = ({
       selectedItems,
       finishedAt: new Date().toISOString(),
     }
-    console.log(selectedItems)
+    //console.log(payload)
+    
     await Inertia.post(`/orders/${orderId}/return/finish`, payload)
 
     setAlreadyReturnedItemIds(prev =>

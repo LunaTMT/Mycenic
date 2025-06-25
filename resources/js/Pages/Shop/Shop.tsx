@@ -11,8 +11,8 @@ import AddItemButton from "@/Components/Buttons/AddItemButton";
 import ProductCard from "@/Pages/Shop/ShopFront/ProductCard";
 import Breadcrumb from "@/Components/Nav/Breadcrumb";
 
-import { ShopProvider, useShop } from "@/Contexts/ShopContext";
-import { useCart } from "@/Contexts/CartContext";
+import { ShopProvider, useShop } from "@/Contexts/Shop/ShopContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 interface ShopProps {
   auth: { user: any } | null;

@@ -20,22 +20,36 @@ class CheckoutController extends Controller
     {
         $this->log('info', 'Checkout process started', $request->all());
 
-        $validated = $request->validate([
-            'cart' => 'required|json',
-            'total' => 'required|numeric|min:0',
-            'subtotal' => 'required|numeric|min:0',
-            'weight' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'shippingCost' => 'required|numeric|min:0',
-            'shippingDetails' => 'required|array',
-            'paymentIntentId' => 'required|string',
-            'legalAgreement' => 'nullable|boolean',
-        ]);
+        // Validate input
+        try {
+            $validated = $request->validate([
+                'cart' => 'required|json',
+                'total' => 'required|numeric|min:0',
+                'subtotal' => 'required|numeric|min:0',
+                'weight' => 'required|numeric|min:0',
+                'discount' => 'nullable|numeric|min:0',
+                'shippingCost' => 'required|numeric|min:0',
+                'shippingDetails' => 'required|array',
+                'paymentIntentId' => 'required|string',
+                'selectedShippingRate' => 'required|array',
+                'selectedShippingRate.amount' => 'required|string',
+                'selectedShippingRate.provider' => 'required|string',
+                'selectedShippingRate.service' => 'required|string',
+                'legalAgreement' => 'nullable|boolean',
+            ]);
+            $this->log('info', 'Validation successful', $validated);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            $this->log('error', 'Validation failed', $ve->errors());
+            return Inertia::render('Shop', [
+                'flash.error' => 'Validation error: ' . json_encode($ve->errors()),
+            ]);
+        }
 
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
         try {
             $intent = PaymentIntent::retrieve($validated['paymentIntentId']);
+            $this->log('info', 'PaymentIntent retrieved', ['id' => $intent->id, 'status' => $intent->status]);
 
             if ($intent->status !== 'succeeded') {
                 $this->log('error', 'PaymentIntent not successful', [
@@ -47,10 +61,21 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            // ✅ Pull payment metadata
             $charge = $intent->charges->data[0] ?? null;
+            $this->log('info', 'Payment charge details', ['charge' => $charge]);
 
-            // ✅ Store data in session
+            $this->log('info', 'Storing session data for checkout', [
+                'cart' => json_decode($validated['cart'], true),
+                'total' => $validated['total'],
+                'subtotal' => $validated['subtotal'],
+                'weight' => $validated['weight'],
+                'discount' => $validated['discount'],
+                'shippingCost' => $validated['shippingCost'],
+                'shippingDetails' => $validated['shippingDetails'],
+                'selectedShippingRate' => $validated['selectedShippingRate'],
+            ]);
+
+         
             session([
                 'cart'                 => json_decode($validated['cart'], true),
                 'total'                => $validated['total'],
@@ -60,17 +85,20 @@ class CheckoutController extends Controller
                 'shippingCost'         => $validated['shippingCost'],
                 'shippingDetails'      => $validated['shippingDetails'],
                 'payment_intent_id'    => $intent->id,
-                'payment_method'       => $intent->payment_method_types[0] ?? 'card',
+                'payment_method'       => $intent->payment_method ?? 'card',
                 'payment_provider'     => 'Stripe',
                 'payment_completed_at' => now(),
                 'payment_last4'        => $charge?->payment_method_details?->card?->last4 ?? null,
                 'payment_receipt_url'  => $charge?->receipt_url ?? null,
+                'selectedShippingRate' => $validated['selectedShippingRate'],
             ]);
 
             if (isset($validated['legalAgreement'])) {
                 session(['legalAgreement' => $validated['legalAgreement']]);
+                $this->log('info', 'Legal agreement stored in session', ['legalAgreement' => $validated['legalAgreement']]);
             }
 
+            $this->log('info', 'Checkout process completed successfully');
             return redirect()->route('checkout.success');
 
         } catch (\Exception $e) {

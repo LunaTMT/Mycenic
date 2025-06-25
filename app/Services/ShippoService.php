@@ -10,6 +10,9 @@ use Shippo_Transaction;
 use Shippo_Track;
 use Shippo_Address;
 
+use App\Models\Order;
+use App\Models\ReturnModel;
+
 class ShippoService
 {
     private $allowedCountries = ['GB'];
@@ -19,51 +22,155 @@ class ShippoService
         \Shippo::setApiKey(config('services.shippo.key'));
     }
 
-
-    public function createShipment($order)
+     private function buildShipmentData(array $from, array $to, float $weight): array
     {
-        Log::info('Creating shipment for order:', $order->toArray());
+        return [
+            'address_from' => $from,
+            'address_to' => $to,
+            'parcels' => [[
+                'length' => '10',
+                'width' => '10',
+                'height' => '5',
+                'distance_unit' => 'in',
+                'weight' => (string) $weight,
+                'mass_unit' => 'lb',
+            ]],
+            'async' => false,
+        ];
+    }
 
-        if (!in_array($order->country, $this->allowedCountries)) {
-            Log::error('Shipping not available for this country.', ['country' => $order->country]);
+
+    public function createOrderShipment(object $data)
+    {
+        if (!in_array($data->country, $this->allowedCountries)) {
+            Log::error('Order shipping not available for this country.', ['country' => $data->country]);
             return null;
         }
 
-        $fromAddress = [
-            'name'    => 'Mycenic',
+        $warehouseAddress = [
+            'name'    => 'Mycenic Warehouse',
             'street1' => '126 Henry Shuttlewood Drive',
             'city'    => 'Chelmsford',
-            'country' => 'GB',
             'zip'     => 'CM1 6EQ',
+            'country' => 'GB',
             'phone'   => '+44 15555555555',
-            'email'   => 'support@mycenic.com'
+            'email'   => 'support@mycenic.com',
         ];
 
-        $toAddress = [
-            'name'    => $order->customer_name,
-            'street1' => $order->address,
-            'city'    => $order->city,
-            'country' => $order->country,
-            'zip'     => $order->zip,
-            'phone'   => $order->phone,
-            'email'   => $order->email
+        $customerAddress = [
+            'name'    => $data->customer_name,
+            'street1' => $data->address,
+            'city'    => $data->city,
+            'zip'     => $data->zip,
+            'country' => $data->country,
+            'phone'   => $data->phone,
+            'email'   => $data->email,
         ];
 
-        $parcel = [
-            'length'  => '10',
-            'width'   => '10',
-            'height'  => '5',
-            'distance_unit' => 'in',
-            'weight'  => '2',
-            'mass_unit' => 'lb'
+        $shipmentData = $this->buildShipmentData($warehouseAddress, $customerAddress, $data->weight ?? 2);
+
+        return $this->createShipment($shipmentData);
+    }
+
+
+    public function createReturnShipment(ReturnModel $return, string $selectedRateId)
+    {
+        if (!in_array($return->country, $this->allowedCountries)) {
+            Log::error('Return shipping not available for this country.', ['country' => $return->country]);
+            return null;
+        }
+
+        $warehouseAddress = [
+            'name'    => 'Mycenic Warehouse',
+            'street1' => '126 Henry Shuttlewood Drive',
+            'city'    => 'Chelmsford',
+            'zip'     => 'CM1 6EQ',
+            'country' => 'GB',
+            'phone'   => '+44 15555555555',
+            'email'   => 'support@mycenic.com',
         ];
+
+        $customerAddress = [
+            'name'    => $return->customer_name,
+            'street1' => $return->address,
+            'city'    => $return->city,
+            'zip'     => $return->zip,
+            'country' => $return->country,
+            'phone'   => $return->phone,
+            'email'   => $return->email,
+        ];
+
+        $weight = $return->weight ?? 2;
+
+        $shipmentData = $this->buildShipmentData($customerAddress, $warehouseAddress, $weight);
+
+        $shipment = $this->createShipment($shipmentData);
+
+        if (!$shipment) {
+            Log::error('Failed to create shipment for return ID: ' . $return->id);
+            throw new \Exception('Failed to create shipment');
+        }
+
+        if (empty($shipment['rates'])) {
+            Log::error('No shipping rates returned for return ID: ' . $return->id);
+            throw new \Exception('No shipping rates available');
+        }
+
+        // Find the rate the customer selected
+        $selectedRate = collect($shipment['rates'])->firstWhere('object_id', $selectedRateId);
+
+        if (!$selectedRate) {
+            Log::error('Selected shipping rate not found for return ID: ' . $return->id, ['selected_rate_id' => $selectedRateId]);
+            throw new \Exception('Selected shipping rate not found');
+        }
+
+        // Purchase the label with the selected rate
+        $label = $this->purchaseLabel($selectedRate['object_id']);
+
+        // Update the ReturnModel with shipment and label info
+        $return->shipment_id     = $shipment['object_id'] ?? null;
+        $return->carrier         = $label['carrier'] ?? null;
+        $return->tracking_number = $label['tracking_number'] ?? null;
+        $return->label_url       = $label['label_url'] ?? null;
+        $return->tracking_url    = $label['label_url'] ?? null; // or a tracking URL if available
+        $return->shipping_option = [
+            'provider' => $selectedRate['provider'] ?? null,
+            'service'  => $selectedRate['servicelevel']['name'] ?? null,
+            'amount'   => $selectedRate['amount'] ?? null,
+            'currency' => $selectedRate['currency'] ?? null,
+            'object_id'=> $selectedRate['object_id'] ?? null,
+        ];
+        $return->shipping_status = 'LABEL_PURCHASED';
+
+        // Save updated return record
+        $return->save();
+
+        return $return;
+    }
+
+
+    public function createShipment(array $data)
+    {
+        Log::info('Creating shipment with request data:', $data);
+
+        if (!in_array($data['address_to']['country'], $this->allowedCountries)) {
+            Log::error('Shipping not available for this country.', ['country' => $data['address_to']['country']]);
+            return null;
+        }
 
         try {
-            $shipment = Shippo_Shipment::create([
-                'address_from' => $fromAddress,
-                'address_to'   => $toAddress,
-                'parcels'      => [$parcel],
-                'async'        => false
+            $shipment = \Shippo_Shipment::create([
+                'address_from' => $data['address_from'],
+                'address_to'   => $data['address_to'],
+                'parcels'      => $data['parcels'] ?? [[
+                    'length' => '10',
+                    'width'  => '10',
+                    'height' => '5',
+                    'distance_unit' => 'in',
+                    'weight' => '2',
+                    'mass_unit' => 'lb'
+                ]],
+                'async' => false,
             ]);
 
             return $shipment;
@@ -72,6 +179,10 @@ class ShippoService
             return null;
         }
     }
+
+
+    
+
 
     public function getRates($order)
     {

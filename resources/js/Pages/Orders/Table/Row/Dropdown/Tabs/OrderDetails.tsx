@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "@inertiajs/react";
-import PaymentStatusBadge from "../../Badges/PaymentStatusBadge";
+
 
 export default function OrderDetails({
   order,
@@ -17,7 +17,9 @@ export default function OrderDetails({
   return (
     <div className="w-full border border-gray-300 dark:border-gray-700 p-6 rounded-lg bg-white dark:bg-[#1e2124] shadow-md">
       {/* Cart Items */}
-      <div className="space-y-6 mb-8">
+      <div className="space-y-2 mb-8">
+        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Items</h4>
+
         {order.cart.map((item: any) => {
           const price = safeNumber(item.price);
           const quantity = safeNumber(item.quantity);
@@ -29,13 +31,13 @@ export default function OrderDetails({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="flex items-center justify-between gap-6"
+              className="flex items-center justify-between "
             >
               <Link href={`/item/${item.id}`} className="flex items-center gap-4 group">
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="w-16 h-16 rounded-lg object-cover "
+                  className="w-16 h-16 rounded-lg object-cover"
                 />
                 <div>
                   <p className="text-md font-semibold text-gray-900 dark:text-white">
@@ -57,7 +59,7 @@ export default function OrderDetails({
       {/* Order Summary */}
       <div className="pt-6 border-t border-gray-300 dark:border-gray-600">
         <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Order Summary
+          Summary
         </h4>
 
         <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
@@ -67,11 +69,13 @@ export default function OrderDetails({
           </div>
 
           {safeNumber(order.discount) > 0 && (
-            <div className="flex justify-between text-red-600 dark:text-red-400">
+            <div className="flex justify-between text-red-400 dark:text-red-400">
               <span className="font-medium">Discount</span>
               <span>-£{discountAmount}</span>
             </div>
           )}
+
+          
 
           <div className="flex justify-between">
             <span className="font-medium">Shipping</span>
@@ -85,12 +89,6 @@ export default function OrderDetails({
             <span>£{safeNumber(order.total).toFixed(2)}</span>
           </div>
 
-          {/* Payment Status badge below Grand Total, right aligned */}
-   
-          <div className="inline-flex items-center gap-2 bg-white dark:bg-[#2a2e33] px-3 py-1 rounded shadow border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300">
-            <span>Payment Status:</span>
-            <PaymentStatusBadge status={order.payment_status} />
-          </div>
 
           {order.payment_method && (
             <div className="flex justify-between pt-2">

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Head } from "@inertiajs/react";
 import { ToastContainer } from "react-toastify";
 
-import { useCart } from "@/Contexts/CartContext";
-import { useDarkMode } from "@/Contexts/DarkModeContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import GuestLayout from "@/Layouts/GuestLayout";

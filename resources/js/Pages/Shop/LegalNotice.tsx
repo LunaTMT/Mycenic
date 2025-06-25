@@ -1,6 +1,6 @@
 // resources/js/Components/Cart/LegalNotice.tsx
 import React from 'react';
-import { useCart } from '@/Contexts/CartContext';
+import { useCart } from '@/Contexts/Shop/Cart/CartContext';
 import { router } from '@inertiajs/react';
 
 interface LegalNoticeProps {

@@ -2,10 +2,10 @@ import React from 'react'
 import { Head } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import Breadcrumb from '@/Components/Nav/Breadcrumb'
-import { useCart } from '@/Contexts/CartContext'
+import { useCart } from '@/Contexts/Shop/Cart/CartContext'
 import StepNavigator from './StepNavigator/StepNavigator'
 import ReturnItemTable from './StepNavigator/Steps/Table/ReturnItemTable'
-import { ReturnInstructionProvider, useReturn } from '@/Contexts/ReturnInstructionContext'
+import { ReturnInstructionProvider, useReturn } from '@/Contexts/Orders/ReturnInstructionContext'
 
 interface ReturnInstructionsProps {
   auth: any

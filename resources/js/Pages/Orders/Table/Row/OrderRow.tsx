@@ -1,7 +1,7 @@
 import { FaChevronRight } from "react-icons/fa";
 import { usePage } from "@inertiajs/react";
 import OrderRowDropdown from "./Dropdown/OrderRowDropdown";
-import { useOrderContext } from "@/Contexts/OrdersContext";
+import { useOrderContext } from "@/Contexts/Orders/OrdersContext";
 
 export default function OrderRow({ orderId }: { orderId: number }) {
   const {
@@ -38,7 +38,7 @@ export default function OrderRow({ orderId }: { orderId: number }) {
       >
 
         {/* Order ID */}
-        <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">#{order.id}</div>
+        <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">Order #{order.id}</div>
 
         {/* Chevron */}
         <FaChevronRight

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useCart } from "@/Contexts/CartContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { motion } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
-import { useDarkMode } from "@/Contexts/DarkModeContext";
+import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 import { FaTrashAlt } from "react-icons/fa";
 import Swal from "sweetalert2";
 

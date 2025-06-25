@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { Inertia } from '@inertiajs/inertia';
 import { useRemember } from '@inertiajs/react';
-import { useNav } from "@/Contexts/NavContext";
+import { useNav } from "@/Contexts/Layout/NavContext";
 import sections from '@/Pages/About/Section';
 
 const slugify = (s: string) =>

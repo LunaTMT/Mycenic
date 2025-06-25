@@ -6,7 +6,7 @@ import { router } from "@inertiajs/react";
 import { Transition } from "@headlessui/react";
 import { IoBagOutline, IoClose } from "react-icons/io5";
 import { FaCheckCircle, FaInfoCircle } from "react-icons/fa";
-import { useCart } from "@/Contexts/CartContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 

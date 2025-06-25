@@ -10,7 +10,7 @@ import Item from "./Item/Item";
 import Summary from "./Summary/Summary";
 
 import { ToastContainer } from "react-toastify";
-import { ShippingDetails, useCart } from "@/Contexts/CartContext";
+import { ShippingDetails, useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 interface CartProps {
   auth: any;
@@ -38,7 +38,7 @@ const Cart: React.FC<CartProps> = ({ auth }) => {
   return (
     <Layout
       header={
-        <div className="h-[5vh] z-10 w-full overflow-visible flex justify-between items-center gap-4">
+        <div className="h-[5vh] z-20 w-full overflow-visible flex justify-between items-center gap-4">
           <Breadcrumb items={[{ label: "SHOP", link: route("shop") }, { label: "CART" }]} />
         </div>
       }
@@ -64,13 +64,13 @@ const Cart: React.FC<CartProps> = ({ auth }) => {
       <div className="relative min-h-[89vh] mx-auto w-full max-w-7xl sm:px-6 lg:px-8 p-5 flex gap-10 justify-center items-start ">
         
         {/* Content */}
-        <div className="w-[65%] space-y-3 p-4 flex flex-col justify-start items-center min-h-[80vh] rounded-lg bg-white/50  border border-black/20 dark:bg-[#424549]/80 dark:border-white/20 text-gray-800 dark:text-gray-200 z-10 backdrop-blur-sm">
+        <div className="w-[65%] space-y-3 p-4 flex flex-col justify-start items-center min-h-[80vh] rounded-lg bg-white/50  border border-black/20 dark:bg-[#424549]/80 dark:border-white/20 text-gray-800 dark:text-gray-200 backdrop-blur-sm">
           {cart.map((item, index) => (
             <Item key={index} item={item} />
           ))}
         </div>
 
-        <div className="w-[35%] z-10 relative">
+        <div className="w-[35%] relative">
           <Summary auth={auth} />
         </div>
       </div>

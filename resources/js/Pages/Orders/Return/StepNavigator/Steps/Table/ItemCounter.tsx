@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { useDarkMode } from "@/Contexts/DarkModeContext";
+import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 
 interface CounterProps {
   quantity: number;

@@ -6,42 +6,33 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up()
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
-            
+
+            $table->foreignId('customer_id')->nullable()->constrained('users')->onDelete('set null');
+
             $table->json('cart')->nullable();
             $table->json('returnable_cart')->nullable();
 
-
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->default(0);
-         
-            $table->decimal('weight', 8, 2)->default(0); 
+            $table->decimal('weight', 8, 2)->default(0);
             $table->decimal('discount', 10, 2)->default(0);
             $table->decimal('shipping_cost', 8, 2)->default(0);
 
-            $table->string('payment_status')->default('PENDING'); //When the order is created it is set to completed so doesnt matter
-            $table->string('customer_name')->nullable();
-            $table->string('address')->nullable();
-            $table->string('city')->nullable();
-            $table->string('zip')->nullable();
-            $table->string('country')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('email')->nullable();
+            $table->string('payment_status')->default('PENDING');
+
+            $table->json('shipping_details')->nullable();
+
             $table->string('shipping_status')->default('PRE-TRANSIT');
             $table->string('carrier')->nullable();
             $table->string('tracking_number')->nullable();
             $table->string('tracking_url')->nullable();
             $table->json('tracking_history')->nullable();
-            
             $table->text('label_url')->nullable();
-             $table->string('shipment_id')->nullable();
+            $table->string('shipment_id')->nullable();
 
             $table->boolean('legal_agreement')->nullable()->default(false);
             $table->boolean('is_completed')->nullable()->default(false);
@@ -49,20 +40,12 @@ return new class extends Migration
 
             $table->string('return_status')->default('UNKNOWN');
 
-
-            
-
-
-
-        
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+
+    public function down()
     {
         Schema::dropIfExists('orders');
     }

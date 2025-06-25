@@ -9,7 +9,7 @@ import VideoPlayer from "@/Components/Video/VideoPlayer";
 import CustomerReviews from "./CustomerReviews";
 import Products from "./Products";
 
-import { useDarkMode } from "@/Contexts/DarkModeContext";
+import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 import "react-toastify/dist/ReactToastify.css";
 import TrustpilotWidget from "@/Components/Widgets/TrustPilot";
 

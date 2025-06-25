@@ -5,7 +5,7 @@ export default function OrderShipping({ order }: { order: any }) {
   if (order.shipping_status?.toLowerCase() === "unknown") return null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 mt-4">
+    <div className="flex flex-col md:flex-row gap-6 mt-4 min-h-45">
       {/* Left: Shipping Status */}
       <div className="relative flex-1 bg-white dark:bg-[#1e2124] border border-gray-300 dark:border-gray-700 rounded-lg p-4 shadow">
         {/* Top-right box */}
@@ -18,7 +18,7 @@ export default function OrderShipping({ order }: { order: any }) {
         </h5>
 
         {/* Status badge positioned bottom right */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-white dark:bg-[#2a2e33] px-3 py-1 rounded shadow border border-gray-300 dark:border-gray-700">
+        <div className="absolute bottom-2 right-0 flex items-center gap-2 bg-white dark:bg-[#2a2e33] px-3 py-1 rounded shadow">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Status:
           </span>

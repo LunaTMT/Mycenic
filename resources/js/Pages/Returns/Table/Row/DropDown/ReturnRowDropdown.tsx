@@ -1,32 +1,30 @@
+// ReturnRowDropdown.tsx
+
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import OrderDetails from "./Tabs/OrderDetails";
-import OrderShipping from "./Tabs/OrderShipping";
-import CustomerInfo from "./Tabs/CustomerInfo";
-import OrderReturns from "./Tabs/OrderReturns";
-import { OrderStatuses } from "./Tabs/OrderStatuses";
 
-type TabKey = "details" | "shipping" | "payment" | "returns" | "statuses" | "customer";
+import Details from "./Tabs/Details";
+import Shipping from "./Tabs/Shipping";
+import Decision from "./Tabs/Decision"; // renamed import
+import Statuses from "./Tabs/Statuses";
+import Customer from "./Tabs/Customer";
 
-interface Props {
-  order: any;
-  auth: any;
+type TabKey = "details" | "shipping" | "decision" | "statuses" | "customer";
+
+type ReturnRowDropdownProps = {
+  returnData: any;
   isExpanded: boolean;
-}
+};
 
-export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
+export default function ReturnRowDropdown({ returnData, isExpanded }: ReturnRowDropdownProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("details");
 
-  if (!isExpanded) return null;
-
-  const isReturnable = order.returnable === true;
-  const discountAmount =
-    order.discount > 0 ? ((order.discount / 100) * order.subtotal).toFixed(2) : "0.00";
+  if (!isExpanded || !returnData) return null;
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "details", label: "Details" },
     { key: "shipping", label: "Shipping" },
-    ...(isReturnable ? [{ key: "returns", label: "Returns" }] : []),
+    { key: "decision", label: "Decision" }, // updated label and key
     { key: "statuses", label: "Statuses" },
     { key: "customer", label: "Customer" },
   ];
@@ -34,6 +32,7 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
   return (
     <AnimatePresence>
       <motion.div
+        key={`return-dropdown-${returnData.id}`}
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
         exit={{ opacity: 0, height: 0 }}
@@ -46,7 +45,7 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
             {/* Left group */}
             <div className="flex gap-4">
               {tabs
-                .filter(({ key }) => ["details", "shipping", "payment", "returns"].includes(key))
+                .filter(({ key }) => ["details", "shipping", "decision"].includes(key))
                 .map(({ key, label }) => (
                   <button
                     key={key}
@@ -61,11 +60,10 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
                   </button>
                 ))}
             </div>
-
             {/* Right group */}
             <div className="flex gap-4">
               {tabs
-                .filter(({ key }) => ["customer", "statuses"].includes(key))
+                .filter(({ key }) => ["statuses", "customer"].includes(key))
                 .map(({ key, label }) => (
                   <button
                     key={key}
@@ -81,19 +79,13 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
                 ))}
             </div>
           </div>
-
-          {/* Tab Content */}
-          <div className="mt-2">
-            {activeTab === "details" && (
-              <OrderDetails order={order} discountAmount={discountAmount} />
-            )}
-            {activeTab === "shipping" && <OrderShipping order={order} />}
-
-            {activeTab === "returns" && (
-              <OrderReturns order={order} isReturnable={isReturnable} />
-            )}
-            {activeTab === "statuses" && <OrderStatuses order={order} />}
-            {activeTab === "customer" && <CustomerInfo order={order} />}
+          {/* Tab content */}
+          <div className="mt-2 space-y-4 text-sm text-gray-800 dark:text-white">
+            {activeTab === "details" && <Details returnData={returnData} />}
+            {activeTab === "shipping" && <Shipping returnData={returnData} />}
+            {activeTab === "decision" && <Decision returnData={returnData} />}
+            {activeTab === "statuses" && <Statuses returnData={returnData} />}
+            {activeTab === "customer" && <Customer returnData={returnData} />}
           </div>
         </div>
       </motion.div>

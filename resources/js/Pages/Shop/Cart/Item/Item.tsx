@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import CartCounter from './Counter';
-import { useCart, CartItem } from "@/Contexts/CartContext";
+import { useCart, CartItem } from "@/Contexts/Shop/Cart/CartContext";
 
 interface CartItemProps {
   item: CartItem;

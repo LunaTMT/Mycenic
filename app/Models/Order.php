@@ -9,35 +9,83 @@ class Order extends Model
 {
     use HasFactory;
 
-    // ✅ Enable timestamps
+    // Enable automatic timestamps (created_at, updated_at)
     public $timestamps = true;
 
+    /**
+     * The attributes that are mass assignable.
+     */
     protected $fillable = [
-        'user_id', 'cart', 'returnable_cart', 'total', 'subtotal', 'weight', 'payment_status',
-        'customer_name', 'address', 'city', 'zip', 'country', 'phone', 'email',
-        'shipping_status', 'tracking_number', 'tracking_url', 'discount', 'carrier', 'tracking_history',
-        'legal_agreement', 'is_completed', 'returnable', 'shipping_cost', 'delivery_price',
+        'customer_id',
+        'cart',
+        'returnable_cart',
+
+        'total',
+        'subtotal',
+        'weight',
+        'discount',
+        'shipping_cost',
+        'delivery_price', // if used
+
+        'payment_status',
+
+        'shipping_details',
+
+        'shipping_status',
+        'carrier',
+
+        'tracking_number',
+        'tracking_url',
+        'tracking_history',
+
+        'label_url',
+        'shipment_id',
+
+        'legal_agreement',
+        'is_completed',
+        'returnable',
+        'return_status',
     ];
 
+    /**
+     * The attributes that should be cast to native types.
+     */
     protected $casts = [
-        'tracking_history' => 'array',
         'cart' => 'array',
         'returnable_cart' => 'array',
-        'return_items' => 'array',
-        'return_tracking_history' => 'array',
-        'return_finished_at' => 'datetime',
+        'tracking_history' => 'array',
+        'shipping_details' => 'array',  // cast JSON shipping details to array
+
         'legal_agreement' => 'boolean',
         'is_completed' => 'boolean',
         'returnable' => 'boolean',
+
+        'return_finished_at' => 'datetime', // if used
     ];
 
-    protected $dates = ['created_at', 'updated_at'];
+    /**
+     * The attributes that should be mutated to dates.
+     */
+    protected $dates = [
+        'created_at',
+        'updated_at',
+    ];
 
+    /**
+     * Determine if the order is returnable.
+     */
     public function isReturnable()
     {
-        // Return true if shipping_status is 'DELIVERED' (case-insensitive check)
-        // and returnable column is true (assuming boolean column)
         return $this->returnable && strcasecmp($this->shipping_status, 'DELIVERED') === 0;
     }
 
+
+    protected static function booted()
+    {
+        static::creating(function ($order) {
+            if (is_null($order->returnable_cart) && $order->cart) {
+                $order->returnable_cart = $order->cart;
+            }
+        });
+    }
 }

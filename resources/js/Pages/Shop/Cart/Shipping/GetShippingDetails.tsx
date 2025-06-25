@@ -1,10 +1,12 @@
-import React, { FormEventHandler, useEffect } from 'react';
+import React, { FormEventHandler, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useForm, usePage, router } from '@inertiajs/react';
 import InputError from '@/Components/Login/InputError';
 import InputLabel from '@/Components/Login/InputLabel';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 import TextInput from '@/Components/Login/TextInput';
-import { useCart } from '@/Contexts/CartContext';
+import ArrowIcon from '@/Components/Buttons/ArrowIcon';
+import { useCart } from '@/Contexts/Shop/Cart/CartContext';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import GuestLayout from "@/Layouts/GuestLayout";
@@ -16,6 +18,8 @@ export default function GetDetails() {
   const { shippingDetails, setShippingDetails } = useCart();
   const { auth } = usePage().props;
   const Layout = auth ? AuthenticatedLayout : GuestLayout;
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const { data, setData, processing, errors } = useForm<Record<FieldKey, string>>({
     name: '',
@@ -54,7 +58,7 @@ export default function GetDetails() {
       if (response.data.valid) {
         const dataWithCountry = {
           ...data,
-          country: 'GB',  // default country added here
+          country: 'GB',
         };
         setShippingDetails(dataWithCountry);
         await axios.post(route('cart.store.shipping.details'), dataWithCountry);
@@ -77,46 +81,65 @@ export default function GetDetails() {
   ];
 
   return (
-    <div className="relative z-10 bg-white dark:bg-[#1e2124] w-full max-w-md  overflow-hidden">
-      <form onSubmit={submit} className="p-2 flex flex-col gap-3">
-        {inputs.slice(0, 4).map(({ id, label, ...rest }) => (
-          <div key={id}>
-            <InputLabel htmlFor={id} value={label} />
-            <TextInput
-              id={id}
-              name={id}
-              type={(rest as any).type || 'text'}
-              value={data[id as FieldKey]}
-              onChange={e => setData(id as FieldKey, e.target.value)}
-              className="mt-1 w-full"
-              {...rest}
-            />
-            <InputError message={errors[id as FieldKey]} className="mt-2" />
-          </div>
-        ))}
+    <>
 
-        <div className="flex gap-4">
-          {inputs.slice(4).map(({ id, label, required, ...rest }) => (
-            <div key={id} className="w-1/2">
+    
+      <button
+        type="button"
+        onClick={() => setIsDropdownOpen(prev => !prev)}
+        className="w-full text-sm text-left font-semibold text-gray-800 dark:text-gray-200 flex justify-between"
+        aria-expanded={isDropdownOpen}
+      >
+        Set Address <ArrowIcon w="24" h="24" isOpen={isDropdownOpen} />
+      </button>
+
+      <motion.div
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: isDropdownOpen ? 'auto' : 0, opacity: isDropdownOpen ? 1 : 0 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
+        className=''
+      >
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          {inputs.slice(0, 4).map(({ id, label, ...rest }) => (
+            <div key={id}>
               <InputLabel htmlFor={id} value={label} />
               <TextInput
                 id={id}
                 name={id}
+                type={(rest as any).type || 'text'}
                 value={data[id as FieldKey]}
                 onChange={e => setData(id as FieldKey, e.target.value)}
                 className="mt-1 w-full"
-                required={required}
                 {...rest}
               />
               <InputError message={errors[id as FieldKey]} className="mt-2" />
             </div>
           ))}
-        </div>
 
-        <PrimaryButton className="w-full mt-4" disabled={processing}>
-          Set Address
-        </PrimaryButton>
-      </form>
-    </div>
+          <div className="flex gap-4">
+            {inputs.slice(4).map(({ id, label, required, ...rest }) => (
+              <div key={id} className="w-1/2">
+                <InputLabel htmlFor={id} value={label} />
+                <TextInput
+                  id={id}
+                  name={id}
+                  value={data[id as FieldKey]}
+                  onChange={e => setData(id as FieldKey, e.target.value)}
+                  className="mt-1 w-full"
+                  required={required}
+                  {...rest}
+                />
+                <InputError message={errors[id as FieldKey]} className="mt-2" />
+              </div>
+            ))}
+          </div>
+
+          <PrimaryButton className="w-full " disabled={processing}>
+            Set Address
+          </PrimaryButton>
+        </form>
+      </motion.div>
+    </>
   );
 }

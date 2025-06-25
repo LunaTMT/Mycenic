@@ -1,10 +1,7 @@
-import { Fragment, useState } from "react";
 import { FaChevronRight } from "react-icons/fa";
 import { usePage } from "@inertiajs/react";
-import ShippingStatusBadge from "@/Pages/Orders/Table/Row/Badges/ShippingStatusBadge";
-import PaymentStatusBadge from "./PaymentStatusBadge";
-import ReturnStatusBadge from "@/Pages/Orders/Table/Row/Badges/ReturnStatusBadge";
-import ReturnRowDropdown from "./ReturnRowDropdown";
+import { useState } from "react";
+import ReturnRowDropdown from "./DropDown/ReturnRowDropdown";
 
 type ReturnRowProps = {
   returnData: {
@@ -24,53 +21,44 @@ type ReturnRowProps = {
 export default function ReturnRow({ returnData }: ReturnRowProps) {
   const { props } = usePage<any>();
   const auth = props.auth;
-  const isAdmin = auth?.user?.role === "admin";
 
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const returnDate = new Date(returnData.created_at).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
-    <Fragment key={returnData.id}>
-      <tr
+    <div className="pb-2">
+      {/* Bubble container - click toggles dropdown */}
+      <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`cursor-pointer rounded-full ${
-          returnData.approved && isAdmin
-            ? "bg-green-400 dark:bg-green-900"
-            : "bg-white/70 dark:bg-[#424549]/10"
+        className={`w-full h-15 bg-white dark:bg-[#24272a] shadow-md border border-gray-300 dark:border-gray-700 p-4 flex items-center transition hover:shadow-lg cursor-pointer ${
+          isExpanded ? "rounded-t-lg" : "rounded-lg"
         }`}
       >
-        <td className="px-6 py-4 text-center h-16">{returnData.id}</td>
-        <td className="px-6 py-4 text-center h-16">
-          <ReturnStatusBadge status={returnData.status} />
-        </td>
-        <td className="px-6 py-4 text-center h-16">
-          <ShippingStatusBadge status={returnData.shipping_status ?? "UNKNOWN"} />
-        </td>
-        <td className="px-6 py-4 text-center h-16">
-          <PaymentStatusBadge status={returnData.payment_status ?? "UNKNOWN"} />
-        </td>
-        <td className="px-6 py-4 text-center h-16">
-          {returnData.completed_at
-            ? new Date(returnData.completed_at).toLocaleDateString("en-GB", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            : "—"}
-        </td>
-        <td className="p-3 mx-auto h-16">
-          <FaChevronRight
-            className={`dark:text-white transition-transform duration-200 ${
-              isExpanded ? "rotate-90" : ""
-            }`}
-          />
-        </td>
-      </tr>
+        {/* Return ID */}
+        <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          Return #{returnData.id}
+        </div>
 
-      <ReturnRowDropdown
-        returnData={returnData}
+        {/* Chevron */}
+        <FaChevronRight
+          className={`mx-4 text-gray-600 dark:text-gray-300 transform transition-transform duration-200 ${
+            isExpanded ? "rotate-90" : ""
+          }`}
+        />
 
-        isExpanded={isExpanded}
-      />
-    </Fragment>
+        {/* Return Date aligned right */}
+        <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+          {returnDate}
+        </div>
+      </div>
+
+      {/* Dropdown shown when expanded */}
+      <ReturnRowDropdown returnData={returnData} isExpanded={isExpanded} />
+    </div>
   );
 }

@@ -1,9 +1,9 @@
 import { PropsWithChildren, ReactNode, useState, useEffect } from "react";
 import { usePage, router, Link } from "@inertiajs/react";
 import { motion } from "framer-motion";
-import { useNav } from "@/Contexts/NavContext";
-import { useDarkMode } from "@/Contexts/DarkModeContext";
-import { useCart } from "@/Contexts/CartContext";
+import { useNav } from "@/Contexts/Layout/NavContext";
+import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 import NavLinks from "@/Components/Nav/NavLinks";
 import AboutSidebar from "@/Layouts/AboutSidebar";

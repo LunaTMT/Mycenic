@@ -18,53 +18,7 @@ class PaymentController extends Controller
     
 // PaymentController.php
 
-    public function index(Request $request)
-    {
-        Log::info("Payment controller");
-
-        // Get the logged-in user or handle as a guest
-        $user = Auth::user();
-        
-        // Retrieve the amount (in cents) from the request
-        $amount = (int) round($request->input('amount') * 100); // Example: 40.00 becomes 4000
-
-        Log::info("Amount to be paid: " . $amount);
-
-        // Set Stripe API key
-        Stripe::setApiKey(config('services.stripe.secret'));
-
-        try {
-            // Create a PaymentIntent
-            $paymentIntent = PaymentIntent::create([
-                'amount' => $amount,
-                'currency' => 'gbp',
-                'metadata' => [
-                    'user_id' => $user ? $user->id : 'guest',
-                    'cart_id' => session()->getId(),
-                ],
-            ]);
-
-            Log::info('Stripe PaymentIntent created', [
-                'id' => $paymentIntent->id,
-                'client_secret' => $paymentIntent->client_secret,
-                'payment intent' => $paymentIntent,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Stripe PaymentIntent creation failed', [
-                'message' => $e->getMessage(),
-            ]);
-
-            return redirect()->route('cart')->withErrors(['error' => 'Payment initialization failed.']);
-        }
-
-        return Inertia::render('Shop/Cart/Payment/PaymentPage', [
-            'paymentIntentClientSecret' => $paymentIntent->client_secret,
-            'auth' => [
-                'user' => $user,
-            ],
-        ]);
-
-    }
+   
 
     
     

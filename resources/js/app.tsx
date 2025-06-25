@@ -6,9 +6,9 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
 import { createRoot } from 'react-dom/client';
 
-import { CartProvider } from '../js/Contexts/CartContext';
-import { NavProvider } from '../js/Contexts/NavContext';  
-import { DarkModeProvider } from './Contexts/DarkModeContext';
+import { CartProvider } from './Contexts/Shop/Cart/CartContext';
+import { NavProvider } from './Contexts/Layout/NavContext';  
+import { DarkModeProvider } from './Contexts/Layout/DarkModeContext';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 

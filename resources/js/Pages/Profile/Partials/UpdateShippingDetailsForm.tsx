@@ -4,7 +4,7 @@ import InputError from '@/Components/Login/InputError';
 import InputLabel from '@/Components/Login/InputLabel';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 import TextInput from '@/Components/Login/TextInput';
-import { useCart } from '@/Contexts/CartContext';
+import { useCart } from '@/Contexts/Shop/Cart/CartContext';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 

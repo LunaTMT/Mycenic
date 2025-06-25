@@ -4,7 +4,7 @@ import { AiOutlineClose } from "react-icons/ai";
 import Swal from 'sweetalert2';
 import { Inertia } from '@inertiajs/inertia';
 import { usePage } from '@inertiajs/react';
-import { useShop } from '@/Contexts/ShopContext'; // Import the ShopContext
+import { useShop } from '@/Contexts/Shop/ShopContext'; // Import the ShopContext
 
 interface ProductCardProps {
     product: any;

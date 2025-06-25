@@ -1,9 +1,9 @@
 import { PropsWithChildren, ReactNode, useState, useEffect } from "react";
 import { usePage, router, Link } from "@inertiajs/react";
 import { motion } from "framer-motion";
-import { useNav } from "@/Contexts/NavContext";
-import { useDarkMode } from "@/Contexts/DarkModeContext";
-import { useCart } from "@/Contexts/CartContext";
+import { useNav } from "@/Contexts/Layout/NavContext";
+import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 import NavLinks from "@/Components/Nav/NavLinks";
 import AboutSidebar from "@/Layouts/AboutSidebar";
@@ -94,7 +94,7 @@ export default function Guest({
         </nav>
 
         {/* Bottom Nav – Header Slot */}
-        <div className="relative  sm:px-6 lg:px-8 w-full    max-w-7xl mx-auto  flex items-center justify-center">
+        <div className="relative sm:px-6 lg:px-8 w-full    max-w-7xl mx-auto  flex items-center justify-center">
           {header}
         </div>
       </motion.header>

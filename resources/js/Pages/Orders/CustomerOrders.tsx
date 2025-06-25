@@ -3,10 +3,9 @@ import { usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import GuestLayout from "@/Layouts/GuestLayout";
 import Breadcrumb from "@/Components/Nav/Breadcrumb";
-import OrderTable from "./Table/OrderTable";
 import OrderRow from "./Table/Row/OrderRow"; // ✅ You need this!
-import { OrderProvider, useOrderContext } from "@/Contexts/OrdersContext";
-import type { Order } from "@/Contexts/OrdersContext";
+import { OrderProvider, useOrderContext } from "@/Contexts/Orders/OrdersContext";
+import type { Order } from "@/Contexts/Orders/OrdersContext";
 
 type CustomerOrdersProps = {
   orders: Order[];

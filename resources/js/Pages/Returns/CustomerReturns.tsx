@@ -3,9 +3,10 @@ import { usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import GuestLayout from "@/Layouts/GuestLayout";
 import Breadcrumb from "@/Components/Nav/Breadcrumb";
-import ReturnTable from "./Table/ReturnTable";
-import { useReturnContext, ReturnProvider } from "@/Contexts/ReturnContext";
-import type { ReturnType } from "@/Contexts/ReturnContext";
+
+import { useReturnContext, ReturnProvider } from "@/Contexts/Orders/ReturnContext";
+
+import ReturnRow from "./Table/Row/ReturnRow"; // <- make sure this is correctly imported
 
 type CustomerReturnsProps = {
   returns: ReturnType[];
@@ -17,7 +18,7 @@ export default function CustomerReturns({ returns }: CustomerReturnsProps) {
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [searchId, setSearchId] = useState("");
-  console.log("CUSTOMER RETURNS", returns);
+
   return (
     <ReturnProvider initialReturns={returns}>
       <Layout
@@ -78,5 +79,11 @@ function ReturnContent({ searchId }: { searchId: string }) {
     );
   }
 
-  return <ReturnTable returns={filteredReturns} />;
+  return (
+    <div className="w-full h-[85vh] rounded-lg flex flex-col gap-4">
+      {filteredReturns.map((ret) => (
+        <ReturnRow key={ret.id} returnData={ret} />
+      ))}
+    </div>
+  );
 }
