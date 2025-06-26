@@ -6,7 +6,7 @@ import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function UpdateProfileInformation({
+export default function UpdateProfileInformationForm({
     mustVerifyEmail,
     status,
     className = '',
@@ -16,6 +16,8 @@ export default function UpdateProfileInformation({
     className?: string;
 }) {
     const user = usePage().props.auth.user;
+    console.log(user);
+   
 
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
@@ -30,8 +32,9 @@ export default function UpdateProfileInformation({
     };
 
     return (
+        
         <section
-            className={`  max-w-xl  ${className}`}
+            className={`rounded-lg  shadow-md dark:border-white/20 border border-black/20 p-4  ${className}`}
         >
  
 

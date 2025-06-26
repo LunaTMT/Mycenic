@@ -50,7 +50,7 @@ export default function UpdatePasswordForm({
 
     return (
         <section
-            className={` max-w-xl `}
+            className={`rounded-lg shadow-md  border dark:border-white/20 border-black/20 p-4  ${className}`}
         >
 
 

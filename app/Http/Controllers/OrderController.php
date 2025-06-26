@@ -40,31 +40,27 @@ class OrderController extends Controller
         $user = $request->user();
 
         if (!$user) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
             return Inertia::render('Auth/Login/Login', [
                 'flash' => ['error' => 'You must be logged in to view this.'],
             ]);
         }
 
-        Log::info("Orders index accessed by user ID: {$user->id}, role: {$user->role}");
-
         $query = Order::orderBy('created_at', 'desc');
 
-        // Non-admins see only their own orders
         if ($user->role !== 'admin') {
-            Log::info("Restricting orders to user ID: {$user->id}");
             $query->where('customer_id', $user->id);
         }
 
         $orders = $query->get()->map(function (Order $order) {
-            Log::info("Processing order ID: {$order->id}");
-
             if ($order->tracking_number) {
                 $trackingData = $this->shippoService->trackShipment($order->carrier, $order->tracking_number);
 
                 if (!empty($trackingData['tracking_status'])) {
                     $status = strtoupper($trackingData['tracking_status']['status']);
                     $order->update(['shipping_status' => $status]);
-                    Log::info("Updated shipping status for order {$order->id}", ['status' => $status]);
                 }
 
                 if (!empty($trackingData['tracking_history'])) {
@@ -78,7 +74,6 @@ class OrderController extends Controller
                     ], $trackingData['tracking_history']);
 
                     $order->update(['tracking_history' => $history]);
-                    Log::info("Stored tracking history for order {$order->id}");
                 }
             }
 
@@ -99,14 +94,18 @@ class OrderController extends Controller
             );
         });
 
-        Log::info("Returning {$orders->count()} orders to view");
+        if ($request->wantsJson()) {
+            return response()->json(['orders' => $orders]);
+        }
 
+        // Otherwise return Inertia view for normal web request
         return Inertia::render('Orders/CustomerOrders', [
-            'orders'    => $orders,
-            'message'   => session('message'),
+            'orders' => $orders,
+            'message' => session('message'),
             'clearCart' => session('clearCart'),
         ]);
     }
+
 
     /**
      * Create a new order from session/cart data.

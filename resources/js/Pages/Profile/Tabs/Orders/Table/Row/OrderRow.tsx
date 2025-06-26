@@ -32,13 +32,17 @@ export default function OrderRow({ orderId }: { orderId: number }) {
       {/* Bubble container - click toggles dropdown */}
       <div
         onClick={() => toggleExpandedOrder(order.id)}
-        className={`w-full h-15 bg-white dark:bg-[#24272a] shadow-md border border-gray-300 dark:border-gray-700 p-4 flex items-center transition hover:shadow-lg cursor-pointer ${
-          isExpanded ? "rounded-t-lg" : "rounded-lg"
-        }`}
+        className={`w-full bg-white dark:bg-[#424549] 
+          border border-black/20 dark:border-white/20 
+          shadow-2xl h-15 p-4 flex items-center 
+          transition hover:shadow-lg cursor-pointer
+          ${isExpanded ? "rounded-t-xl border-b-0" : "rounded-xl"}
+        `}
       >
-
         {/* Order ID */}
-        <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">Order #{order.id}</div>
+        <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          Order #{order.id}
+        </div>
 
         {/* Chevron */}
         <FaChevronRight
@@ -47,10 +51,10 @@ export default function OrderRow({ orderId }: { orderId: number }) {
           }`}
         />
 
-
-
         {/* Order Date aligned right */}
-        <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">{orderDate}</div>
+        <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+          {orderDate}
+        </div>
       </div>
 
       {/* Dropdown shown when expanded */}

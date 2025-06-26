@@ -9,115 +9,97 @@ import { FormEventHandler, useRef, useState } from 'react';
 import { Inertia } from '@inertiajs/inertia';
 import Swal from 'sweetalert2';
 
-export default function DeleteUserForm({
-    className = '',
-}: {
-    className?: string;
-}) {
-    const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
-    const passwordInput = useRef<HTMLInputElement>(null);
 
-    const {
-        data,
-        setData,
-        delete: destroy,
-        processing,
-        reset,
-        errors,
-        clearErrors,
-    } = useForm({
-        password: '',
-    });
+export default function DeleteUserForm({ className = '' }: { className?: string }) {
+  const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
+  const passwordInput = useRef<HTMLInputElement>(null);
 
-    const confirmUserDeletion = () => {
-        setConfirmingUserDeletion(true);
-    };
+  const {
+    data,
+    setData,
+    delete: destroy,
+    processing,
+    reset,
+    errors,
+    clearErrors,
+  } = useForm({
+    password: '',
+  });
 
-    const deleteUser: FormEventHandler = (e) => {
-        e.preventDefault();
-    
-        destroy(route('profile.destroy'), {
-            preserveScroll: false,  // Ensure scroll is reset
-            onSuccess: () => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Account Deleted',
-                    text: 'Your account has been successfully deleted.',
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: 'OK',
-                }).then(() => {
-                    Inertia.visit('/', { preserveScroll: false });
-                });
-            },
-            onError: () => passwordInput.current?.focus(),
-            onFinish: () => reset(),
+  const confirmUserDeletion = () => {
+    setConfirmingUserDeletion(true);
+  };
+
+  const deleteUser: FormEventHandler = (e) => {
+    e.preventDefault();
+
+    destroy(route('profile.destroy'), {
+      preserveScroll: false,
+      onSuccess: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Account Deleted',
+          text: 'Your account has been successfully deleted.',
+          confirmButtonColor: '#d33',
+          confirmButtonText: 'OK',
+        }).then(() => {
+          Inertia.visit('/', { preserveScroll: false });
         });
-    };
-    
-    
+      },
+      onError: () => passwordInput.current?.focus(),
+      onFinish: () => reset(),
+    });
+  };
 
-    const closeModal = () => {
-        setConfirmingUserDeletion(false);
+  const closeModal = () => {
+    setConfirmingUserDeletion(false);
+    clearErrors();
+    reset();
+  };
 
-        clearErrors();
-        reset();
-    };
+  return (
+    <>
+      <DangerButton onClick={confirmUserDeletion} className={className}>
+        Delete Account
+      </DangerButton>
 
-    return (
-        <section className={`space-y-6 ${className}`}>
-            <header>
-                <p className="mt-1 text-sm text-black dark:text-white ">
-                    Once your account is deleted, all of its resources and data
-                    will be permanently deleted. Before deleting your account,
-                    please download any data or information that you wish to
-                    retain.
-                </p>
-            </header>
+      <Modal show={confirmingUserDeletion} onClose={closeModal}>
+        <form onSubmit={deleteUser} className="p-6 flex flex-col items-center text-center">
+          <h2 className="text-lg font-medium text-black dark:text-black">
+            Are you sure you want to delete your account?
+          </h2>
 
-            <DangerButton onClick={confirmUserDeletion}>
-                Delete Account
-            </DangerButton>
+          <p className="mt-1 text-sm text-gray-600">
+            Once your account is deleted, all of its resources and data will be permanently deleted.
+            Please enter your password to confirm you would like to permanently delete your account.
+          </p>
 
-            <Modal show={confirmingUserDeletion} onClose={closeModal}>
-                <form 
-                    onSubmit={deleteUser} 
-                    className="p-6 flex flex-col items-center text-center"
-                >
-                    <h2 className="text-lg font-medium text-black dark:text-black ">
-                        Are you sure you want to delete your account?
-                    </h2>
+          <div className="mt-6 w-full flex flex-col items-center">
+            <InputLabel htmlFor="password" value="Password" className="sr-only dark:text-slate-100" />
 
-                    <p className="mt-1 text-sm text-gray-600">
-                        Once your account is deleted, all of its resources and data will be permanently deleted. 
-                        Please enter your password to confirm you would like to permanently delete your account.
-                    </p>
+            <TextInput
+              id="password"
+              type="password"
+              name="password"
+              ref={passwordInput}
+              value={data.password}
+              onChange={(e) => setData('password', e.target.value)}
+              className="block w-full text-center dark:bg-slate-800 text-black border-2 border-black bg-white"
+              isFocused
+              placeholder="Password"
+            />
 
-                    <div className="mt-6 w-full flex flex-col items-center ">
-                        <InputLabel htmlFor="password" value="Password" className="sr-only dark:text-slate-100" />
+            <InputError message={errors.password} className="mt-2 dark:text-red-400" />
+          </div>
 
-                        <TextInput
-                            id="password"
-                            type="password"
-                            name="password"
-                            ref={passwordInput}
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            className=" block w-full text-center dark:bg-slate-800 text-black
-                            border-2 border-black bg-white "
-                            isFocused
-                            placeholder="Password"
-                        />
-
-                        <InputError message={errors.password} className="mt-2 dark:text-red-400" />
-                    </div>
-
-                    <div className="mt-6 flex justify-center gap-3 w-full">
-                        <SecondaryButton onClick={closeModal} className='rounded-md'>Cancel</SecondaryButton>
-                        <DangerButton disabled={processing}>Delete Account</DangerButton>
-                    </div>
-                </form>
-            </Modal>
-
-        </section>
-    );
+          <div className="mt-6 flex justify-center gap-3 w-full">
+            <SecondaryButton onClick={closeModal} className="rounded-md">
+              Cancel
+            </SecondaryButton>
+            <DangerButton disabled={processing}>Delete Account</DangerButton>
+          </div>
+        </form>
+      </Modal>
+    </>
+  );
 }

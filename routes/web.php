@@ -85,6 +85,8 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/profile/shipping', [ProfileController::class, 'updateShipping'])->name('profile.update-shipping');
 
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+
     Route::get('/profile/shipping-details', function () {
         $user = auth()->user();
 

@@ -17,52 +17,32 @@ function getTimeRemaining(createdAt: string) {
   return { days, hours, minutes };
 }
 
-export default function OrderReturns({
-  order,
-  isReturnable,
-}: {
-  order: any;
-  isReturnable: boolean;
-}) {
+export default function OrderReturns({ order, isReturnable }: { order: any; isReturnable: boolean }) {
   const [remaining, setRemaining] = useState(getTimeRemaining(order.created_at));
 
   useEffect(() => {
     const interval = setInterval(() => {
       setRemaining(getTimeRemaining(order.created_at));
-    }, 60000); // Update every minute
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [order.created_at]);
 
   if (!isReturnable) {
-    return (
-      <p className="text-gray-500 dark:text-gray-400">
-        This order is not eligible for return.
-      </p>
-    );
+    return <p className="text-gray-500 dark:text-gray-400">This order is not eligible for return.</p>;
   }
 
   return (
-    <div className="w-full bg-white dark:bg-[#1e2124]  flex gap-6 ">
-      {/* Left: Returnable Items (2/3 width) */}
-      <div className="md:w-2/3 space-y-4 border p-4 border-gray-300 dark:border-gray-700 rounded-lg ">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-          Returnable Items
-        </h4>
-
+    <div className="w-full flex flex-col md:flex-row gap-6">
+      <div className="md:w-2/3 bg-white dark:bg-[#424549] border border-black/20 dark:border-white/20 rounded-xl shadow-2xl p-6">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Returnable Items</h4>
         {order.returnable_cart?.length > 0 ? (
           order.returnable_cart.map((item: any) => (
             <div key={item.id} className="flex items-center gap-4">
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-16 h-16 rounded-md object-cover"
-              />
+              <img src={item.image} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
               <div>
                 <p className="text-md font-semibold dark:text-white">{item.name}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Quantity: {item.quantity}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Quantity: {item.quantity}</p>
               </div>
             </div>
           ))
@@ -71,16 +51,12 @@ export default function OrderReturns({
         )}
       </div>
 
-      {/* Right: Return Button Section (1/3 width) */}
-      <div className="md:w-1/3 flex flex-col justify-start space-y-6 p-4 border border-gray-300 dark:border-gray-700 rounded-lg">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-white">
-          Initiate A Return Process
-        </h4>
+      <div className="md:w-1/3 bg-white dark:bg-[#424549] border border-black/20 dark:border-white/20 rounded-xl shadow-2xl p-6 flex flex-col justify-start space-y-6">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-white">Initiate A Return</h4>
         <p className="text-sm text-gray-600 dark:text-gray-300">
           You can return eligible items from this order.
         </p>
 
-        {/* Countdown badge */}
         <div className="bg-white dark:bg-[#2a2e33] border border-gray-300 dark:border-gray-700 shadow rounded px-4 py-2 text-center text-xs font-semibold">
           {remaining ? (
             <p className="text-green-700 dark:text-green-400 text-sm">

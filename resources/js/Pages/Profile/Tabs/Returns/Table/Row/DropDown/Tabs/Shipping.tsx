@@ -1,5 +1,5 @@
 import { FaTruck } from "react-icons/fa";
-import ShippingStatusBadge from "@/Pages/Orders/Table/Row/Badges/ShippingStatusBadge";
+import ShippingStatusBadge from "@/Pages/Profile/Tabs/Orders/Table/Row/Badges/ShippingStatusBadge";
 
 type ShippingProps = { returnData: any };
 

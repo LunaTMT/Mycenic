@@ -27,12 +27,11 @@ class User extends Authenticatable
         'stripe_id',
         'stripe_status',
         'stripe_subscription_id',
-        'google_id', 
+        'google_id',
         'avatar',
         'provider',
-        'provider_id'
+        'provider_id',
     ];
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -70,4 +69,11 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /**
+     * Get all addresses associated with the user.
+     */
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
 }

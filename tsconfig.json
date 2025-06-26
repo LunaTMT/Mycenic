@@ -22,6 +22,6 @@
       "resources/js/**/*.tsx",
       "resources/js/**/*.d.ts",
       "resources/js/types/global.d.ts"
-, "resources/js/Pages/Orders/Save"    ]
+, "resources/js/Pages/Profile/Tabs/Orders/Save"    ]
   }
   

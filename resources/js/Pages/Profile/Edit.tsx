@@ -1,119 +1,112 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { PageProps } from '@/types';
-import { Head } from '@inertiajs/react';
-import DeleteUserForm from './Partials/DeleteUserForm';
-import UpdatePasswordForm from './Partials/UpdatePasswordForm';
-import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Head } from "@inertiajs/react";
+import axios from "axios";
 
-import Breadcrumb from '@/Components/Nav/Breadcrumb';
-import { ChevronUpIcon } from '@heroicons/react/20/solid';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import UpdateShippingDetailsForm from './Partials/UpdateShippingDetailsForm';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import TabNavigation, { TabKey } from "./Components/TabNavigation";
+import ProfileTabContent from "./Tabs/Profile/ProfileTabContent";
+import UpdateShippingDetailsForm from "./Partials/UpdateShippingDetailsForm";
+import CustomerOrders from "./Tabs/Orders/CustomerOrders";
 
+// Placeholder returns component (replace with your actual component)
+function ReturnsTabContent() {
+  return (
+    <div className="text-center text-gray-700 dark:text-gray-300">
+      <h2 className="text-2xl font-semibold mb-4">Returns</h2>
+      <p>Returns tab content goes here.</p>
+    </div>
+  );
+}
 
-export default function Edit({
-    mustVerifyEmail,
-    status,
-}: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
+interface Props {
+  mustVerifyEmail: boolean;
+  status?: string;
+}
 
-    const sections = [
-        {
-            title: "Update Profile Information",
-            component: <UpdateProfileInformationForm mustVerifyEmail={mustVerifyEmail} status={status} />,
-        },
-        {
-            title: "Update Password",
-            component: <UpdatePasswordForm />,
-        },
-        {
-            title: "Update Shipping Details",
-            component: <UpdateShippingDetailsForm />,
-        },
+export default function Edit({ mustVerifyEmail, status }: Props) {
+  const [activeTab, setActiveTab] = useState<TabKey>("profile");
 
-        {
-            title: "Delete Account",
-            component: <DeleteUserForm />,
-        },
-    ];
+  // Store orders locally
+  const [orders, setOrders] = useState<any[] | null>(null); // Replace any with your order type
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
 
-    const [openIndex, setOpenIndex] = useState<number>(-1);
+  useEffect(() => {
+    if (activeTab === "orders" && orders === null) {
+      setLoadingOrders(true);
+      setOrdersError(null);
 
-    return (
-        <AuthenticatedLayout
-            header={
-                <div className="h-[5vh] z-10 w-full overflow-visible flex justify-between items-center gap-4">
-                    <Breadcrumb
-                        items={[
-                            { label: "ACCOUNT" },
-                            { label: "PROFILE" },
-                        ]}
-                    />
-                </div>
-            }
+      axios
+        .get("/orders") // Change to your actual backend endpoint
+        .then((res) => setOrders(res.data.orders || []))
+        .catch(() => {
+          setOrders([]);
+          setOrdersError("Failed to load orders. Please try again later.");
+        })
+        .finally(() => setLoadingOrders(false));
+    }
+  }, [activeTab, orders]);
+
+  return (
+    <AuthenticatedLayout>
+      <Head title="Profile" />
+
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
         >
-            <Head title="Profile" />
+          <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
+        </video>
+      </div>
 
-            {/* Background Video */}
-            <div className="fixed inset-0 z-0 overflow-hidden">
-                <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                >
-                    <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-            </div>
+      <div className="relative z-10 w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
+        <div className="w-full bg-white dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl">
+          <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            {/* Main Content */}
-            <div className="relative w-full h-full py-5">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-4 font-Poppins">
-                    {sections.map((section, index) => {
-                        const isOpen = openIndex === index;
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="p-8 space-y-8 min-h-[400px]"
+            >
+              {activeTab === "profile" && (
+                <ProfileTabContent
+                  mustVerifyEmail={mustVerifyEmail}
+                  status={status}
+                />
+              )}
 
-                        return (
-                            <div
-                                key={index}
-                                className="rounded-md bg-white dark:bg-[#424549]  dark:border-white/20 border border-black/20 shadow-2xl"
-                            >
-                                <button
-                                    onClick={() =>
-                                        setOpenIndex(isOpen ? -1 : index)
-                                    }
-                                    className="w-full flex justify-between items-center px-8 py-2  text-left text-lg font-semibold dark:text-white"
-                                >
-                                    <span>{section.title}</span>
-                                    <ChevronUpIcon
-                                        className={`w-10 h-10 transform transition-transform duration-200 ${
-                                            isOpen ? 'rotate-180' : ''
-                                        }`}
-                                    />
-                                </button>
+              {activeTab === "orders" && (
+                <>
+                  {loadingOrders && (
+                    <p className="text-center text-gray-600 dark:text-gray-300">
+                      Loading orders...
+                    </p>
+                  )}
+                  {ordersError && (
+                    <p className="text-center text-red-500">{ordersError}</p>
+                  )}
+                  {!loadingOrders && !ordersError && (
+                    <CustomerOrders orders={orders || []} />
+                  )}
+                </>
+              )}
 
-                                <AnimatePresence initial={false}>
-                                    {isOpen && (
-                                        <motion.div
-                                            key="content"
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            transition={{ duration: 0.5, ease: 'easeInOut' }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="w-full pl-8 p-4">
-                                                {section.component}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </AuthenticatedLayout>
-    );
+ 
+
+              {activeTab === "returns" && <ReturnsTabContent />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </AuthenticatedLayout>
+  );
 }

@@ -10,6 +10,7 @@
         "aws/aws-sdk-php": "^3.343",
         "guzzlehttp/guzzle": "^7.9",
         "inertiajs/inertia-laravel": "^2.0",
+        "intervention/image": "^3.11",
         "laravel/cashier": "^15.6",
         "laravel/framework": "^11.9",
         "laravel/sanctum": "^4.0",

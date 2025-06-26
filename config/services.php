@@ -63,6 +63,10 @@ return [
         'key' => env('SHIPPO_API_KEY'),
     ],
 
+    'unsplash' => [
+        'access_key' => env('UNSPLASH_ACCESS_KEY'),
+    ],
+
 
     
     'recaptcha' => [

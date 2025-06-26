@@ -143,6 +143,7 @@ class ShippingController extends Controller
             'message' => 'Tracking information not found.'
         ], 404);
     }
+
     public function validateAddress(Request $request)
     {
         $client = new Client();
@@ -152,45 +153,41 @@ class ShippingController extends Controller
 
         $addressData = $request->only(['address', 'city', 'zip']);
 
-        $payload = [
-            'address' => [
-                'addressLines' => [$addressData['address']],
-                'locality' => $addressData['city'],
-                'postalCode' => $addressData['zip'],
-                'regionCode' => 'GB',
-            ]
-        ];
-
         try {
-            $response = $client->post($url, ['json' => $payload]);
+            $response = $client->post($url, ['json' => [
+                'address' => [
+                    'addressLines' => [$addressData['address']],
+                    'locality' => $addressData['city'],
+                    'postalCode' => $addressData['zip'],
+                    'regionCode' => 'GB',
+                ],
+            ]]);
+
             $data = json_decode($response->getBody()->getContents(), true);
-
-            // ✅ Log full response for debugging
-            Log::info('Google Address Validation Response', ['response' => $data]);
-
             $verdict = $data['result']['verdict'] ?? [];
 
             $addressComplete = $verdict['addressComplete'] ?? false;
-            $hasUnconfirmedComponents = $verdict['hasUnconfirmedComponents'] ?? false;
+            $validationGranularity = $verdict['validationGranularity'] ?? '';
 
-            if ($addressComplete && !$hasUnconfirmedComponents) {
-                return response()->json([
-                    'valid' => true,
-                    'data' => $data['result'],
-                ]);
-            } else {
-                return response()->json([
-                    'valid' => false,
-                    'messages' => ['Address is incomplete or contains unconfirmed components.'],
-                    'data' => $data['result'] ?? [],
-                ]);
-            }
+            $valid = $addressComplete || stripos($validationGranularity, 'PREMISE') !== false || stripos($validationGranularity, 'PROXIMITY') !== false;
+
+            Log::info('Address check:', compact('addressComplete', 'validationGranularity', 'valid'));
+
+            return response()->json([
+                'valid' => $valid,
+                'data' => $data['result'],
+            ]);
         } catch (\Exception $e) {
-            \Log::error('Google Address Validation failed', ['error' => $e->getMessage()]);
+            Log::error('Google Address Validation failed', ['error' => $e->getMessage()]);
             return response()->json([
                 'valid' => false,
                 'messages' => ['An error occurred during validation.'],
             ], 500);
         }
     }
+
+
+
+
+
 };

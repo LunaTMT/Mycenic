@@ -1,9 +1,14 @@
 <?php
 
 namespace App\Providers;
-use Inertia\Inertia;
+
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
+
+
+use App\Models\User;
+use App\Observers\UserObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -12,7 +17,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // ✅ Register UnsplashService as a singleton
+        $this->app->singleton(\App\Services\UnsplashService::class);
     }
 
     /**
@@ -21,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
         Inertia::share([
             'flash' => function () {
                 return [
@@ -29,5 +36,8 @@ class AppServiceProvider extends ServiceProvider
                 ];
             },
         ]);
+
+        // ✅ Register the observer properly
+        User::observe(app(UserObserver::class));
     }
 }
