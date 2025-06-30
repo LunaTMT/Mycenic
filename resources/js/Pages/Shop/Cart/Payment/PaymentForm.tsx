@@ -3,6 +3,7 @@ import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { useCart } from '@/Contexts/Shop/Cart/CartContext';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 import LegalNotice from '../../LegalNotice';
+import { useShipping } from '@/Contexts/Shop/Cart/ShippingContext';
 
 interface PaymentDetailsProps {
   paymentIntentClientSecret: string;
@@ -14,7 +15,8 @@ const PaymentForm: React.FC<PaymentDetailsProps> = ({ paymentIntentClientSecret 
   const [isProcessing, setIsProcessing] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
-  const { createOrder, total, hasPsyilocybinSporeSyringe } = useCart();
+  const { total, hasPsyilocybinSporeSyringe } = useCart();
+  const { createOrder  } = useShipping(); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,6 +6,8 @@ use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
@@ -14,19 +16,29 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\File;
 
+
+use App\Models\Address;
+
 class ProfileController extends Controller
 {
     /**
      * Display the user's profile form.
-     */
-    public function edit(Request $request): Response
+        */
+    public function index(Request $request): Response
     {
-        Log::info('Profile edit page viewed', ['user_id' => $request->user()->id]);
-        return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+        $user = $request->user()->load('addresses');
+
+        $initialTab = $request->query('initialTab', 'profile'); // default tab
+
+        return Inertia::render('Profile/profile', [
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            'user' => $user,
+            'initialTab' => $initialTab,
         ]);
     }
+
+
 
     /**
      * Update the user's profile information.
@@ -130,6 +142,56 @@ class ProfileController extends Controller
         $user->save();
 
         return redirect()->route('profile.edit')->with('status', 'Avatar updated.');
+    }
+
+
+    public function storeAddress(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'label'   => 'nullable|string|max:50',
+                'address' => 'required|string|max:255',
+                'city'    => 'required|string|max:100',
+                'zip'     => 'required|string|max:20',
+                'country' => 'nullable|string|max:100',
+            ]);
+        } catch (ValidationException $e) {
+            // Return JSON with validation errors and 422 status code
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors'  => $e->errors(),
+            ], 422);
+        }
+
+        $validated['country'] = $validated['country'] ?? 'UK';
+
+        $user = $request->user();
+
+        $exists = $user->addresses()
+            ->where('address', $validated['address'])
+            ->where('city', $validated['city'])
+            ->where('zip', $validated['zip'])
+            ->where('country', $validated['country'])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'This address already exists.',
+            ], 409);
+        }
+
+        $address = $user->addresses()->create($validated);
+
+        \Log::info('New address stored', [
+            'user_id'    => $user->id,
+            'address_id' => $address->id,
+            'data'       => $validated,
+        ]);
+
+        return response()->json([
+            'message' => 'Address stored successfully.',
+            'address' => $address,
+        ]);
     }
 
     /**

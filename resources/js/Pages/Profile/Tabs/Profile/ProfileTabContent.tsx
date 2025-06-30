@@ -26,10 +26,10 @@ export default function ProfileTabContent({ mustVerifyEmail, status }: ProfileTa
           <UpdatePasswordForm />
         </div>
 
-        <div className="w-full space-y-6">
+        
           <UpdateShippingDetailsForm />
 
-        </div>
+        
       </div>
     </div>
   );

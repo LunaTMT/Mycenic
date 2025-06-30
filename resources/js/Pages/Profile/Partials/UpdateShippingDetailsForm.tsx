@@ -1,5 +1,5 @@
-import React, { FormEventHandler, useEffect, useState } from 'react';
-import { useForm } from '@inertiajs/react';
+import React, { useState, FormEventHandler } from 'react';
+import { useForm, usePage } from '@inertiajs/react';
 import InputError from '@/Components/Login/InputError';
 import InputLabel from '@/Components/Login/InputLabel';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
@@ -20,84 +20,93 @@ interface Address {
   created_at?: string;
 }
 
+interface User {
+  addresses?: Address[];
+}
+
+interface PageProps {
+  auth: {
+    user: User;
+  };
+}
+
 interface Props {
   className?: string;
 }
 
 export default function UpdateShippingDetailsForm({ className = '' }: Props) {
   const { shippingDetails, setShippingDetails } = useCart();
-  const [addresses, setAddresses] = useState<Address[]>([]);
+
+  const { data, setData, processing, errors, reset, setError, clearErrors } =
+    useForm<Record<FieldKey, string>>({
+      address: '',
+      city: '',
+      zip: '',
+    });
+
+  const page = usePage<PageProps>();
+  const user = page.props.auth.user;
+
+  const [addresses, setAddresses] = useState<Address[]>(user.addresses ?? []);
   const [showForm, setShowForm] = useState(false);
-
-  const { data, setData, processing, errors, reset } = useForm<Record<FieldKey, string>>({
-    address: '',
-    city: '',
-    zip: '',
-  });
-
-  const fetchAddresses = async () => {
-    try {
-      const response = await axios.get(route('profile.shipping-details'));
-      setAddresses(response.data.addresses || []);
-    } catch {
-      toast.error('Failed to load addresses.');
-    }
-  };
-
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
 
   const submit: FormEventHandler = async (e) => {
     e.preventDefault();
+    clearErrors();
 
     try {
       const validation = await axios.post(route('shipping.validate.address'), data);
-      console.log('Validation response:', validation.data);
 
       if (validation.data.valid) {
         const hasUnconfirmed = validation.data.data?.verdict?.hasUnconfirmedComponents;
-
         setShippingDetails(data);
 
-        await axios.post(route('profile.addresses.store'), { ...data });
+        const response = await axios.post(route('profile.addresses.store'), { ...data });
 
-        if (hasUnconfirmed) {
-          toast.warn('Address added, but some parts may be unconfirmed.');
-        } else {
-          toast.success('Address added.');
-        }
+        toast.success(hasUnconfirmed ? 'Address added' : 'Address added.');
 
         reset();
-        fetchAddresses();
         setShowForm(false);
+        setAddresses((prev) => [...prev, response.data.address]);
       } else {
         toast.error(
           'Invalid address: ' +
-          (validation.data.messages?.join(', ') || 'Please check your details.')
+            (validation.data.messages?.join(', ') || 'Please check your details.')
         );
       }
-    } catch (error) {
-      toast.error('Validation failed. Please try again.');
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 422) {
+          const validationErrors = error.response.data.errors;
+          for (const key in validationErrors) {
+            if (validationErrors.hasOwnProperty(key)) {
+              setError(key as FieldKey, validationErrors[key][0]);
+            }
+          }
+          toast.error('Please fix the validation errors and try again.');
+        } else if (error.response?.status === 409) {
+          toast.error(error.response.data.message || 'Address already exists.');
+        } else {
+          toast.error('Validation failed. Please try again.');
+        }
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
       console.error('Validation error:', error);
     }
   };
 
   return (
-    <section className={`rounded-lg w-full h-full shadow-md dark:border-white/20 border border-black/20 p-4 ${className}`}>
-      <div className="rounded-lg shadow-md border dark:border-white/20 border-black/20 p-4 mb-6">
+    <section
+      className={`rounded-lg w-full h-full shadow-md border dark:border-white/20 border-black/20 ${className}`}
+    >
+      <div className="rounded-lg p-4">
         <div className="flex justify-between items-center mb-4">
+          
           <h2 className="text-xl font-semibold text-black dark:text-white">Saved Addresses</h2>
           <button
             onClick={() => setShowForm(!showForm)}
-            className={`
-              text-2xl font-bold
-              rounded-full w-8 h-8 flex items-center justify-center
-              transition
-              bg-yellow-500 text-yellow-900 border border-yellow-600
-              hover:scale-110 duration-300 
-              dark:bg-[#7289da] dark:text-white dark:border-[#4a5fb3]
-            `}
+            className="text-2xl font-bold rounded-full w-8 h-8 flex items-center justify-center transition bg-yellow-500 text-white   hover:scale-110 duration-300 dark:bg-[#7289da] dark:text-white"
             aria-label={showForm ? 'Hide add address form' : 'Show add address form'}
           >
             {showForm ? '−' : '+'}
@@ -109,11 +118,17 @@ export default function UpdateShippingDetailsForm({ className = '' }: Props) {
             {addresses.map((addr) => (
               <li
                 key={addr.id}
-                className="p-3 bg-gray-100 dark:bg-[#444] rounded-md border border-gray-300 dark:border-gray-600"
+                className="p-3 rounded-md border dark:border-white/20 border-black/20"
               >
-                <p className="font-medium">{addr.label ?? 'Address'}</p>
-                <p>{addr.address}, {addr.city}, {addr.zip}</p>
-                {addr.country && <p className="text-sm text-gray-500">{addr.country}</p>}
+                <p className="font-medium text-gray-800 dark:text-gray-100">
+                  {addr.label ?? 'Address'}
+                </p>
+                <p className="text-gray-700 dark:text-gray-300">
+                  {addr.address}, {addr.city}, {addr.zip}
+                </p>
+                {addr.country && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{addr.country}</p>
+                )}
               </li>
             ))}
           </ul>
@@ -121,62 +136,74 @@ export default function UpdateShippingDetailsForm({ className = '' }: Props) {
           <p className="text-sm text-gray-600 dark:text-gray-400">No addresses saved.</p>
         )}
       </div>
-
+        
+        <h2 className="text-xl pl-4 font-semibold text-black dark:text-white">Add Address</h2>
       {showForm && (
-        <form
-          onSubmit={submit}
-          className="rounded-lg shadow-md border dark:border-white/20 border-black/20 p-4 space-y-4"
-        >
-          <h2 className="text-xl font-semibold text-black dark:text-white">Add New Address</h2>
+        <div className="rounded-lg p-4">
+            
+          
+          <form
+            onSubmit={submit}
+            className="rounded-lg shadow-md p-4 space-y-4 border dark:border-white/20 border-black/20"
+            noValidate
+          >
+            
 
-          <div>
-            <InputLabel htmlFor="address" value="Street Address" />
-            <TextInput
-              id="address"
-              name="address"
-              type="text"
-              value={data.address}
-              onChange={(e) => setData('address', e.target.value)}
-              className="mt-1 w-full"
-              autoComplete="street-address"
-              required
-            />
-            <InputError message={errors.address} className="mt-2" />
-          </div>
-
-          <div className="flex gap-4">
-            <div className="w-1/2">
-              <InputLabel htmlFor="city" value="City" />
+            <div>
+              <InputLabel htmlFor="address" value="Street Address" />
               <TextInput
-                id="city"
-                name="city"
-                value={data.city}
-                onChange={(e) => setData('city', e.target.value)}
+                id="address"
+                name="address"
+                type="text"
+                value={data.address}
+                onChange={(e) => setData('address', e.target.value)}
                 className="mt-1 w-full"
-                autoComplete="address-level2"
+                autoComplete="street-address"
                 required
+                aria-invalid={!!errors.address}
+                aria-describedby="address-error"
               />
-              <InputError message={errors.city} className="mt-2" />
+              <InputError message={errors.address} className="mt-2" id="address-error" />
             </div>
-            <div className="w-1/2">
-              <InputLabel htmlFor="zip" value="Postal Code" />
-              <TextInput
-                id="zip"
-                name="zip"
-                value={data.zip}
-                onChange={(e) => setData('zip', e.target.value)}
-                className="mt-1 w-full"
-                autoComplete="postal-code"
-                required
-              />
-              <InputError message={errors.zip} className="mt-2" />
-            </div>
-          </div>
 
-          <PrimaryButton className="rounded-lg" disabled={processing}>
-            Add Address
-          </PrimaryButton>
-        </form>
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <InputLabel htmlFor="city" value="City" />
+                <TextInput
+                  id="city"
+                  name="city"
+                  value={data.city}
+                  onChange={(e) => setData('city', e.target.value)}
+                  className="mt-1 w-full"
+                  autoComplete="address-level2"
+                  required
+                  aria-invalid={!!errors.city}
+                  aria-describedby="city-error"
+                />
+                <InputError message={errors.city} className="mt-2" id="city-error" />
+              </div>
+              <div className="w-1/2">
+                <InputLabel htmlFor="zip" value="Postal Code" />
+                <TextInput
+                  id="zip"
+                  name="zip"
+                  value={data.zip}
+                  onChange={(e) => setData('zip', e.target.value)}
+                  className="mt-1 w-full"
+                  autoComplete="postal-code"
+                  required
+                  aria-invalid={!!errors.zip}
+                  aria-describedby="zip-error"
+                />
+                <InputError message={errors.zip} className="mt-2" id="zip-error" />
+              </div>
+            </div>
+
+            <PrimaryButton className="rounded-lg" disabled={processing}>
+              Add Address
+            </PrimaryButton>
+          </form>
+        </div>
       )}
     </section>
   );

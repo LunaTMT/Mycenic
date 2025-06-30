@@ -19,7 +19,8 @@ export default function GetDetails() {
   const { auth } = usePage().props;
   const Layout = auth ? AuthenticatedLayout : GuestLayout;
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // Dropdown open by default
+  const [isDropdownOpen, setIsDropdownOpen] = useState(true);
 
   const { data, setData, processing, errors } = useForm<Record<FieldKey, string>>({
     name: '',
@@ -83,22 +84,13 @@ export default function GetDetails() {
   return (
     <>
 
-    
-      <button
-        type="button"
-        onClick={() => setIsDropdownOpen(prev => !prev)}
-        className="w-full text-sm text-left font-semibold text-gray-800 dark:text-gray-200 flex justify-between"
-        aria-expanded={isDropdownOpen}
-      >
-        Set Address <ArrowIcon w="24" h="24" isOpen={isDropdownOpen} />
-      </button>
 
       <motion.div
         initial={{ height: 0, opacity: 0 }}
         animate={{ height: isDropdownOpen ? 'auto' : 0, opacity: isDropdownOpen ? 1 : 0 }}
         exit={{ height: 0, opacity: 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
-        className=''
+        className=""
       >
         <form onSubmit={submit} className="flex flex-col gap-3">
           {inputs.slice(0, 4).map(({ id, label, ...rest }) => (

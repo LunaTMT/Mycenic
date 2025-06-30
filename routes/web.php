@@ -10,8 +10,9 @@ use Inertia\Inertia;
 use App\Models\{Item, Order};
 
 // Controllers
-use App\Http\Controllers\{
 
+use App\Http\Controllers\{
+    AddressController,
     ReturnController,
     AboutController,
     CartController,
@@ -79,14 +80,20 @@ Route::get('login/{provider}/callback', [SocialAuthController::class, 'handlePro
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::patch('/profile/shipping', [ProfileController::class, 'updateShipping'])->name('profile.update-shipping');
-
+    
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+    Route::post('/profile/addresses', [ProfileController::class, 'storeAddress'])->name('profile.addresses.store');
 
+    Route::get('/profile/addresses', [AddressController::class, 'index'])->name('profile.addresses.index');
+
+    
+    
+    
     Route::get('/profile/shipping-details', function () {
         $user = auth()->user();
 
@@ -97,6 +104,15 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('profile.shipping-details');
 });
+
+
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/user/addresses', [AddressController::class, 'index'])->name('user.addresses.index');
+    Route::post('/user/addresses', [AddressController::class, 'store'])->name('user.addresses.store');
+});
+
 
 
 /**

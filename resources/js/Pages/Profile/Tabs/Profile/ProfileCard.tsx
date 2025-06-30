@@ -1,7 +1,8 @@
-import { usePage, useForm } from '@inertiajs/react';
+import { usePage, useForm, router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { FaUpload } from 'react-icons/fa';
+
 
 import DeleteUserForm from '../../Partials/DeleteUserForm';
 
@@ -21,9 +22,7 @@ export default function ProfileCard() {
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data, setData, post, processing, errors, reset } = useForm<{ avatar: File | null }>({
-    avatar: null,
-  });
+  const { post, processing, errors, reset } = useForm();
 
   useEffect(() => {
     if (user.avatar) {
@@ -44,26 +43,23 @@ export default function ProfileCard() {
         useWebWorker: true,
       });
 
-      setData('avatar', compressedFile);
       setPreview(URL.createObjectURL(compressedFile));
+
+      const formData = new FormData();
+      formData.append('avatar', compressedFile);
+
+      // Use Inertia router.post to send FormData
+      router.post('/profile/avatar', formData, {
+        forceFormData: true,
+        onSuccess: () => {
+          setPreview(null);
+          window.location.reload();
+        },
+        onError: (errors) => {
+          console.error('Avatar upload errors:', errors);
+        },
+      });
     }
-  }
-
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!data.avatar) return;
-
-    post('/profile/avatar', {
-      forceFormData: true,
-      onSuccess: () => {
-        setPreview(null);
-        reset('avatar');
-        window.location.reload();
-      },
-      onError: (errors) => {
-        console.error('Avatar upload errors:', errors);
-      },
-    });
   }
 
   return (
@@ -71,71 +67,69 @@ export default function ProfileCard() {
       className="
         relative
         w-full h-full min-h-[180px] border border-gray-300 dark:border-gray-700 shadow-md rounded-lg p-4
-        bg-gradient-to-b from-yellow-300/10 to-yellow-300
-        dark:from-[#7289da] dark:to-[#4a5fb3]
+        bg-yellow-500
+        dark:bg-[#7289da]
         text-black dark:text-white
         flex flex-row justify-between items-center gap-8
+
+        transform transition-all duration-300
+        hover:scale-[1.02]
+        hover:shadow-[0_8px_20px_rgba(255,215,0,0.6)]
+        dark:hover:shadow-[0_8px_20px_rgba(115,137,218,0.6)]
+        hover:brightness-105 dark:hover:brightness-110
       "
     >
-      {/* Left side: Avatar and user info grouped */}
+      {/* Left: Avatar and user info */}
       <div className="flex items-center gap-6 flex-1">
-        {/* Avatar & upload */}
-        <form onSubmit={onSubmit} className="relative flex flex-col items-start">
-          {(preview || avatarUrl) && (
-            <img
-              src={preview || avatarUrl}
-              alt={`${user.name}'s Avatar`}
-              className="w-40 aspect-square rounded-lg object-cover border-4 border-white dark:border-[#424549] shadow cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-              title="Click to change avatar"
+        <div className="flex flex-col items-start">
+          {/* Avatar and icon */}
+          <div className="relative">
+            {(preview || avatarUrl) && (
+              <img
+                src={preview || avatarUrl}
+                alt={`${user.name}'s Avatar`}
+                className="w-40 aspect-square rounded-lg object-cover border-4 border-white dark:border-[#424549] shadow cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                title="Click to change avatar"
+              />
+            )}
+
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={onChangeAvatar}
             />
-          )}
 
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={onChangeAvatar}
-          />
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={processing}
-            className="
-              absolute bottom-2 right-2 flex items-center justify-center w-10 h-10
-              bg-black/75 rounded-full shadow-md
-              hover:bg-black/90
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition
-            "
-            title={processing ? 'Uploading...' : 'Change profile picture'}
-          >
-            <FaUpload className="text-white w-5 h-5" />
-          </button>
-
-          {data.avatar && (
+            {/* Upload icon overlay */}
             <button
-              type="submit"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
               disabled={processing}
-              className="
-                mt-4 px-6 py-2 bg-green-600 rounded-lg text-white font-semibold shadow-md
-                hover:bg-green-700
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition
-              "
+              className={`
+                p-3 rounded-full
+                font-Poppins text-white text-center flex justify-center items-center
+                bg-yellow-500
+                dark:bg-[#7289da]
+                ${processing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                absolute bottom-2 right-2
+              `}
+              title={processing ? 'Uploading...' : 'Change profile picture'}
             >
-              {processing ? 'Uploading...' : 'Upload'}
+              <FaUpload className="text-white w-5 h-5" />
             </button>
-          )}
+          </div>
 
+          {/* Show error if any */}
           {errors.avatar && (
-            <p className="text-red-500 text-xs mt-1 font-medium dark:text-red-400">{errors.avatar}</p>
+            <p className="text-red-500 text-xs mt-2 font-medium dark:text-red-400">
+              {errors.avatar}
+            </p>
           )}
-        </form>
+        </div>
 
-        {/* User info next to avatar */}
+        {/* User info */}
         <div className="flex flex-col items-start text-left space-y-2 max-w-md">
           <h2 className="text-2xl font-semibold">{user.name}</h2>
 
@@ -154,7 +148,7 @@ export default function ProfileCard() {
         </div>
       </div>
 
-      {/* Right bottom corner: DeleteUserForm */}
+      {/* Right corner: DeleteUserForm */}
       <div className="absolute bottom-4 right-4 w-40">
         <DeleteUserForm />
       </div>

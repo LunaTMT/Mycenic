@@ -216,103 +216,90 @@
         }
         
         
-        public function getShippingRates(Request $request)
-        {
-            try {
+    public function getShippingRates(Request $request)
+    {
+        try {
+            $request->validate([
+                'weight' => 'required|numeric|min:0.1',
+                'address' => 'required|string',
+                'city' => 'required|string',
+                'zip' => 'required|string',
+            ]);
 
-                $request->validate([
-                    'weight' => 'required|numeric|min:0.1',
-                    'name' => 'required|string',
-                    'address' => 'required|string',
-                    'city' => 'required|string',
-                    'zip' => 'required|string',
-                ]);
-                
-                // Log incoming request data
-                Log::info('Received shipping estimate request', [
-                    'weight' => $request->weight,
-                    'name' => $request->name,
-                    'address' => $request->address,
-                    'city' => $request->city,
-                    'zip' => $request->zip,
-                ]);
-        
-                // Set the Shippo API key
-                Log::info('Setting Shippo API key');
-                Shippo::setApiKey(env('SHIPPO_API_KEY'));
-        
-                // Define sender address
-                $fromAddress = [
-                    'name' => 'Mycenic Ltd',
-                    'street1' => '123 Main Street',
-                    'city' => 'London',
-                    'zip' => 'E1 6AN',
-                    'country' => 'GB'
-                ];
-                Log::info('From address configured', $fromAddress);
-        
-                // Define receiver address
-                $toAddress = [
-                    'name' => $request->name,
-                    'street1' => $request->address,
-                    'city' => $request->city,
-                    'zip' => $request->zip,
-                    'country' => 'GB'
-                ];
-                Log::info('To address configured', $toAddress);
-        
-                // Define parcel
-                $parcel = [
-                    'length' => 10,
-                    'width' => 15,
-                    'height' => 5,
-                    'distance_unit' => 'cm',
-                    'weight' => $request->weight,
-                    'mass_unit' => 'g'
-                ];
-                Log::info('Parcel details', $parcel);
-        
-                // Create shipment
-                Log::info('Creating shipment with Shippo...');
-                $shipment = Shippo_Shipment::create([
-                    'address_from' => $fromAddress,
-                    'address_to' => $toAddress,
-                    'parcels' => [$parcel],
-                    'async' => false
-                ]);
-                Log::info('Shipment created', ['shipment_object_id' => $shipment['object_id'] ?? 'N/A']);
-        
-                // Parse rates
-                $parsedRates = [];
-                if (!empty($shipment['rates'])) {
-                    foreach ($shipment['rates'] as $rate) {
-                        $parsedRate = [
-                            'amount' => $rate['amount'],
-                            'currency' => $rate['currency'],
-                            'provider' => $rate['provider'],
-                            'service' => $rate['servicelevel']['name'] ?? 'Unknown',
-                            'object_id' => $rate['object_id']
-                        ];
-                        $parsedRates[] = $parsedRate;
-                        Log::info('Rate found', $parsedRate);
-                    }
-                } else {
-                    Log::warning('No rates returned from Shippo');
+            $userName = auth()->user()?->name ?? 'Customer';
+
+            // Log incoming request data
+            Log::info('Received shipping estimate request', [
+                'weight' => $request->weight,
+                'name' => $userName,
+                'address' => $request->address,
+                'city' => $request->city,
+                'zip' => $request->zip,
+            ]);
+
+            Shippo::setApiKey(env('SHIPPO_API_KEY'));
+
+            $fromAddress = [
+                'name' => 'Mycenic Ltd',
+                'street1' => '123 Main Street',
+                'city' => 'London',
+                'zip' => 'E1 6AN',
+                'country' => 'GB'
+            ];
+
+            $toAddress = [
+                'name' => $userName,
+                'street1' => $request->address,
+                'city' => $request->city,
+                'zip' => $request->zip,
+                'country' => 'GB'
+            ];
+
+            $parcel = [
+                'length' => 10,
+                'width' => 15,
+                'height' => 5,
+                'distance_unit' => 'cm',
+                'weight' => $request->weight,
+                'mass_unit' => 'g'
+            ];
+
+            $shipment = Shippo_Shipment::create([
+                'address_from' => $fromAddress,
+                'address_to' => $toAddress,
+                'parcels' => [$parcel],
+                'async' => false
+            ]);
+
+            $parsedRates = [];
+
+            if (!empty($shipment['rates'])) {
+                foreach ($shipment['rates'] as $rate) {
+                    $parsedRate = [
+                        'amount' => $rate['amount'],
+                        'currency' => $rate['currency'],
+                        'provider' => $rate['provider'],
+                        'service' => $rate['servicelevel']['name'] ?? 'Unknown',
+                        'object_id' => $rate['object_id']
+                    ];
+                    $parsedRates[] = $parsedRate;
+                    Log::info('Rate found', $parsedRate);
                 }
-        
-                Log::info('Parsed shipping rates successfully');
-        
-                return response()->json($parsedRates);
-        
-            } catch (\Exception $e) {
-                Log::error('Error fetching shipping estimate', [
-                    'message' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                return response()->json(['error' => 'Unable to fetch shipping estimate'], 500);
+            } else {
+                Log::warning('No rates returned from Shippo');
             }
+
+            return response()->json($parsedRates);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching shipping estimate', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Unable to fetch shipping estimate'], 500);
         }
-        
+    }
+
 
 
 

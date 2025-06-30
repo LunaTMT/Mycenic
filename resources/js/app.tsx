@@ -1,57 +1,56 @@
-import '../css/app.css';
-import './bootstrap';
+    import '../css/app.css';
+    import './bootstrap';
 
-import { createInertiaApp } from '@inertiajs/react';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+    import { createInertiaApp } from '@inertiajs/react';
+    import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
-import { createRoot } from 'react-dom/client';
+    import { createRoot } from 'react-dom/client';
 
-import { CartProvider } from './Contexts/Shop/Cart/CartContext';
-import { NavProvider } from './Contexts/Layout/NavContext';  
-import { DarkModeProvider } from './Contexts/Layout/DarkModeContext';
+    import { NavProvider } from './Contexts/Layout/NavContext';
+    import { DarkModeProvider } from './Contexts/Layout/DarkModeContext';
+    import { CartProvider } from './Contexts/Shop/Cart/CartContext'; // Import CartProvider
+    import { ShippingProvider } from './Contexts/Shop/Cart/ShippingContext';
 
-import { GoogleOAuthProvider } from '@react-oauth/google';
+    import { GoogleOAuthProvider } from '@react-oauth/google';
 
-import Lenis from 'lenis';
+    import Lenis from 'lenis';
 
-// Import Inertia
-import { Inertia } from '@inertiajs/inertia';
+    // Import Inertia
+    import { Inertia } from '@inertiajs/inertia';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+    const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-// Initialize Lenis
-const lenis = new Lenis({
-    autoRaf: true,
-});
+    // Initialize Lenis
+    const lenis = new Lenis({
+        autoRaf: true,
+    });
 
-createInertiaApp({
-    
-    title: (title) => `${title} - ${appName}`,
-    resolve: (name) =>
-    resolvePageComponent(`./Pages/${name}.tsx`, {
-        ...import.meta.glob('./Pages/**/*.tsx'),
-    }),
+    createInertiaApp({
+        title: (title) => `${title} - ${appName}`,
+        resolve: (name) =>
+            resolvePageComponent(`./Pages/${name}.tsx`, {
+                ...import.meta.glob('./Pages/**/*.tsx'),
+            }),
 
-    setup({ el, App, props }) {
-        const root = createRoot(el);
-        root.render(
-            <DarkModeProvider>
-                <NavProvider>  
-                    <CartProvider>  
+        setup({ el, App, props }) {
+            const root = createRoot(el);
+            root.render(
+                <DarkModeProvider>
+                    <NavProvider>
                         <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-                                <App {...props} />
+                            {/* Wrap CartProvider and AddressesProvider around the App */}
+                            <CartProvider>
+                                <ShippingProvider>
+                                    <App {...props} />                            
+                                </ShippingProvider>
+                            </CartProvider>                        
                         </GoogleOAuthProvider>
-                    </CartProvider>
-                </NavProvider>
-            </DarkModeProvider> 
-        );
+                    </NavProvider>
+                </DarkModeProvider>
+            );
 
-        Inertia.on('navigate', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          });
-          
-    },
-});
-
-
-//move cart provider closer to component 
+            Inertia.on('navigate', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        },
+    });

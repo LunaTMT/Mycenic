@@ -29,9 +29,9 @@ class CheckoutController extends Controller
                 'weight' => 'required|numeric|min:0',
                 'discount' => 'nullable|numeric|min:0',
                 'shippingCost' => 'required|numeric|min:0',
-                'shippingDetails' => 'required|array',
+                'shippingDetails' => 'required|array',  // Ensure it's an array
                 'paymentIntentId' => 'required|string',
-                'selectedShippingRate' => 'required|array',
+                'selectedShippingRate' => 'required|array',  // Ensure it's an array
                 'selectedShippingRate.amount' => 'required|string',
                 'selectedShippingRate.provider' => 'required|string',
                 'selectedShippingRate.service' => 'required|string',
@@ -40,14 +40,13 @@ class CheckoutController extends Controller
             $this->log('info', 'Validation successful', $validated);
         } catch (\Illuminate\Validation\ValidationException $ve) {
             $this->log('error', 'Validation failed', $ve->errors());
-            return Inertia::render('Shop', [
-                'flash.error' => 'Validation error: ' . json_encode($ve->errors()),
-            ]);
+            return back()->with('flash.error', 'Validation error: ' . json_encode($ve->errors()));
         }
 
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
         try {
+            // Retrieve Payment Intent using the ID from the request
             $intent = PaymentIntent::retrieve($validated['paymentIntentId']);
             $this->log('info', 'PaymentIntent retrieved', ['id' => $intent->id, 'status' => $intent->status]);
 
@@ -56,14 +55,13 @@ class CheckoutController extends Controller
                     'id' => $intent->id,
                     'status' => $intent->status,
                 ]);
-                return Inertia::render('Shop', [
-                    'flash.error' => 'Payment did not complete. Please try again.'
-                ]);
+                return back()->with('flash.error', 'Payment did not complete. Please try again.');
             }
 
             $charge = $intent->charges->data[0] ?? null;
             $this->log('info', 'Payment charge details', ['charge' => $charge]);
 
+            // Storing session data for checkout
             $this->log('info', 'Storing session data for checkout', [
                 'cart' => json_decode($validated['cart'], true),
                 'total' => $validated['total'],
@@ -75,7 +73,7 @@ class CheckoutController extends Controller
                 'selectedShippingRate' => $validated['selectedShippingRate'],
             ]);
 
-         
+            // Store data in session
             session([
                 'cart'                 => json_decode($validated['cart'], true),
                 'total'                => $validated['total'],
@@ -93,21 +91,23 @@ class CheckoutController extends Controller
                 'selectedShippingRate' => $validated['selectedShippingRate'],
             ]);
 
+            // Check if legal agreement was provided and store it in the session
             if (isset($validated['legalAgreement'])) {
                 session(['legalAgreement' => $validated['legalAgreement']]);
                 $this->log('info', 'Legal agreement stored in session', ['legalAgreement' => $validated['legalAgreement']]);
             }
 
+            // Complete the checkout process successfully
             $this->log('info', 'Checkout process completed successfully');
             return redirect()->route('checkout.success');
-
         } catch (\Exception $e) {
+            // Log error and return error message
             $this->log('error', 'Checkout process failed', ['error' => $e->getMessage()]);
-            return Inertia::render('Shop', [
-                'flash.error' => 'There was a problem processing your payment. Please try again.'
-            ]);
+            return back()->with('flash.error', 'Checkout process failed: ' . $e->getMessage());
         }
     }
+
+
 
 
 

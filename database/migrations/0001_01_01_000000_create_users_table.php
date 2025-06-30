@@ -38,13 +38,13 @@ return new class extends Migration
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('label')->nullable(); // e.g. 'Home', 'Work'
             $table->string('address')->nullable();
             $table->string('city')->nullable();
             $table->string('zip')->nullable();
-            $table->string('country')->nullable();
+            $table->string('country')->default('UK'); // Default to UK
             $table->timestamps();
         });
+
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

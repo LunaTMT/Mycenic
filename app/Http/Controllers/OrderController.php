@@ -98,13 +98,9 @@ class OrderController extends Controller
             return response()->json(['orders' => $orders]);
         }
 
-        // Otherwise return Inertia view for normal web request
-        return Inertia::render('Orders/CustomerOrders', [
-            'orders' => $orders,
-            'message' => session('message'),
-            'clearCart' => session('clearCart'),
-        ]);
+        return redirect()->route('profile.index')->with('initialTab', 'orders');
     }
+
 
 
     /**

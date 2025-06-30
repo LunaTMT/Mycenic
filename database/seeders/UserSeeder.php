@@ -21,7 +21,6 @@ class UserSeeder extends Seeder
         // Insert address(es) for admin user into addresses table
         DB::table('addresses')->insert([
             'user_id' => $admin->id,
-            'label' => 'Home',
             'address' => '123 Baker Street',
             'city' => 'London',
             'zip' => 'NW1 6XE',

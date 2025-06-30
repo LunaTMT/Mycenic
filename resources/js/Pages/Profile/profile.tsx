@@ -6,10 +6,8 @@ import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import TabNavigation, { TabKey } from "./Components/TabNavigation";
 import ProfileTabContent from "./Tabs/Profile/ProfileTabContent";
-import UpdateShippingDetailsForm from "./Partials/UpdateShippingDetailsForm";
 import CustomerOrders from "./Tabs/Orders/CustomerOrders";
 
-// Placeholder returns component (replace with your actual component)
 function ReturnsTabContent() {
   return (
     <div className="text-center text-gray-700 dark:text-gray-300">
@@ -22,13 +20,15 @@ function ReturnsTabContent() {
 interface Props {
   mustVerifyEmail: boolean;
   status?: string;
+  initialTab?: TabKey; // optional initial tab prop
 }
 
-export default function Edit({ mustVerifyEmail, status }: Props) {
-  const [activeTab, setActiveTab] = useState<TabKey>("profile");
+export default function Edit({ mustVerifyEmail, status, initialTab }: Props) {
+  // Default to 'profile' if initialTab is not provided
+  console.log(initialTab);
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab ?? "profile");
 
-  // Store orders locally
-  const [orders, setOrders] = useState<any[] | null>(null); // Replace any with your order type
+  const [orders, setOrders] = useState<any[] | null>(null);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
 
@@ -38,7 +38,7 @@ export default function Edit({ mustVerifyEmail, status }: Props) {
       setOrdersError(null);
 
       axios
-        .get("/orders") // Change to your actual backend endpoint
+        .get("/orders")
         .then((res) => setOrders(res.data.orders || []))
         .catch(() => {
           setOrders([]);
@@ -52,17 +52,6 @@ export default function Edit({ mustVerifyEmail, status }: Props) {
     <AuthenticatedLayout>
       <Head title="Profile" />
 
-      <div className="fixed inset-0 z-0 overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
-        </video>
-      </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
         <div className="w-full bg-white dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl">
@@ -99,8 +88,6 @@ export default function Edit({ mustVerifyEmail, status }: Props) {
                   )}
                 </>
               )}
-
- 
 
               {activeTab === "returns" && <ReturnsTabContent />}
             </motion.div>

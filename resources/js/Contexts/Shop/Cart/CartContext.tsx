@@ -9,6 +9,7 @@ import React, {
 import axios from "axios";
 import { router } from "@inertiajs/react";
 
+
 // --- Types --------------------------------------------------------
 
 export interface CartItem {
@@ -22,22 +23,6 @@ export interface CartItem {
   addedAt?: number;
   category: string;
   isPsyilocybinSpores: boolean;
-}
-
-export interface ShippingDetails {
-  name: string;
-  phone: string;
-  address: string;
-  city: string;
-  zip: string;
-  email: string;
-}
-
-export interface ShippingRate {
-  id: string;       
-  amount: string;
-  provider: string;
-  service: string;
 }
 
 export interface PaymentDetails {
@@ -61,21 +46,6 @@ interface CartContextType {
   total: string;
   weight: number;
 
-  rates: ShippingRate[];
-  fetchShippingEstimate: () => Promise<void>;
-  fetchShippingRates: () => Promise<void>;
-  shippingCostEstimate: [number, number];
-  setShippingCostEstimate: React.Dispatch<React.SetStateAction<[number, number]>>;
-
-  shippingDetails: ShippingDetails | null;
-  setShippingDetails: React.Dispatch<React.SetStateAction<ShippingDetails | null>>;
-
-  shippingCost: number;
-  setShippingCost: React.Dispatch<React.SetStateAction<number>>;
-
-  selectedShippingRate: number;
-  setSelectedShippingRate: React.Dispatch<React.SetStateAction<number>>;
-
   addToCart: (item: CartItem, quantity: number) => void;
   removeFromCart: (id: number) => Promise<void>;
   updateCartQuantity: (id: number, quantity: number) => void;
@@ -90,7 +60,7 @@ interface CartContextType {
 
   isPromoCodeDropdownOpen: boolean;
   togglePromoCodeDropdown: () => void;
-  setIsPromoCodeDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsPromoCodeDropdown: React.Dispatch<React.SetStateAction<boolean>>;
 
   promoCode: string;
   setPromoCode: React.Dispatch<React.SetStateAction<string>>;
@@ -101,7 +71,7 @@ interface CartContextType {
   createOrder: (
     paymentIntentId: string,
     legalAgreement: boolean
-  ) => void; // The function signature
+  ) => void;
 
   getStock: (id: number) => Promise<number>;
   changeItemQuantity: (id: number, newQuantity: number) => Promise<void>;
@@ -136,37 +106,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isPromoCodeDropdownOpen, setIsPromoCodeDropdownOpen] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
-  const [rates, setRates] = useState<ShippingRate[]>([]);
-  const [shippingCostEstimate, setShippingCostEstimate] = useState<[number, number]>([0, 0]);
+  
 
-  const [shippingCost, setShippingCost] = useState<number>(() => {
-    const stored = localStorage.getItem("shippingCost");
-    return stored ? parseFloat(stored) : 0;
-  });
-
-  // NEW: selected shipping rate index state
-  const [selectedShippingRate, setSelectedShippingRate] = useState<number>(0);
-
-  useEffect(() => {
-    localStorage.setItem("shippingCost", shippingCost.toString());
-  }, [shippingCost]);
-
-  const [shippingDetails, setShippingDetails] = useState<ShippingDetails | null>(() => {
-    try {
-      const stored = localStorage.getItem("shippingDetails");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  useEffect(() => {
-    if (shippingDetails) {
-      localStorage.setItem("shippingDetails", JSON.stringify(shippingDetails));
-    } else {
-      localStorage.removeItem("shippingDetails");
-    }
-  }, [shippingDetails]);
 
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
@@ -187,10 +128,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const total = useMemo(() => {
     const base = Number(subtotal) - Number(discountAmount);
-
-    console.log(base, shippingCost);
-    return (base + shippingCost).toFixed(2);
-  }, [subtotal, discountAmount, shippingCost, shippingCostEstimate]);
+    return (base).toFixed(2);
+  }, [subtotal, discountAmount]);
 
   const hasPsyilocybinSporeSyringe = useMemo(
     () => cart.some((item) => item.category === "SPORES" && item.isPsyilocybinSpores),
@@ -205,6 +144,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       clearCart();
     }
   }, [cart]);
+
+  
+
+
 
   const triggerScale = () => {
     setScaled(true);
@@ -221,7 +164,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addToCart = async (item: CartItem, quantity: number) => {
-    console.log("cart context ", item);
     try {
       const stock = await getStock(item.id);
       if (quantity > stock) return;
@@ -257,19 +199,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             isPsyilocybinSpores: item.isPsyilocybinSpores ?? false,
           },
         ];
-      });
-
-      console.log("🛒 Cart contents:");
-      cart.forEach((item, index) => {
-        console.log(`Item ${index + 1}:`, {
-          id: item.id,
-          name: item.name,
-          category: item.category,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.total,
-          isPsyilocybinSpores: item.isPsyilocybinSpores,
-        });
       });
 
       triggerScale();
@@ -333,61 +262,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const createOrder = (
-    paymentIntentId: string,
-    legalAgreement: boolean
-  ) => {
-    if (!cart.length) return;
+  
 
-    if (!shippingDetails) {
-      console.error("Missing shipping details");
-      return;
-    }
-    
-    console.log("rates : ", rates)
-    if (rates.length === 0) {
-      console.error("No shipping rates available");
-      return;
-    }
 
-    const selectedRate = rates[selectedShippingRate];
-     console.log(selectedRate)
-    if (!selectedRate) {
-      console.error("Selected shipping rate not found");
-      return;
-    }
-
-    const data: any = {
-      cart: JSON.stringify(cart),
-      total,
-      subtotal,
-      weight,
-      discount: promoDiscount,
-      shippingDetails,
-      paymentIntentId,
-      shippingCost,
-      selectedShippingRate: selectedRate, // or id if you have it
-    };
-    console.log("cartcontext", data);
-
-    if (hasPsyilocybinSporeSyringe) {
-      data.legalAgreement = legalAgreement;
-    }
-
-    router.visit(route("checkout.process"), {
-      method: "post",
-      data,
-      onFinish: () => {
-        // Empty the cart on successful checkout
-        setCart([]);
-        console.log("Cart has been emptied.");
-      },
-    });
-    
-  };
 
   const handlePromoCodeValidation = () => {
-    console.log(promoCode, " cartcontext");
     router.post(
       route("promo.validate"),
       { promoCode },
@@ -402,59 +281,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
   };
 
-  const fetchShippingEstimate = async () => {
-    if (cart.length == 0) {
-      return;
-    }
-
-    console.log("getting estimates");
-    try {
-      const { data } = await axios.post(route("cart.shipping.estimate"), {
-        weight,
-      });
-      if (Array.isArray(data) && data.length) {
-        const filtered = data.map((r: any) => ({
-          amount: r.amount,
-          provider: r.provider,
-          service: r.service,
-        }));
-        const ams = filtered.map((r) => parseFloat(r.amount));
-        setShippingCostEstimate([Math.min(...ams), Math.max(...ams)]);
-      } else {
-        setShippingCostEstimate([0, 0]);
-      }
-    } catch (e) {
-      console.error("Error fetching shipping estimate:", e);
-      setShippingCostEstimate([0, 0]);
-    }
-  };
-
-  const fetchShippingRates = async () => {
-    try {
-      const { data } = await axios.post(route("cart.shipping.rates"), {
-        weight,
-        ...shippingDetails,
-      });
-
-      if (Array.isArray(data) && data.length > 0) {
-        const filtered: ShippingRate[] = data.map((r: any) => ({
-          id: r.object_id,          
-          amount: r.amount,
-          provider: r.provider,
-          service: r.service,
-        }));
-
-        setRates(filtered);
-
-        const numericAmounts = filtered.map((r) => parseFloat(r.amount));
-        const smallest = Math.min(...numericAmounts);
-        setShippingCost(smallest);
-      }
-    } catch (e) {
-      console.error("Error fetching shipping rates:", e);
-    }
-  };
-
+  
 
   return (
     <CartContext.Provider
@@ -467,17 +294,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         discountAmount,
         total,
         weight,
-        rates,
-        fetchShippingEstimate,
-        fetchShippingRates,
-        shippingCostEstimate,
-        setShippingCostEstimate,
-        shippingDetails,
-        setShippingDetails,
-        shippingCost,
-        setShippingCost,
-        selectedShippingRate,
-        setSelectedShippingRate,
         addToCart,
         removeFromCart,
         updateCartQuantity,
@@ -495,7 +311,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         promoDiscount,
         setPromoDiscount,
         handlePromoCodeValidation,
-        createOrder,
+
         getStock,
         changeItemQuantity,
         paymentDetails,
