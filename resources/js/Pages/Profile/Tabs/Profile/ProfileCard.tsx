@@ -2,9 +2,7 @@ import { usePage, useForm, router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { FaUpload } from 'react-icons/fa';
-
-
-import DeleteUserForm from '../../Partials/DeleteUserForm';
+import DeleteUserForm from './Partials/DeleteUserForm';
 
 interface User {
   name: string;
@@ -66,10 +64,10 @@ export default function ProfileCard() {
     <div
       className="
         relative
-        w-full h-full min-h-[180px] border border-gray-300 dark:border-gray-700 shadow-md rounded-lg p-4
+        w-full h-full border border-gray-300 dark:border-gray-700 shadow-md rounded-lg p-4
         bg-yellow-500
         dark:bg-[#7289da]
-        text-black dark:text-white
+        text-white dark:text-white
         flex flex-row justify-between items-center gap-8
 
         transform transition-all duration-300
@@ -88,7 +86,7 @@ export default function ProfileCard() {
               <img
                 src={preview || avatarUrl}
                 alt={`${user.name}'s Avatar`}
-                className="w-40 aspect-square rounded-lg object-cover border-4 border-white dark:border-[#424549] shadow cursor-pointer"
+                className="w-30 aspect-square rounded-lg object-cover border-4 border-white dark:border-[#424549] shadow cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
                 title="Click to change avatar"
               />
@@ -131,16 +129,16 @@ export default function ProfileCard() {
 
         {/* User info */}
         <div className="flex flex-col items-start text-left space-y-2 max-w-md">
-          <h2 className="text-2xl font-semibold">{user.name}</h2>
+          <h2 className="text-2xl font-semibold text-white">{user.name}</h2>
 
           {user.email && (
-            <p className="text-sm break-words opacity-90 dark:opacity-80">{user.email}</p>
+            <p className="text-sm break-words opacity-90 dark:opacity-80 text-white">{user.email}</p>
           )}
 
           {user.created_at && (
-            <p className="text-xs opacity-80 dark:opacity-70">
+            <p className="text-xs opacity-80 dark:opacity-70 text-white">
               Joined{' '}
-              <span className="font-medium">
+              <span className="font-medium text-white">
                 {new Date(user.created_at).toLocaleDateString()}
               </span>
             </p>
@@ -148,10 +146,7 @@ export default function ProfileCard() {
         </div>
       </div>
 
-      {/* Right corner: DeleteUserForm */}
-      <div className="absolute bottom-4 right-4 w-40">
-        <DeleteUserForm />
-      </div>
+
     </div>
   );
 }

@@ -53,8 +53,8 @@ export default function Edit({ mustVerifyEmail, status, initialTab }: Props) {
       <Head title="Profile" />
 
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
-        <div className="w-full bg-white dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl">
+      <div className="relative z-10 w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
+        <div className="w-full h-[88vh]  dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl">
           <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
           <AnimatePresence mode="wait" initial={false}>
@@ -64,7 +64,7 @@ export default function Edit({ mustVerifyEmail, status, initialTab }: Props) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-8 space-y-8 min-h-[400px]"
+              className="p-8 h-full "
             >
               {activeTab === "profile" && (
                 <ProfileTabContent

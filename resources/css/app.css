@@ -149,98 +149,42 @@
   );
 }
 
-
-
-
-/* Swiper Slide */
-.swiper-slide {
-text-align: center;
-display: flex;
-justify-content: center;
-align-items: center;
-
-
-}
-
-
-
-
-/* Default swiper-pagination bullet */
-.swiper-pagination-bullet {
-background-color: black !important;  /* Default bullet color for light mode */
-}
-
-/* Dark Mode swiper-pagination bullet */
-.dark .swiper-pagination-bullet {
-background-color: white !important;  /* White bullet in dark mode */
-}
-
-/* Active swiper-pagination bullet */
-.swiper-pagination-bullet-active {
-background-color: rgba(0, 0, 0, 0.50) !important;  /* Semi-transparent black in light mode */
-}
-
-/* Dark Mode active swiper-pagination bullet */
-.dark .swiper-pagination-bullet-active {
-background-color: white !important;  /* White active bullet in dark mode */
-}
-
-/* Swiper buttons (prev/next) */
-.swiper-button-prev,
-.swiper-button-next {
-color: rgba(0, 0, 0, 0.25) !important; /* Black with 50% transparency for light mode */
-display: flex;
-align-items: center;
-justify-content: center;
-}
-
-/* Dark Mode swiper buttons */
-.dark .swiper-button-prev,
-.dark .swiper-button-next {
-color: rgba(255, 255, 255, 0.5) !important; /* White with 50% transparency for dark mode */
-}
-
-/* You can also add a dark background to the swiper container */
-.dark .swiper-container {
-background-color: rgba(255, 255, 255, 0.5);  
-}
-
-
-/* Light Mode Scrollbar */
+/* Scrollbar styling - Light Mode */
 ::-webkit-scrollbar {
-  width: 8px;
-  background-color: white;
+  width: 5px; /* thinner */
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar-track {
-  background: white;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: rgba(136, 136, 136, 0.7); /* semi-transparent gray */
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: rgba(85, 85, 85, 0.9); /* darker on hover */
 }
 
-/* Dark Mode Scrollbar */
+/* Scrollbar styling - Dark Mode (switched colors) */
 .dark ::-webkit-scrollbar {
-  background-color: #1e2124; /* scrollbar background (was thumb) */
+  width: 5px; /* keep it thin here too */
+  background-color: #424549;
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1e2124; /* scrollbar track (was thumb) */
+  background: #424549;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #424549; /* scrollbar thumb (was background) */
+  background: rgba(30, 33, 36, 0.8); /* visible dark thumb with some opacity */
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #5a5e63; /* slightly lighter on hover */
+  background: #1e2124; /* solid darker on hover */
 }

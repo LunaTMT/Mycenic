@@ -16,16 +16,13 @@ interface Props {
 export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>("details");
 
-  // Debug: Log auth to see its shape
   useEffect(() => {
     console.log("Auth prop received:", auth);
   }, [auth]);
 
   if (!isExpanded) return null;
 
-  // Safer admin check
   const isAdmin = Boolean(auth?.user?.isAdmin || auth?.isAdmin || auth?.admin);
-
   const isReturnable = order.returnable === true;
   const discountAmount =
     order.discount > 0 ? ((order.discount / 100) * order.subtotal).toFixed(2) : "0.00";
@@ -37,6 +34,15 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
     ...(isAdmin ? [{ key: "customer", label: "Customer" }] : []),
   ];
 
+  const tabClass = (key: TabKey) =>
+    `px-4 py-2 font-semibold transition-transform duration-300 border-b-2 border-transparent
+     ${
+       activeTab === key
+         ? "text-yellow-500 dark:text-[#7289da]"
+         : "text-gray-600 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-[#7289da]"
+     }
+     hover:scale-[1.03]`;
+
   return (
     <AnimatePresence>
       <motion.div
@@ -47,28 +53,25 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
         className="w-full bg-white dark:bg-[#424549] border border-t-0 border-black/20 dark:border-white/20 rounded-b-xl shadow-2xl overflow-hidden"
       >
         <div className="p-4">
-          {/* Tabs with left and right groups */}
-          <div className="flex justify-between border-b border-gray-300 dark:border-gray-600 mb-4">
-            {/* Left group */}
+          {/* Tabs */}
+          <div className="flex justify-between border-b border-black/20 dark:border-white/20  mb-4">
+            {/* Left Group */}
             <div className="flex gap-4">
               {tabs
-                .filter(({ key }) => ["details", "shipping", "payment", "returns"].includes(key))
+                .filter(({ key }) =>
+                  ["details", "shipping", "payment", "returns"].includes(key)
+                )
                 .map(({ key, label }) => (
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`px-4 py-2 font-semibold transition ${
-                      activeTab === key
-                        ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
-                        : "text-gray-600 dark:text-gray-300"
-                    }`}
+                    className={tabClass(key)}
                   >
                     {label}
                   </button>
                 ))}
             </div>
-
-            {/* Right group */}
+            {/* Right Group */}
             <div className="flex gap-4">
               {tabs
                 .filter(({ key }) => key === "customer")
@@ -76,11 +79,7 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`px-4 py-2 font-semibold transition ${
-                      activeTab === key
-                        ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
-                        : "text-gray-600 dark:text-gray-300"
-                    }`}
+                    className={tabClass(key)}
                   >
                     {label}
                   </button>

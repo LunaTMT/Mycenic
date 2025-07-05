@@ -44,7 +44,7 @@ const Trigger = ({ children }: PropsWithChildren) => {
     <div
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      className="relative inline-block"
+      className="relative w-full" // changed from inline-block to w-full here
     >
       {children}
     </div>
@@ -85,9 +85,9 @@ const Content = ({
       <div
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className={`absolute mt-2 z-50  border-t-0   shadow-2xl border-[1px] border-black/30 dark:border-gray-500 ${alignmentClasses} ${widthClasses}`}
+        className={`absolute mt-2 z-50 border-t-0 shadow-2xl border-[1px] border-black/30 dark:border-gray-500 ${alignmentClasses} ${widthClasses}`}
       >
-        <div className={`${contentClasses } `}>
+        <div className={`${contentClasses}`}>
           {children}
         </div>
       </div>
@@ -103,7 +103,7 @@ const DropdownLink = ({
   <Link
     {...props}
     className={
-      'block w-full px-4 py-2 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out focus:bg-gray-100 focus:outline-none ' +
+      'block w-full  text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out focus:bg-gray-100 focus:outline-none ' +
       className
     }
   >

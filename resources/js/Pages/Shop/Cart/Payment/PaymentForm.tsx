@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { useCart } from '@/Contexts/Shop/Cart/CartContext';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
-import LegalNotice from '../../LegalNotice';
+import LegalNotice from '../LegalNotice';
 import { useShipping } from '@/Contexts/Shop/Cart/ShippingContext';
 
 interface PaymentDetailsProps {

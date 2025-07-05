@@ -62,7 +62,7 @@ class ProfileController extends Controller
         $user->save();
         Log::info('Profile update completed', ['user_id' => $user->id]);
 
-        return Redirect::route('profile.edit');
+        return Redirect::route('profile.index');
     }
 
     /**
@@ -103,7 +103,7 @@ class ProfileController extends Controller
             ]);
         }
 
-        return Redirect::route('profile.edit')->with('status', 'shipping-updated');
+        return Redirect::route('profile.index')->with('status', 'shipping-updated');
     }
 
     /**
@@ -141,7 +141,7 @@ class ProfileController extends Controller
         $user->avatar = 'assets/avatars/' . $filename;
         $user->save();
 
-        return redirect()->route('profile.edit')->with('status', 'Avatar updated.');
+        return redirect()->route('profile.index')->with('status', 'Avatar updated.');
     }
 
 

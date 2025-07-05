@@ -50,4 +50,37 @@ class UnsplashService
 
         return $url;
     }
+
+    public function getImages(string $query, int $count = 8): array
+    {
+        Log::info("UnsplashService: Fetching {$count} images for '{$query}'.");
+
+        $response = Http::get("{$this->baseUrl}/search/photos", [
+            'client_id' => config('services.unsplash.access_key'),
+            'query' => $query,
+            'per_page' => $count,
+            'orientation' => 'squarish',
+            'order_by' => 'relevant',
+        ]);
+
+        if (!$response->successful()) {
+            Log::error('UnsplashService: Failed to fetch images.', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return [];
+        }
+
+        $images = collect($response->json()['results'] ?? [])
+            ->pluck('urls.regular')
+            ->filter()
+            ->values()
+            ->all();
+
+        Log::info("UnsplashService: Retrieved images for '{$query}'", $images);
+
+        return $images;
+    }
+
+
 }

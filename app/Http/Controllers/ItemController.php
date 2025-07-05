@@ -51,7 +51,7 @@ class ItemController extends Controller
     
             Log::info('Items fetched from database:', $items->toArray());
     
-            return Inertia::render('Shop/Shop', [
+            return Inertia::render('Shop/ShopFront/Index', [
                 'items' => $items,
                 'category' => $category,
                 'showFilter' => $showFilter,

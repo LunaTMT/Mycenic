@@ -1,7 +1,5 @@
 import React from 'react'
-import { Head, usePage } from '@inertiajs/react'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
-import GuestLayout from '@/Layouts/GuestLayout'
+import { Head } from '@inertiajs/react'
 import Breadcrumb from '@/Components/Nav/Breadcrumb'
 
 interface SubSection {
@@ -87,10 +85,6 @@ const refundsReturnsData: Section = {
 }
 
 export default function RefundsReturns() {
-  const { auth } = usePage().props as { auth: { user?: any } }
-
-  const Layout = auth?.user ? AuthenticatedLayout : GuestLayout
-
   const breadcrumbItems = [
     { label: 'Home', link: route('home') },
     { label: 'About', link: route('about.index') },
@@ -99,18 +93,9 @@ export default function RefundsReturns() {
   ]
 
   return (
-    <Layout
-      header={
-        <div className="h-[5vh] z-10 w-full flex items-center">
-          <Breadcrumb items={breadcrumbItems} />
-        </div>
-      }
-    >
-      <Head title="Refunds & Returns" />
-
-      <div className="mx-auto min-h-[80vh] max-w-7xl sm:px-6 lg:px-8 p-5">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-200">{refundsReturnsData.heading}</h1>
-
+    <>
+    <Head title="Refunds & Returns" />
+      <div className="w-full dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
         {refundsReturnsData.content.map((subSection, idx) => (
           <div key={idx} className="mb-8">
             <h2
@@ -135,6 +120,6 @@ export default function RefundsReturns() {
           </div>
         ))}
       </div>
-    </Layout>
+    </>
   )
 }

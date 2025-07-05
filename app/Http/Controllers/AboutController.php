@@ -22,39 +22,39 @@ class AboutController extends Controller
      */
     public function showLegalIndex()
     {
-        return Inertia::render('About/Legal/Index');
+        return Inertia::render('About/Section/Legal/Index');
     }
 
     /**
-     * GET /about/legal/use-policy
+     * GET /about/Section/Legal/use-policy
      */
     public function showUsePolicy()
     {
-        return Inertia::render('About/Legal/UsePolicy');
+        return Inertia::render('About/Section/Legal/UsePolicy');
     }
 
     /**
-     * GET /about/legal/law-policy
+     * GET /about/Section/Legal/law-policy
      */
     public function showLawPolicy()
     {
-        return Inertia::render('About/Legal/LawPolicy');
+        return Inertia::render('About/Section/Legal/LawPolicy');
     }
 
     /**
-     * GET /about/legal/cookie-policy
+     * GET /about/Section/Legal/cookie-policy
      */
     public function showCookiePolicy()
     {
-        return Inertia::render('About/Legal/CookiePolicy');
+        return Inertia::render('About/Section/Legal/CookiePolicy');
     }
 
     /**
-     * GET /about/legal/privacy-policy
+     * GET /about/Section/Legal/privacy-policy
      */
     public function showPrivacyPolicy()
     {
-        return Inertia::render('About/Legal/PrivacyPolicy');
+        return Inertia::render('About/Section/Legal/PrivacyPolicy');
     }
 
     // ─── Help Section ────────────────────────────────────────────────────────
@@ -64,39 +64,39 @@ class AboutController extends Controller
      */
     public function showHelpIndex()
     {
-        return Inertia::render('About/Help/Index');
+        return Inertia::render('About/Section/Help/Index');
     }
 
     /**
-     * GET /about/help/contact-us
+     * GET /about/Section/Help/contact-us
      */
     public function showContactUs()
     {
-        return Inertia::render('About/Help/ContactUs');
+        return Inertia::render('About/Section/Help/ContactUs');
     }
 
     /**
-     * GET /about/help/about-us
+     * GET /about/Section/Help/about-us
      */
     public function showAboutUs()
     {
-        return Inertia::render('About/Help/AboutUs');
+        return Inertia::render('About/Section/Help/AboutUs');
     }
 
     /**
-     * GET /about/help/faq
+     * GET /about/Section/Help/faq
      */
     public function showFAQ()
     {
-        return Inertia::render('About/Help/FAQ');
+        return Inertia::render('About/Section/Help/FAQ');
     }
 
     /**
-     * GET /about/help/guides
+     * GET /about/Section/Help/guides
      */
     public function showGuides()
     {
-        return Inertia::render('About/Help/Guides');
+        return Inertia::render('About/Section/Help/Guides');
     }
 
     // ─── Information Section ────────────────────────────────────────────────

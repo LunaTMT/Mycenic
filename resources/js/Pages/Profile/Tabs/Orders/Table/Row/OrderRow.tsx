@@ -34,8 +34,8 @@ export default function OrderRow({ orderId }: { orderId: number }) {
         onClick={() => toggleExpandedOrder(order.id)}
         className={`w-full bg-white dark:bg-[#424549] 
           border border-black/20 dark:border-white/20 
-          shadow-2xl h-15 p-4 flex items-center 
-          transition hover:shadow-lg cursor-pointer
+          h-15 p-4 flex items-center 
+          transition  cursor-pointer
           ${isExpanded ? "rounded-t-xl border-b-0" : "rounded-xl"}
         `}
       >

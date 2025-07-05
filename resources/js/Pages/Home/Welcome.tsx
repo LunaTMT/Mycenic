@@ -10,8 +10,8 @@ import CustomerReviews from "./CustomerReviews";
 import Products from "./Products";
 
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
+
 import "react-toastify/dist/ReactToastify.css";
-import TrustpilotWidget from "@/Components/Widgets/TrustPilot";
 
 interface WelcomeProps {
   laravelVersion: string;
@@ -31,7 +31,7 @@ const Welcome: React.FC<WelcomeProps> = () => {
     <Layout>
       <Head title="Welcome" />
       
-      <VideoPlayer src="/assets/videos/time_lapse.mp4" className="w-full h-[94vh] relative" />
+      <VideoPlayer src="/assets/videos/time_lapse.mp4"  />
       
       <Products />
       <CustomerReviews />

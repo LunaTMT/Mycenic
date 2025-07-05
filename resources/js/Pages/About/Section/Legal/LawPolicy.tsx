@@ -1,7 +1,5 @@
 import React from 'react'
-import { Head, usePage } from '@inertiajs/react'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
-import GuestLayout from '@/Layouts/GuestLayout'
+import { usePage } from '@inertiajs/react'
 import Breadcrumb from '@/Components/Nav/Breadcrumb'
 
 interface SubSection {
@@ -115,8 +113,6 @@ const lawPolicyData: Section = {
 export default function LawPolicy() {
   const { auth } = usePage().props as { auth: { user?: any } }
 
-  const Layout = auth?.user ? AuthenticatedLayout : GuestLayout
-
   const breadcrumbItems = [
     { label: 'Home', link: route('home') },
     { label: 'About', link: route('about.index') },
@@ -125,45 +121,35 @@ export default function LawPolicy() {
   ]
 
   return (
-    <Layout
-      header={
-        <div className="h-[5vh] z-10 w-full flex items-center">
-          <Breadcrumb items={breadcrumbItems} />
-        </div>
-      }
-    >
-      <Head title="Law" />
-
-      <div className="mx-auto min-h-[89vh] max-w-7xl sm:px-6 lg:px-8 p-5 text-black dark:text-white rounded-lg shadow-md dark:shadow-none">
-        <h1 className="text-3xl font-bold mb-6">{lawPolicyData.heading}</h1>
-
-        {lawPolicyData.content.map((subSection, idx) => (
-          <div key={idx} className="mb-8">
-            <h2
-              id={subSection.title.toLowerCase().replace(/\s+/g, '-')}
-              className="text-xl font-semibold mb-3 scroll-mt-24"
-            >
-              {subSection.title}
-            </h2>
-            {subSection.content.map((entry, entryIdx) =>
-              typeof entry === 'string' ? (
-                <p key={entryIdx} className="mb-2 text-gray-800 dark:text-gray-200">
-                  {entry}
-                </p>
-              ) : (
-                <ul
-                  key={entryIdx}
-                  className="list-disc list-inside pl-4 text-gray-800 dark:text-gray-200 mb-2"
-                >
-                  {entry.map((item, itemIdx) => (
-                    <li key={itemIdx}>{item}</li>
-                  ))}
-                </ul>
-              )
-            )}
-          </div>
-        ))}
-      </div>
-    </Layout>
+    <>
+    <div className="w-full dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
+      {lawPolicyData.content.map((subSection, idx) => (
+        <section key={idx} className="mb-8">
+          <h2
+            id={subSection.title.toLowerCase().replace(/\s+/g, '-')}
+            className="text-xl font-semibold mb-3 scroll-mt-24"
+          >
+            {subSection.title}
+          </h2>
+          {subSection.content.map((entry, entryIdx) =>
+            typeof entry === 'string' ? (
+              <p key={entryIdx} className="mb-2 text-gray-800 dark:text-gray-200">
+                {entry}
+              </p>
+            ) : (
+              <ul
+                key={entryIdx}
+                className="list-disc list-inside pl-4 text-gray-800 dark:text-gray-200 mb-2"
+              >
+                {entry.map((item, itemIdx) => (
+                  <li key={itemIdx}>{item}</li>
+                ))}
+              </ul>
+            )
+          )}
+        </section>
+      ))}
+    </div>
+    </>
   )
 }

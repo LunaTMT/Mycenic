@@ -34,7 +34,7 @@ export default function UpdateProfileInformationForm({
     return (
         
         <section
-            className={`rounded-lg  shadow-md dark:border-white/20 border border-black/20 p-4  ${className}`}
+            className={`rounded-lg  w-1/2 shadow-md dark:border-white/20 border border-black/20 p-4  ${className}`}
         >
  
 
@@ -108,7 +108,7 @@ export default function UpdateProfileInformationForm({
                 )}
 
                 <div className="flex items-center gap-4 ">
-                    <PrimaryButton className="rounded-lg w-1/4" disabled={processing}>
+                    <PrimaryButton className="rounded-lg w-1/2" disabled={processing}>
                         UPDATE
                     </PrimaryButton>
 

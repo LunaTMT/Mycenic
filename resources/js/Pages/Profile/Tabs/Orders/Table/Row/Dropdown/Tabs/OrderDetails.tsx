@@ -23,9 +23,9 @@ export default function OrderDetails({
   };
 
   return (
-    <div className="w-full flex flex-col md:flex-row gap-6">
+    <div className="w-full flex  gap-6">
       {/* Left: Cart and Summary */}
-      <div className="w-full md:w-1/2 bg-white dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
+      <div className="w-full   dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
         {/* Cart Items */}
         <div className="space-y-2 mb-8">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-8">Items</h4>

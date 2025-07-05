@@ -9,7 +9,6 @@ import React, {
 import axios from "axios";
 import { router } from "@inertiajs/react";
 
-
 // --- Types --------------------------------------------------------
 
 export interface CartItem {
@@ -104,10 +103,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [scaled, setScaled] = useState(false);
   const [isModalDropdownOpen, setIsModalDropdownOpen] = useState(false);
   const [isPromoCodeDropdownOpen, setIsPromoCodeDropdownOpen] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoDiscount, setPromoDiscount] = useState(0);
-  
 
+  // Retrieve promo code and discount from localStorage or initialize with defaults
+  const [promoCode, setPromoCode] = useState(localStorage.getItem("promoCode") || "");
+  const [promoDiscount, setPromoDiscount] = useState(() => {
+    const savedDiscount = localStorage.getItem("promoDiscount");
+    return savedDiscount ? parseFloat(savedDiscount) : 0;
+  });
 
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
@@ -139,15 +141,15 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
 
+    // Save promo code and discount to localStorage
+    localStorage.setItem("promoCode", promoCode);
+    localStorage.setItem("promoDiscount", promoDiscount.toString());
+
     const TEN_MINUTES = 10 * 60 * 1000;
     if (cart.length && cart.every((i) => i.addedAt && Date.now() - i.addedAt > TEN_MINUTES)) {
       clearCart();
     }
-  }, [cart]);
-
-  
-
-
+  }, [cart, promoCode, promoDiscount]); // Save cart, promoCode, and promoDiscount
 
   const triggerScale = () => {
     setScaled(true);
@@ -159,8 +161,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const clearCart = () => {
     setCart([]);
-    setPromoCode("");
-    setPromoDiscount(0);
+    setPromoCode(""); // Reset promo code
+    setPromoDiscount(0); // Reset promo discount
+    localStorage.removeItem("promoCode"); // Remove promo code from localStorage
+    localStorage.removeItem("promoDiscount"); // Remove promo discount from localStorage
   };
 
   const addToCart = async (item: CartItem, quantity: number) => {
@@ -262,10 +266,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  
-
-
-
   const handlePromoCodeValidation = () => {
     router.post(
       route("promo.validate"),
@@ -280,8 +280,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     );
   };
-
-  
 
   return (
     <CartContext.Provider
@@ -311,7 +309,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         promoDiscount,
         setPromoDiscount,
         handlePromoCodeValidation,
-
         getStock,
         changeItemQuantity,
         paymentDetails,

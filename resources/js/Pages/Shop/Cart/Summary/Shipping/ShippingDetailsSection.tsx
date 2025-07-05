@@ -15,20 +15,13 @@ const ShippingDetailsSection: React.FC = () => {
     isShippingOpen, // Using isShippingOpen from the context
     toggleShippingOpen,
     isFormDropdownOpen,
-    fetchShippingRates,
+    
     } = useShipping(); // All shipping-related data is managed in the ShippingContext
 
   const { cart } = useCart(); // Cart data should only be managed by CartContext
-  const user = usePage().props.auth;
 
 
-  // Effect to fetch shipping rates if rates are empty and shippingDetails are available
-  useEffect(() => {
-    if (shippingDetails && rates.length === 0) {
 
-      fetchShippingRates(); // Fetch shipping rates when there are no rates and shippingDetails exists
-    }
-  });
 
 
   return (
@@ -45,16 +38,9 @@ const ShippingDetailsSection: React.FC = () => {
 
       {isShippingOpen && (
         <div id="shipping-details-dropdown" className="rounded mt-2 dark:text-white">
-          {/* Show AddressSelector only if there are addresses or shipping details */}
-          {(addresses && addresses.length > 0) || shippingDetails ? (
-            <AddressSelector />
-          ) : null}
 
-          {/* Show UpdateShippingDetailsForm if no user or shipping details exist, and the form dropdown is open */}
-          {isFormDropdownOpen && (!user || !shippingDetails) ? (
-            <UpdateShippingDetailsForm />
-          ) : null}
-
+          <AddressSelector />
+          
           {/* Show ShippingOptions if the cart has items and rates are available */}
           {cart.length > 0 && rates.length > 0 && <ShippingOptions />}
         </div>

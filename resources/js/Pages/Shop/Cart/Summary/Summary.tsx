@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
@@ -25,10 +25,23 @@ const Summary: React.FC<{ auth: any }> = ({ auth }) => {
     shippingDetails,
     shippingCost,
     setIsFormDropdownOpen,
-    setIsShippingOpen
+    setIsShippingOpen,
+    fetchShippingRates,
+    rates,
+    selectedShippingRate
+
   } = useShipping();
 
+
+
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+
+  // Effect to fetch shipping rates if rates are empty and shippingDetails are available
+  useEffect(() => {
+    if (shippingDetails && rates.length === 0) {
+      fetchShippingRates(); // Fetch shipping rates when there are no rates and shippingDetails exists
+    }
+  });
 
 
   const hasShipping = shippingDetails && shippingCost !== null;
@@ -36,6 +49,13 @@ const Summary: React.FC<{ auth: any }> = ({ auth }) => {
   const handleProceed = async () => {
     if (cart.length === 0) {
       toast.info("Your cart is empty.");
+      return;
+    }
+
+    if (!selectedShippingRate){
+      setIsShippingOpen(true);
+
+      toast.info("Please select a shipping rate before proceeding.");
       return;
     }
 
@@ -63,7 +83,7 @@ const Summary: React.FC<{ auth: any }> = ({ auth }) => {
   };
 
   return (
-    <div className="rounded-lg font-Poppins border p-4 border-black/20 bg-white dark:bg-[#424549] dark:border-white/20">
+    <div className="rounded-lg font-Poppins border p-4  bg-white dark:bg-[#424549] border-black/20 dark:border-white/20">
       <h1 className="text-3xl text-black text-left dark:text-white mb-2">Summary</h1>
 
       <div className="border-t border-gray-300 dark:border-white/50 py-4 relative">

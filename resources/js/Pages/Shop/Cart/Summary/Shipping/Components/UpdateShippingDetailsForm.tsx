@@ -8,26 +8,26 @@ import { useCart } from '@/Contexts/Shop/Cart/CartContext';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import SecondaryButton from '@/Components/Buttons/SecondaryButton';
-import { useShipping } from '@/Contexts/Shop/Cart/ShippingContext'; // Import from context
-import { ShippingDetails } from '@/Contexts/Shop/Cart/ShippingContext'; // Import the type
+import { useShipping } from '@/Contexts/Shop/Cart/ShippingContext';
+import { ShippingDetails } from '@/Contexts/Shop/Cart/ShippingContext';
 
-type FieldKey = 'address' | 'city' | 'zip';
+type FieldKey = 'name' | 'address' | 'city' | 'zip' | 'phone' | 'email';
 
 export default function UpdateShippingDetailsForm() {
-  const { cart } = useCart();  // If you need to use the cart or trigger shipping estimate
+  const { cart } = useCart();
 
-  // Using useShipping for shipping details and rates
   const {
-    addAddress,  // Use addAddress from context
-    
+    addAddress,
     toggleDropdown,
-    // Toggle form visibility
   } = useShipping();
 
   const { data, setData, processing, errors, reset, setError, clearErrors } = useForm<Record<FieldKey, string>>({
+    name: '',  // Added name field
     address: '',
     city: '',
     zip: '',
+    phone: '',  // Optional phone field
+    email: '',  // Required email field
   });
 
   const user = usePage().props.auth;
@@ -41,26 +41,23 @@ export default function UpdateShippingDetailsForm() {
 
       if (validation.data.valid) {
         const hasUnconfirmed = validation.data.data?.verdict?.hasUnconfirmedComponents;
-        
-        // Create a new address with an ID (temporary or backend-generated)
+
         let newAddress: ShippingDetails = {
-          id: user ? validation.data.data.id : Math.random().toString(36).substring(7), // Generate temporary ID for local addresses
+          id: user ? validation.data.data.id : Math.random().toString(36).substring(7),
+          name: data.name,  // Added name field
           address: data.address,
           city: data.city,
           zip: data.zip,
+          phone: data.phone,  // Optional phone field
+          email: data.email,  // Required email field
         };
 
-        if (user) {
-          // If the user is logged in, save address to the backend
-          const response = await axios.post(route('user.addresses.store'), newAddress);
-          newAddress = response.data.address;
-        }
-
+        await axios.post(route('user.addresses.store'), newAddress);
+     
         addAddress(newAddress, cart.length);
 
         reset();
-        toggleDropdown();  // Close the form dropdown after submission
-
+        toggleDropdown();
       } else {
         toast.error(
           'Invalid address: ' +
@@ -73,15 +70,32 @@ export default function UpdateShippingDetailsForm() {
   };
 
   const onCancel = () => {
-    toggleDropdown();   // Set FormDropdownOpen to false to close the form
+    toggleDropdown();
   };
 
   return (
     <form
       onSubmit={submit}
-      className={`space-y-4 `}
+      className={`space-y-2 border-black/20 dark:border-white/20 border  rounded-lg p-3`}
       noValidate
     >
+
+      <div>
+        <InputLabel htmlFor="name" value="Full Name" />
+        <TextInput
+          id="name"
+          name="name"
+          type="text"
+          value={data.name}
+          onChange={(e) => setData('name', e.target.value)}
+          className="mt-1 w-full"
+          required
+          aria-invalid={!!errors.name}
+          aria-describedby="name-error"
+        />
+        <InputError message={errors.name} className="mt-2" id="name-error" />
+      </div>
+
       <div>
         <InputLabel htmlFor="address" value="Street Address" />
         <TextInput
@@ -132,9 +146,42 @@ export default function UpdateShippingDetailsForm() {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div>
+        <InputLabel htmlFor="email" value="Email Address" />
+        <TextInput
+          id="email"
+          name="email"
+          type="email"
+          value={data.email}
+          onChange={(e) => setData('email', e.target.value)}
+          className="mt-1 w-full"
+          autoComplete="email"
+          required
+          aria-invalid={!!errors.email}
+          aria-describedby="email-error"
+        />
+        <InputError message={errors.email} className="mt-2" id="email-error" />
+      </div>
+
+      <div>
+        <InputLabel htmlFor="phone" value="Phone Number (optional)" />
+        <TextInput
+          id="phone"
+          name="phone"
+          type="tel"
+          value={data.phone}
+          onChange={(e) => setData('phone', e.target.value)}
+          className="mt-1 w-full"
+          autoComplete="tel"
+          aria-invalid={!!errors.phone}
+          aria-describedby="phone-error"
+        />
+        <InputError message={errors.phone} className="mt-2" id="phone-error" />
+      </div>
+
+      <div className="flex gap-4 pt-2">
         <PrimaryButton className="w-1/2" disabled={processing}>
-          Save Address
+          Save 
         </PrimaryButton>
 
         <SecondaryButton className="w-1/2" onClick={onCancel}>

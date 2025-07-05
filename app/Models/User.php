@@ -19,7 +19,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password',
+        'password',  // Optional in the case of soft registration
         'phone',
         'address',
         'city',

@@ -76,7 +76,7 @@ export default function StepNavigator() {
     : step.component
 
   return (
-    <div className="rounded-lg bg-white dark:bg-[#1e2124] p-6 shadow-lg">
+    <div className=" bg-white w-full p-6 dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl">
       <p className="mb-4 font-semibold text-lg text-green-600">
         Step {currentStep} of {total}
       </p>

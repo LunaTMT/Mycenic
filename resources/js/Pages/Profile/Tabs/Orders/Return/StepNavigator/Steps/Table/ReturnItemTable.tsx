@@ -1,6 +1,6 @@
-import React from 'react'
-import ItemCounter from './ItemCounter'
-import { useReturn } from '@/Contexts/Orders/ReturnInstructionContext'
+import React from 'react';
+import ItemCounter from './ItemCounter';
+import { useReturn } from '@/Contexts/Orders/ReturnInstructionContext';
 
 export default function ReturnItemTable() {
   const {
@@ -10,22 +10,22 @@ export default function ReturnItemTable() {
     updateQuantity,
     currentStep,
     grandTotal,
-  } = useReturn()
+  } = useReturn();
 
-  const isActive = currentStep === 1
+  const isActive = currentStep === 1;
 
   // Helper to get quantity from selectedItems by id
   const getSelectedQuantity = (id: number) => {
-    const found = selectedItems.find(([itemId]) => itemId === id)
-    return found ? found[1] : 0
-  }
+    const found = selectedItems.find(([itemId]) => itemId === id);
+    return found ? found[1] : 0;
+  };
 
   // Helper to check if item is selected
-  const isSelected = (id: number) => selectedItems.some(([itemId]) => itemId === id)
+  const isSelected = (id: number) => selectedItems.some(([itemId]) => itemId === id);
 
   return (
-    <div className="w-full overflow-hidden rounded-xl shadow-lg border border-black/20 dark:border-white/20 dark:bg-[#424549]/80 mb-8">
-      <table className="w-full">
+    <div className="w-full h-full overflow-hidden rounded-xl shadow-lg border border-black/20 dark:border-white/20 dark:bg-[#424549]/80">
+      <table className="w-full h-full">
         <thead className="bg-white dark:bg-[#1e2124] text-gray-900 dark:text-white">
           <tr>
             <th className="px-4 py-2 text-left">Item</th>
@@ -37,7 +37,7 @@ export default function ReturnItemTable() {
         </thead>
         <tbody className="divide-y divide-black/20 dark:divide-white/20">
           {items.map((item) => {
-            const qty = getSelectedQuantity(item.id)
+            const qty = getSelectedQuantity(item.id);
             return (
               <tr key={item.id} className="bg-white/70 dark:bg-[#424549]/20">
                 <td className="px-4 py-3 flex items-center gap-4">
@@ -83,7 +83,7 @@ export default function ReturnItemTable() {
                   />
                 </td>
               </tr>
-            )
+            );
           })}
         </tbody>
 
@@ -96,5 +96,5 @@ export default function ReturnItemTable() {
         </tfoot>
       </table>
     </div>
-  )
+  );
 }

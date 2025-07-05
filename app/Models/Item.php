@@ -20,6 +20,7 @@ class Item extends Model
         'stripe_product_id',
         'stripe_price_id',
         'isPsyilocybinSpores',
-        
+        'image_sources',        
+        'options',
     ];
 }

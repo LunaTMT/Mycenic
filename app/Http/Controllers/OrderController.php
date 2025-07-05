@@ -252,7 +252,7 @@ class OrderController extends Controller
             'weight'   => $item['weight'] ?? 0,
         ])->toArray();
 
-        return Inertia::render('Orders/Return/ReturnInstructions', [
+        return Inertia::render('Profile/Tabs/Orders/Return/ReturnInstructions', [
             'orderId' => $order->id,
             'items'   => $items,
         ]);

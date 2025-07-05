@@ -108,10 +108,10 @@ Route::middleware('auth')->group(function () {
 
 
 
-Route::middleware('auth')->group(function () {
-    Route::get('/user/addresses', [AddressController::class, 'index'])->name('user.addresses.index');
-    Route::post('/user/addresses', [AddressController::class, 'store'])->name('user.addresses.store');
-});
+
+Route::get('/user/addresses', [AddressController::class, 'index'])->name('user.addresses.index');
+Route::post('/user/addresses', [AddressController::class, 'store'])->name('user.addresses.store');
+
 
 
 
@@ -143,12 +143,14 @@ Route::get('/user/has-shipping-address', function () {
 Route::get('/shop', [ItemController::class, 'index'])->name('shop');
 Route::resource('items', ItemController::class);
 Route::get('/item/add', fn () => Inertia::render('Shop/ShopFront/AddItem'))->middleware('auth')->name('item.add');
+
 Route::get('/item/{id}', function ($id, Request $request) {
-    return Inertia::render('Shop/ShopFront/Item', [
+    return Inertia::render('Shop/Item/Tabs/Item/Item', [
         'item'       => Item::find($id),
         'showFilter' => $request->query('showFilter', false),
     ]);
 })->name('item');
+
 Route::post('/item/{id}/update', [ItemController::class, 'update'])->name('item.update');
 Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.stock');
 

@@ -4,14 +4,16 @@ import { toast } from 'react-toastify';
 import { useCart } from '@/Contexts/Shop/Cart/CartContext'; // Assuming this hook is available in your app
 import { router } from "@inertiajs/react";
 
-// Types
+// TYPES
+// Define the structure for shipping details and shipping rates
 export interface ShippingDetails {
   id: string;
   address: string;
   city: string;
   zip: string;
-  name?: string;
-  email?: string;
+  name?: string;  // New field for full name
+  email?: string; // New field for email address
+  phone?: string; // New field for phone number
 }
 
 export interface ShippingRate {
@@ -22,7 +24,8 @@ export interface ShippingRate {
   service: string;
 }
 
-// Context Type
+// CONTEXT TYPE
+// Define the context and its structure
 interface ShippingContextType {
   addresses: ShippingDetails[];
   setAddresses: React.Dispatch<React.SetStateAction<ShippingDetails[]>>;
@@ -53,10 +56,12 @@ interface ShippingContextType {
   createOrder: (paymentIntentId: string, legalAgreement: boolean) => void;
 }
 
-// Context
+// CONTEXT CREATION
+// Create the context for the Shipping functionality
 const ShippingContext = createContext<ShippingContextType | undefined>(undefined);
 
-// Custom hook to use the context
+// CUSTOM HOOK
+// Custom hook to use the Shipping Context
 export const useShipping = () => {
   const context = useContext(ShippingContext);
   if (!context) {
@@ -65,8 +70,10 @@ export const useShipping = () => {
   return context;
 };
 
-// Provider Component
+// PROVIDER COMPONENT
+// The provider that wraps your app to provide the shipping context
 export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // STATE MANAGEMENT
   const [addresses, setAddresses] = useState<ShippingDetails[]>(() => {
     const savedAddresses = localStorage.getItem('addresses');
     if (savedAddresses) {
@@ -94,7 +101,18 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   const [shippingCost, setShippingCost] = useState<number>(0);
-  const [selectedShippingRate, setSelectedShippingRate] = useState<ShippingRate | null>(null);
+  const [selectedShippingRate, setSelectedShippingRate] = useState<ShippingRate | null>(() => {
+    const savedShippingRate = localStorage.getItem('selectedShippingRate');
+    if (savedShippingRate) {
+      try {
+        return JSON.parse(savedShippingRate);
+      } catch (e) {
+        console.error('Error parsing selected shipping rate from localStorage:', e);
+        return null;
+      }
+    }
+    return null;
+  });
   const [rates, setRates] = useState<ShippingRate[]>(() => {
     const savedRates = localStorage.getItem('shippingRates');
     if (savedRates) {
@@ -108,12 +126,27 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
     return [];
   });
 
-  const [isFormDropdownOpen, setIsFormDropdownOpen] = useState<boolean>(!shippingDetails);
+  const [isFormDropdownOpen, setIsFormDropdownOpen] = useState<boolean>(true);
   const [isShippingOpen, setIsShippingOpen] = useState<boolean>(false);
   const [loadingAddresses, setLoadingAddresses] = useState<boolean>(false);
-  const { cart, total, subtotal, weight, promoDiscount } = useCart();
+  const { cart, total, subtotal, weight, promoDiscount, clearCart } = useCart();
 
-  // Load addresses from localStorage or the API
+  // EFFECT HOOKS
+  // UseEffect for loading addresses when the component is mounted
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  // LOGGING SELECTED SHIPPING RATE
+  useEffect(() => {
+    if (selectedShippingRate) {
+      console.log('Selected Shipping Rate changed:', selectedShippingRate);
+    }
+  }, [selectedShippingRate]);
+
+  // FUNCTIONS
+
+  // Load addresses from localStorage or API
   const loadAddresses = async () => {
     setLoadingAddresses(true);
     try {
@@ -133,20 +166,17 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  // Logging changes to the selectedShippingRate
-  useEffect(() => {
-    if (selectedShippingRate) {
-      console.log('Selected Shipping Rate changed:', selectedShippingRate);
-    }
-  }, [selectedShippingRate]);
-
+  // Add a new address
   const addAddress = (address: ShippingDetails, cartLength: number) => {
     setAddresses((prev) => {
       const addressExists = prev.some(
         (addr) =>
           addr.address === address.address &&
           addr.city === address.city &&
-          addr.zip === address.zip
+          addr.zip === address.zip &&
+          addr.name === address.name &&  // Ensure name is checked
+          addr.email === address.email && // Ensure email is checked
+          addr.phone === address.phone    // Ensure phone is checked
       );
 
       if (addressExists) {
@@ -156,8 +186,8 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
 
       const updatedAddresses = [...prev, address];
       localStorage.setItem('addresses', JSON.stringify(updatedAddresses));
-      setShippingDetails(address);
-      localStorage.setItem('shippingDetails', JSON.stringify(address));
+      setShippingDetails(address); // Make sure shippingDetails is updated with all fields
+      localStorage.setItem('shippingDetails', JSON.stringify(address)); // Save all fields to localStorage
       toast.success('Address added.');
       if (cartLength > 0) {
         fetchShippingRates();
@@ -167,6 +197,7 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
+  // Update an existing address
   const updateAddress = (address: ShippingDetails) => {
     setAddresses((prev) => {
       const updatedAddresses = prev.map((addr) =>
@@ -177,6 +208,7 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
+  // Remove an address
   const removeAddress = (addressId: string) => {
     setAddresses((prev) => {
       const updatedAddresses = prev.filter((addr) => addr.id !== addressId);
@@ -185,7 +217,9 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
+  // Fetch shipping rates from the API
   const fetchShippingRates = async () => {
+    console.log("Fetching rates");
     if (!shippingDetails || !shippingDetails.address || !shippingDetails.city || !shippingDetails.zip) {
       console.warn('Shipping details are incomplete');
       return;
@@ -211,8 +245,7 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-
-
+  // Create an order
   const createOrder = (
     paymentIntentId: string,
     legalAgreement: boolean
@@ -238,24 +271,22 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
       return;
     }
 
-    // Prepare shipping details as an object
+    // Prepare shipping details and selected shipping rate for the order
     const shippingDetailsObject = {
       id: shippingDetails.id,
       address: shippingDetails.address,
       city: shippingDetails.city,
       zip: shippingDetails.zip,
+      name: shippingDetails.name, // Include name
+      email: shippingDetails.email, // Include email
+      phone: shippingDetails.phone, // Include phone
     };
 
-    // Prepare the selected shipping rate object
     const selectedShippingRateObject = {
       amount: selectedShippingRate.amount,
       provider: selectedShippingRate.provider,
       service: selectedShippingRate.service,
     };
-
-    // Log the prepared data
-    console.log("Shipping Details Object:", shippingDetailsObject);
-    console.log("Selected Shipping Rate Object:", selectedShippingRateObject);
 
     // Prepare the data to be sent to the server
     const data = {
@@ -271,23 +302,29 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
       legalAgreement,
     };
 
-    // Log the final data to be sent to the server
-    console.log("Data to be sent to server:", data);
-
     // Proceed with router visit after validation
     router.visit(route("checkout.process"), {
       method: "post",
       data,
       onFinish: () => {
         setAddresses([]);  // Optionally reset addresses
+        clearCart();
         console.log("Cart has been emptied.");
       },
     });
   };
 
-  useEffect(() => {
-    loadAddresses();
-  }, []);
+  const toggleShippingOpen = () => {
+    if (isShippingOpen && shippingDetails) {
+      setIsFormDropdownOpen(false);  // Set dropdown to false if shipping is closed
+    }
+    setIsShippingOpen((prev) => !prev);  // Toggle the shipping open state
+  };
+
+  const toggleDropdown = () => {
+    console.log("toggleDropdown has been called");
+    setIsFormDropdownOpen((prev) => !prev);
+  };
 
   return (
     <ShippingContext.Provider
@@ -308,10 +345,10 @@ export const ShippingProvider: React.FC<{ children: ReactNode }> = ({ children }
         fetchShippingRates,
         isFormDropdownOpen,
         setIsFormDropdownOpen,
-        toggleDropdown: () => setIsFormDropdownOpen((prev) => !prev),
+        toggleDropdown,
         isShippingOpen,
         setIsShippingOpen,
-        toggleShippingOpen: () => setIsShippingOpen((prev) => !prev),
+        toggleShippingOpen,
         loadingAddresses,
         createOrder,
       }}

@@ -66,20 +66,7 @@ function Content({
 
   return (
     <div className="relative z-10 w-full max-w-7xl mx-auto dark:text-gray-300 flex gap-5 justify-center items-start font-Poppins">
-      {/* Background video */}
-      <div className="fixed inset-0 z-0 overflow-hidden bg-black">
-        <video
-          className="w-full h-full object-cover"
-          autoPlay
-          loop
-          muted
-          playsInline
-        >
-          <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        <div className="absolute inset-0 bg-black/40" />
-      </div>
+
 
       {/* Foreground content */}
       <div className="relative z-10 w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 text-gray-900 dark:text-gray-300 font-Poppins">

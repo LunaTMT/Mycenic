@@ -120,8 +120,7 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
                 </div>
             </motion.header>
 
-            {/* ✅ About Sidebar (conditionally rendered inside layout) */}
-            <AboutSidebar currentUrl={url} onNavigate={router.get}  />
+  
 
             <main
                 className={`relative w-full min-h[89vh] h-full dark:bg-[#1e2124] ${

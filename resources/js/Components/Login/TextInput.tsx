@@ -34,7 +34,7 @@ export default forwardRef(function TextInput(
         {...props}
         ref={localRef}
         type={isPasswordField ? inputType : type} // Dynamically set the type
-        className={`rounded-md border-1 border-gray-400 shadow-2xl p-2 pl-2 dark:text-white ${className}`}
+        className={`rounded-md border-1 border-gray-400 shadow-2xl p-[6px] pl-2 dark:text-white ${className}`}
         disabled={disabled} // Pass disabled to the input element
       />
       {isPasswordField && onTogglePasswordVisibility && (

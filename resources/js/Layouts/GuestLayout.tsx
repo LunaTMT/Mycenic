@@ -99,8 +99,7 @@ export default function Guest({
         </div>
       </motion.header>
 
-      {/* ✅ About Sidebar (conditionally rendered inside layout) */}
-      <AboutSidebar currentUrl={url} onNavigate={router.get}  />
+
 
       {/* MAIN CONTENT */}
       <main

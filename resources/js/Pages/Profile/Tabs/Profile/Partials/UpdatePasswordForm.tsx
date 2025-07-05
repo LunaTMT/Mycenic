@@ -50,7 +50,7 @@ export default function UpdatePasswordForm({
 
     return (
         <section
-            className={`rounded-lg shadow-md  border dark:border-white/20 border-black/20 p-4  ${className}`}
+            className={`rounded-lg shadow-md   w-1/2  border dark:border-white/20 border-black/20 p-4  ${className}`}
         >
 
 
@@ -124,8 +124,8 @@ export default function UpdatePasswordForm({
                     />
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <PrimaryButton className="rounded-lg w-1/4" disabled={processing}>
+                <div className="flex items-center gap-4 ">
+                    <PrimaryButton className="rounded-lg w-1/2" disabled={processing}>
                         UPDATE
                     </PrimaryButton>
 
