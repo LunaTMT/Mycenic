@@ -103,7 +103,7 @@ export default function Guest({
 
       {/* MAIN CONTENT */}
       <main
-        className={`relative w-full min-h[89vh] h-full   dark:bg-[#1e2124] ${
+        className={`relative w-full min-h-screen h-full   dark:bg-[#1e2124] ${
           url.includes("about") ? "" : ""
         }`}
       >

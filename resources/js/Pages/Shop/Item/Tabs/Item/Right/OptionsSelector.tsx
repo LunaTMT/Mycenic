@@ -25,13 +25,13 @@ const OptionsSelector: React.FC = () => {
         };
 
         return (
-          <div key={label} className="mb-4 flex-1 relative">
+          <div key={label} className="mb-4 flex-1 relative ">
             <label className="block text-sm font-medium text-gray-700 dark:text-white mb-1">{label}</label>
 
             <button
               type="button"
               onClick={toggleDropdown}
-              className="w-full px-4 py-2 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md text-left cursor-pointer flex justify-between items-center"
+              className="w-full px-4 py-2 text-gray-900 dark:text-white border rounded-lg dark:bg-[#424549]/80 border-black/20 dark:border-white/20 rounded-md text-left cursor-pointer flex justify-between items-center"
             >
               <span>{selectedOptions[label] || `Select ${label}`}</span>
               <ArrowIcon w="16" h="16" isOpen={isOpen} />

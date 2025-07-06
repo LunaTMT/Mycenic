@@ -145,7 +145,7 @@ Route::resource('items', ItemController::class);
 Route::get('/item/add', fn () => Inertia::render('Shop/ShopFront/AddItem'))->middleware('auth')->name('item.add');
 
 Route::get('/item/{id}', function ($id, Request $request) {
-    return Inertia::render('Shop/Item/Tabs/Item/Item', [
+    return Inertia::render('Shop/Item/ItemPage', [
         'item'       => Item::find($id),
         'showFilter' => $request->query('showFilter', false),
     ]);

@@ -13,7 +13,7 @@ export default function TabNavigation({ activeTab, setActiveTab }: TabNavigation
   const tabs = [
     { key: "Item", label: "Item", icon: <FaBox size={20} className="inline mr-2" /> },
     { key: "Guides", label: "Guides", icon: <FaBookOpen size={20} className="inline mr-2" /> },
-    { key: "Reviews", label: "Reviews", icon: <FaStar size={20} className="inline mr-2" /> },
+    { key: "Feedback", label: "Feedback", icon: <FaStar size={20} className="inline mr-2" /> },
   ];
 
   return (

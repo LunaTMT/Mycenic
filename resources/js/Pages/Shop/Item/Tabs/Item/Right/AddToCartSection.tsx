@@ -1,11 +1,19 @@
 import React from "react";
-import ItemCounter from "../../../ItemCounter";
+import ItemCounter from "./ItemCounter";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import { useItemContext } from "@/Contexts/Shop/ItemContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 const AddToCartSection: React.FC = () => {
-  const { quantity, setQuantity, stock, price, item, selectedOptions, selectedImage } = useItemContext();
+  const {
+    quantity,
+    setQuantity,
+    stock,
+    price,
+    item,
+    selectedOptions,
+    selectedImage,
+  } = useItemContext();
   const { addToCart } = useCart();
 
   const handleAddToCart = () => {
@@ -29,19 +37,35 @@ const AddToCartSection: React.FC = () => {
   };
 
   return (
-    <div className="mt-4">
-      <div className="flex w-full gap-16 justify-between items-center">
-        <ItemCounter quantity={quantity} onQuantityChange={setQuantity} itemId={item?.id ?? 0} className="w-30 h-10" />
-        <p className="text-4xl font-semibold text-black dark:text-white tracking-tight">
+    <div className="mt-6 space-y-4">
+      {/* Quantity + Total Price */}
+      <div className="flex items-center justify-between gap-6">
+        <ItemCounter
+          quantity={quantity}
+          onQuantityChange={setQuantity}
+          itemId={item?.id ?? 0}
+          className="w-32 h-12"
+        />
+
+        <p className="text-3xl font-bold tracking-tight text-black dark:text-white whitespace-nowrap">
           £{(parseFloat(price) * quantity).toFixed(2)}
         </p>
       </div>
 
-      <PrimaryButton onClick={handleAddToCart} disabled={stock === 0} className="w-full mt-4">
-        {stock > 0 ? "Add to cart" : "Out of Stock"}
-      </PrimaryButton>
+      {/* Button and Stock in one row */}
+      <div className="flex items-center justify-between mt-2">
+        <PrimaryButton
+          onClick={handleAddToCart}
+          disabled={stock === 0}
+          className="w-1/2 py-3 text-base font-semibold"
+        >
+          {stock > 0 ? "Add to cart" : "Out of Stock"}
+        </PrimaryButton>
 
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-2">{stock} in stock</p>
+        <p className="text-sm text-right text-gray-500 dark:text-gray-400 ml-4 whitespace-nowrap">
+          {stock} {stock === 1 ? "item" : "items"} in stock
+        </p>
+      </div>
     </div>
   );
 };

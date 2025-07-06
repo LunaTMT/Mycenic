@@ -30,7 +30,6 @@ const ImageGallery: React.FC = () => {
     return `/${src}`;
   };
 
-  // Set initial selected index (4 if possible, else max available)
   useEffect(() => {
     if (images.length > 0) {
       const initialIndex = images.length > 4 ? 4 : images.length - 1;
@@ -38,7 +37,6 @@ const ImageGallery: React.FC = () => {
     }
   }, [images, setSelectedIndex]);
 
-  // Keep selectedImage in sync
   useEffect(() => {
     const src = images[selectedIndex];
     const source = imageSources?.[selectedIndex];
@@ -53,26 +51,26 @@ const ImageGallery: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white border rounded-lg dark:bg-[#424549]/80 border-black/20 dark:border-white/20 overflow-hidden">
-      {/* Main image */}
-      <div className="flex-grow p-3 flex items-center justify-center overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-[#1e2124]/30 border rounded-lg  border-black/20 dark:border-white/20 overflow-hidden">
+      {/* Main image - 2/3 height */}
+      <div className="h-[75%] flex items-center justify-center overflow-hidden">
         {selectedImage ? (
           <img
             src={selectedImage}
             alt="Selected"
-            className="object-cover w-full h-full rounded-lg"
+            className="object-contain w-full h-full"
           />
         ) : (
-          <p>No image available</p>
+          <p className="text-gray-700 dark:text-gray-300">No image available</p>
         )}
       </div>
 
-      {/* Thumbnail gallery */}
-      <div className="p-3 border-black/20 dark:border-white/20">
+      {/* Thumbnails - 1/3 height */}
+      <div className="h-[25%] px-3 py-2 border-t border-black/10 dark:border-white/10">
         <Swiper
-         initialSlide={images.length > 3 ? 3 : images.length - 1}
+          initialSlide={images.length > 3 ? 3 : images.length - 1}
           slidesPerView="auto"
-          centeredSlides={true}
+          centeredSlides
           spaceBetween={10}
           effect="coverflow"
           coverflowEffect={{
@@ -84,10 +82,9 @@ const ImageGallery: React.FC = () => {
           }}
           pagination={{ clickable: true }}
           modules={[EffectCoverflow, Pagination]}
-          className="mySwiper"
           onSlideChange={(swiper) => setSelectedIndex(swiper.realIndex)}
           onSwiper={(swiper) => setSwiperRef(swiper)}
-          style={{ paddingBottom: "50px" }}
+          className="h-full"
         >
           {images.map((src, idx) => {
             const thumbSrc = resolveSrc(src, imageSources?.[idx]);
@@ -95,8 +92,8 @@ const ImageGallery: React.FC = () => {
               <SwiperSlide
                 key={idx}
                 style={{
-                  width: "120px",
-                  height: "120px",
+                  width: "100px",
+                  height: "100px",
                   cursor: "pointer",
                   borderRadius: "0.5rem",
                   overflow: "hidden",
