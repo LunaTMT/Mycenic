@@ -29,11 +29,18 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
+
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? array_merge(
+                    $user->only('id', 'name', 'email', 'avatar'),  // Add 'avatar' here
+                    ['is_admin' => $user->isAdmin()]
+                ) : null,
             ],
+
             'flash' => [
                 'success' => session('flash.success'),
                 'error'   => session('flash.error'),
@@ -41,5 +48,5 @@ class HandleInertiaRequests extends Middleware
             ],
         ];
     }
-    
+
 }

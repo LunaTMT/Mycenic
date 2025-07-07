@@ -137,7 +137,7 @@ export default function Login({
                 </span>
               </div>
 
-              <PrimaryButton className="w-full" disabled={processing}>
+              <PrimaryButton className="w-full p-2" disabled={processing}>
                 Sign in
               </PrimaryButton>
 
@@ -148,14 +148,14 @@ export default function Login({
           <div className="w-full px-8 pb-8 space-y-2">
             {canResetPassword && (
               <SecondaryButton
-                className="w-full"
+                className="w-full p-2"
                 onClick={() => Inertia.visit(route('password.request'))}
               >
                 Forgot your password?
               </SecondaryButton>
             )}
             <SecondaryButton
-              className="w-full"
+              className="w-full p-2"
               onClick={() => Inertia.visit(route('register'))}
             >
               Create Account

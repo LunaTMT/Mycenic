@@ -1,3 +1,6 @@
+import React from "react";
+import SortByDropdown from "./Tabs/Reviews/SortByDropdown";
+
 interface Tab {
   key: string;
   label: string;
@@ -7,9 +10,17 @@ interface TabNavigationProps {
   tabs: Tab[];
   activeKey: string;
   onChange: (key: string) => void;
+  sortBy: string;
+  onSortChange: (sortBy: string) => void;
 }
 
-export default function TabNavigation({ tabs, activeKey, onChange }: TabNavigationProps) {
+export default function TabNavigation({
+  tabs,
+  activeKey,
+  onChange,
+  sortBy,
+  onSortChange,
+}: TabNavigationProps) {
   const getTabClass = (key: string) =>
     `px-4 py-2 font-semibold transition-transform duration-300 border-b-2 border-transparent
      ${
@@ -20,16 +31,22 @@ export default function TabNavigation({ tabs, activeKey, onChange }: TabNavigati
      hover:scale-[1.03]`;
 
   return (
-    <div className="flex border-b border-black/20 dark:border-white/20 mb-6">
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          onClick={() => onChange(tab.key)}
-          className={getTabClass(tab.key)}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <div className="flex items-center border-b border-black/20 dark:border-white/20 mb-6">
+      <div className="flex space-x-4">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => onChange(tab.key)}
+            className={getTabClass(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-grow" />
+
+      
     </div>
   );
 }

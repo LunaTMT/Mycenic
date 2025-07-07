@@ -1,85 +1,68 @@
 import React, { useState } from "react";
 import QuestionForm from "./QuestionForm";
 import QuestionCard from "./QuestionCard/Card";
-import { Question } from "../../Feedback";
+import exampleQuestions from "./questionsData";
 
-const exampleQuestions: Question[] = [
-  {
-    author: "Alice",
-    profileImage: "https://i.pravatar.cc/150?img=1",
-    question: "Is this product durable?",
-    date: "2025-07-06",
-    replies: [
-      {
-        author: "Bob",
-        profileImage: "https://i.pravatar.cc/150?img=2",
-        question: "Yes, I've been using it for a year with no issues.",
-        date: "2025-07-07",
-      },
-      {
-        author: "Carol",
-        profileImage: "https://i.pravatar.cc/150?img=3",
-        question: "Mine broke after 6 months, but customer service was great.",
-        date: "2025-07-08",
-        replies: [
-          {
-            author: "Dave",
-            profileImage: "https://i.pravatar.cc/150?img=4",
-            question: "What was the issue exactly?",
-            date: "2025-07-09",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    author: "Eve",
-    profileImage: "https://i.pravatar.cc/150?img=5",
-    question: "How long does the battery last on a full charge?",
-    date: "2025-07-04",
-    replies: [
-      {
-        author: "Frank",
-        profileImage: "https://i.pravatar.cc/150?img=6",
-        question: "Around 10 hours with moderate use.",
-        date: "2025-07-05",
-      },
-    ],
-  },
-  {
-    author: "Grace",
-    profileImage: "https://i.pravatar.cc/150?img=7",
-    question: "Can this be used outdoors in the rain?",
-    date: "2025-07-01",
-    replies: [
-      {
-        author: "Heidi",
-        profileImage: "https://i.pravatar.cc/150?img=8",
-        question: "Yes, it’s water resistant but avoid heavy downpours.",
-        date: "2025-07-02",
-      },
-      {
-        author: "Ivan",
-        profileImage: "https://i.pravatar.cc/150?img=9",
-        question: "I used it in the rain for a week, and it worked fine.",
-        date: "2025-07-03",
-      },
-    ],
-  },
-];
+import SortByDropdown from "./SortByDropdown"; // Reuse or create one for questions
+import { Question } from "./questionsData";
 
 export default function Questions() {
-  const [localQuestions] = useState<Question[]>(exampleQuestions);
+  const [localQuestions, setLocalQuestions] = useState<Question[]>(exampleQuestions);
+  const [sortBy, setSortBy] = useState<string>("newest");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const questionsPerPage = 5;
+
+  const sortedQuestions = [...localQuestions].sort((a, b) => {
+    if (sortBy === "newest") return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (sortBy === "oldest") return new Date(a.date).getTime() - new Date(b.date).getTime();
+    return 0;
+  });
+
+  const indexOfLastQuestion = currentPage * questionsPerPage;
+  const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
+  const currentQuestions = sortedQuestions.slice(indexOfFirstQuestion, indexOfLastQuestion);
+  const totalPages = Math.ceil(sortedQuestions.length / questionsPerPage);
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
-      <QuestionForm />
-      
-      <div className="border border-black/20 dark:border-white/20 rounded-lg p-6 bg-white dark:bg-[#1e2124]/30 space-y-6">
-        {localQuestions.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 text-sm">No questions yet.</p>
-        ) : (
-          localQuestions.map((q, index) => <QuestionCard key={index} question={q} />)
+      <QuestionForm setQuestions={setLocalQuestions} />
+
+      <div className="border border-gray-300 dark:border-gray-600 rounded-md p-4 bg-gray-50 dark:bg-[#2c2f33]">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Customer Questions</h2>
+          <SortByDropdown sortBy={sortBy} onSortChange={handleSortChange} />
+        </div>
+
+        <div className="space-y-2">
+          {currentQuestions.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No questions yet.</p>
+          ) : (
+            currentQuestions.map((q, index) => <QuestionCard key={index} question={q} />)
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-4">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  currentPage === i + 1
+                    ? "bg-yellow-500 dark:bg-[#7289da] text-white"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
         )}
       </div>
     </div>

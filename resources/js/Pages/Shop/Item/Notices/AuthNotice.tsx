@@ -1,13 +1,17 @@
 import React from "react";
 
-export default function AuthNotice() {
+interface AuthNoticeProps {
+  comment?: string;
+}
+
+export default function AuthNotice({ comment = "leave a comment" }: AuthNoticeProps) {
   return (
-    <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 p-4 text-yellow-800 dark:text-yellow-300">
+    <div className="rounded-lg text-gray-600 dark:text-gray-300">
       You must{" "}
       <a href="/login" className="underline font-semibold">
         sign in
       </a>{" "}
-      to leave a comment.
+      to {comment}.
     </div>
   );
 }

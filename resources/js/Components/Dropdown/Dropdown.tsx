@@ -85,7 +85,7 @@ const Content = ({
       <div
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className={`absolute mt-2 z-50 border-t-0 shadow-2xl border-[1px] border-black/30 dark:border-gray-500 ${alignmentClasses} ${widthClasses}`}
+        className={`absolute mt-2 z-50  shadow-2xl border-[1px] border-black/30 dark:border-gray-500 ${alignmentClasses} ${widthClasses}`}
       >
         <div className={`${contentClasses}`}>
           {children}

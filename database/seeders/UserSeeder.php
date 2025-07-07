@@ -28,5 +28,24 @@ class UserSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // Create non-admin user Taylor Threader
+        $user = User::create([
+            'name' => 'Taylor Threader',
+            'email' => 'taylorthreader@gmail.com',
+            'password' => bcrypt('password'),
+            'role' => 'user', // default role, could omit since 'user' is default
+        ]);
+
+        // (Optional) Insert address(es) for non-admin user
+        DB::table('addresses')->insert([
+            'user_id' => $user->id,
+            'address' => '456 Example Road',
+            'city' => 'Manchester',
+            'zip' => 'M1 2AB',
+            'country' => 'UK',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

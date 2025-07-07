@@ -11,7 +11,7 @@ export default function SecondaryButton({
         <button
             {...props}
             className={`
-                font-medium py-3 px-8 rounded-xl 
+                font-medium   rounded-xl 
                 transform ${!disabled ? 'hover:scale-[103%] transition-all duration-300' : ''}
                 font-Poppins text-black 
                 text-center flex justify-center items-center

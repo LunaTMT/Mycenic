@@ -1,64 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
-import PrimaryButton from "@/Components/Buttons/PrimaryButton";
-import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 
-export default function LikeDislikeButtons() {
+interface LikeDislikeButtonsProps {
+  initialLikes: number;
+  initialDislikes: number;
+}
+
+export default function LikeDislikeButtons({ initialLikes, initialDislikes }: LikeDislikeButtonsProps) {
   const [voted, setVoted] = useState<"like" | "dislike" | null>(null);
-  const [likes, setLikes] = useState(0);
-  const [dislikes, setDislikes] = useState(0);
+  const [likes, setLikes] = useState(initialLikes);
+  const [dislikes, setDislikes] = useState(initialDislikes);
 
-  function toggleLike() {
-    if (voted === "like") {
-      setLikes(likes - 1);
+  const toggleVote = (type: "like" | "dislike") => {
+    if (voted === type) {
+      if (type === "like") setLikes((prev) => prev - 1);
+      else setDislikes((prev) => prev - 1);
       setVoted(null);
     } else {
-      if (voted === "dislike") setDislikes(dislikes - 1);
-      setLikes(likes + 1);
-      setVoted("like");
-    }
-  }
+      if (voted === "like") setLikes((prev) => prev - 1);
+      if (voted === "dislike") setDislikes((prev) => prev - 1);
 
-  function toggleDislike() {
-    if (voted === "dislike") {
-      setDislikes(dislikes - 1);
-      setVoted(null);
-    } else {
-      if (voted === "like") setLikes(likes - 1);
-      setDislikes(dislikes + 1);
-      setVoted("dislike");
+      if (type === "like") setLikes((prev) => prev + 1);
+      else setDislikes((prev) => prev + 1);
+
+      setVoted(type);
     }
-  }
+  };
+
+  useEffect(() => {
+    setLikes(initialLikes);
+    setDislikes(initialDislikes);
+  }, [initialLikes, initialDislikes]);
 
   return (
-    <div className="flex justify-end mt-4 space-x-3">
-      <PrimaryButton
-        onClick={toggleLike}
-        disabled={voted === "like"}
-        aria-pressed={voted === "like"}
+    <div className="flex justify-end mt-4 space-x-4 text-sm">
+      <div
+        className={`flex items-center cursor-pointer hover:scale-110 transition-transform ${
+          voted === "like" ? "text-yellow-500 dark:text-[#7289da]" : "text-gray-600 dark:text-gray-300"
+        }`} 
+        onClick={() => toggleVote("like")}
         aria-label="Like"
-        className={`w-24 py-1 px-4 justify-center text-base ${
-          voted === "like"
-            ? "scale-[103%] shadow-[0_0_3px_#FFD700,0_0_8px_#FFD700,0_0_15px_#FFD700]"
-            : ""
-        } flex items-center`}
       >
-        <FaThumbsUp size={28} className="text-black dark:text-white" />
-        <span className="ml-2">{likes}</span>
-      </PrimaryButton>
+        <FaThumbsUp size={16} />
+        <span className="ml-1">{likes}</span>
+      </div>
 
-      <SecondaryButton
-        onClick={toggleDislike}
-        disabled={voted === "dislike"}
-        aria-pressed={voted === "dislike"}
+      <div
+        className={`flex items-center cursor-pointer hover:scale-110 transition-transform ${
+          voted === "dislike" ? "text-red-600 dark:text-red-400" : "text-gray-600 dark:text-gray-300"
+        }`}
+        onClick={() => toggleVote("dislike")}
         aria-label="Dislike"
-        className={`w-24 py-1 px-4 justify-center text-base ${
-          voted === "dislike" ? "scale-[103%] opacity-70 cursor-default" : ""
-        } flex items-center`}
       >
-        <FaThumbsDown size={28} className="text-black dark:text-white" />
-        <span className="ml-2">{dislikes}</span>
-      </SecondaryButton>
+        <FaThumbsDown size={16} />
+        <span className="ml-1">{dislikes}</span>
+      </div>
     </div>
   );
 }

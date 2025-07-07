@@ -31,45 +31,51 @@ const ImageGallery: React.FC = () => {
   };
 
   useEffect(() => {
-    if (images.length > 0) {
-      const initialIndex = images.length > 4 ? 4 : images.length - 1;
-      setSelectedIndex(initialIndex);
+    if (images.length === 0) {
+      setSelectedImage("");
+      return;
     }
-  }, [images, setSelectedIndex]);
-
-  useEffect(() => {
+    if (selectedIndex < 0 || selectedIndex >= images.length) {
+      return;
+    }
     const src = images[selectedIndex];
     const source = imageSources?.[selectedIndex];
     setSelectedImage(resolveSrc(src, source));
   }, [selectedIndex, images, imageSources, setSelectedImage]);
 
+  useEffect(() => {
+    if (swiperRef && selectedIndex !== swiperRef.realIndex) {
+      swiperRef.slideTo(selectedIndex);
+    }
+  }, [selectedIndex, swiperRef]);
+
   const handleSlideClick = (idx: number) => {
+    setSelectedIndex(idx);
     if (swiperRef) {
       swiperRef.slideTo(idx);
     }
-    setSelectedIndex(idx);
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-[#1e2124]/30 border rounded-lg  border-black/20 dark:border-white/20 overflow-hidden">
-      {/* Main image - 2/3 height */}
-      <div className="h-[75%] flex items-center justify-center overflow-hidden">
+    <div className="w-full h-full flex flex-col border rounded-lg bg-white dark:bg-[#1e2124]/30  border-black/20 dark:border-white/20 overflow-hidden">
+      {/* Main image container with rounded corners and overflow hidden */}
+      <div className="h-[75%] flex items-center justify-center p-5   ">
         {selectedImage ? (
           <img
             src={selectedImage}
             alt="Selected"
-            className="object-contain w-full h-full"
+            className="object-contain w-full h-full "
           />
         ) : (
           <p className="text-gray-700 dark:text-gray-300">No image available</p>
         )}
       </div>
 
-      {/* Thumbnails - 1/3 height */}
-      <div className="h-[25%] px-3 py-2 border-t border-black/10 dark:border-white/10">
+      {/* Thumbnails */}
+      <div className="h-[25%] py-5 border-t border-black/10 dark:border-white/10">
         <Swiper
-          initialSlide={images.length > 3 ? 3 : images.length - 1}
           slidesPerView="auto"
+          initialSlide={4}
           centeredSlides
           spaceBetween={10}
           effect="coverflow"
@@ -102,7 +108,7 @@ const ImageGallery: React.FC = () => {
               >
                 <img
                   src={thumbSrc}
-                  alt={item.name}
+                  alt={item?.name ?? `Thumbnail ${idx}`}
                   style={{
                     width: "100%",
                     height: "100%",
@@ -111,7 +117,7 @@ const ImageGallery: React.FC = () => {
                   }}
                   className={`border transition-all duration-200 dark:bg-white/40 bg-black/20 ${
                     selectedIndex === idx
-                      ? "p-1 border-gray-400 dark:border-white/50"
+                      ? "p-[2px] border-gray-400 dark:border-white/50"
                       : "border-transparent"
                   }`}
                 />

@@ -8,13 +8,14 @@ import { FaChevronRight } from "react-icons/fa";
 
 import StarRating from "./StarRating";
 import { Review } from "../../types";
+import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 
 interface ReviewFormProps {
   rating: number;
   setRating: React.Dispatch<React.SetStateAction<number>>;
   setReviews: React.Dispatch<React.SetStateAction<Review[]>>;
   resetRating: () => void;
-  authUser: any;
+  authUser: any | null; // nullable for unauthenticated state
 }
 
 const MAX_LENGTH = 500;
@@ -100,39 +101,47 @@ export default function ReviewForm({
       </div>
 
       {expanded && (
-        <form
-          onSubmit={submit}
-          className="space-y-6 p-6 border border-t-0 border-black/20 dark:border-white/20 rounded-b-lg"
-        >
-          <div>
-            <InputLabel htmlFor="comment" />
-            <textarea
-              id="comment"
-              name="comment"
-              value={data.comment}
-              onChange={(e) => {
-                if (e.target.value.length <= MAX_LENGTH) {
-                  setData("comment", e.target.value);
-                }
-              }}
-              placeholder="Write your thoughts here..."
-              maxLength={MAX_LENGTH}
-              className="mt-1 w-full rounded-md border border-black/20 dark:border-white/20 bg-white dark:bg-[#1e2124] px-4 py-3 text-gray-900 dark:text-gray-100 shadow-sm focus:border-yellow-400 focus:ring focus:ring-yellow-300 focus:ring-opacity-40 resize-none"
-              rows={5}
-            />
-            <div className="mt-1 text-xs text-left text-gray-500 dark:text-gray-400">
-              {data.comment.length} / {MAX_LENGTH}
+        <>
+          {!authUser ? (
+            <div className="p-6 border border-t-0 border-black/20 dark:border-white/20 bg-white dark:bg-[#1e2124]/30">
+              <AuthNotice comment="leave a review" />
             </div>
-            <InputError message={errors.comment} className="mt-2" />
-          </div>
+          ) : (
+            <form
+              onSubmit={submit}
+              className="space-y-6 p-6 border border-t-0 border-black/20 dark:border-white/20 rounded-b-lg bg-white dark:bg-[#1e2124]/30"
+            >
+              <div>
+                <InputLabel htmlFor="comment" value="Your Review" />
+                <textarea
+                  id="comment"
+                  name="comment"
+                  value={data.comment}
+                  onChange={(e) => {
+                    if (e.target.value.length <= MAX_LENGTH) {
+                      setData("comment", e.target.value);
+                    }
+                  }}
+                  placeholder="Write your thoughts here..."
+                  maxLength={MAX_LENGTH}
+                  className="mt-1 w-full rounded-md border border-black/20 dark:border-white/20 bg-white dark:bg-[#1e2124] px-4 py-3 text-gray-900 dark:text-gray-100 shadow-sm focus:border-yellow-400 focus:ring focus:ring-yellow-300 focus:ring-opacity-40 resize-none"
+                  rows={5}
+                />
+                <div className="mt-1 text-xs text-left text-gray-500 dark:text-gray-400">
+                  {data.comment.length} / {MAX_LENGTH}
+                </div>
+                <InputError message={errors.comment} className="mt-2" />
+              </div>
 
-          <div className="flex justify-between gap-20">
-            <StarRating rating={rating} setRating={setRating} />
-            <PrimaryButton disabled={processing}>
-              Submit Review
-            </PrimaryButton>
-          </div>
-        </form>
+              <div className="flex justify-between gap-20 items-center">
+                <StarRating rating={rating} setRating={setRating} />
+                <PrimaryButton disabled={processing} className="">
+                  Submit Review
+                </PrimaryButton>
+              </div>
+            </form>
+          )}
+        </>
       )}
     </div>
   );

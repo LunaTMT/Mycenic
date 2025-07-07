@@ -12,11 +12,11 @@ export default function PrimaryButton({
             {...props}
             
             className={`
-                 font-medium py-3 px-8 rounded-xl 
+                 font-medium  rounded-xl 
                 transform 
                 font-Poppins text-white 
                 text-center flex justify-center items-center
-                
+                p-2
                 bg-yellow-500
                 dark:bg-[#7289da]
                 
