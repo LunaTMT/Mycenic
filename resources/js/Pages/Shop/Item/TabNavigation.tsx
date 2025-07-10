@@ -1,8 +1,8 @@
 import React from "react";
 import { FaBox, FaBookOpen, FaStar } from "react-icons/fa";
-import { useItemContext } from "@/Contexts/Shop/ItemContext";
+import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 
-export type TabKey = "Item" | "Guides" | "Reviews";
+export type TabKey = "Item" | "Guides" | "Feedback";
 
 interface TabNavigationProps {
   activeTab: TabKey;

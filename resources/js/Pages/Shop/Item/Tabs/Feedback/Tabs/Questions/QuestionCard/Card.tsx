@@ -1,33 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { usePage } from "@inertiajs/react";
-import { FaUserShield } from "react-icons/fa";
-import ReplyForm from "./ReplyForm";
-import QuestionText from "./QuestionText";
-import ReplyToggleButtons from "./ReplyToggleButtons";
-import LikeDislikeButtons from "./LikeDislikeButtons";
-import RepliesList from "./RepliesLists";
-import ArrowIcon from "@/Components/Buttons/ArrowIcon";
-
-export interface Question {
-  author: string;
-  profileImage: string;
-  question: string;
-  date: string;
-  replies?: Question[];
-  isAdmin?: boolean;
-  likes?: number;
-  dislikes?: number;
-}
+import ReplyForm from "../../Components/ReplyForm";
+import Avatar from "./Author/Avatar";
+import Content from "./Content";
+import ArrowButton from "@/Components/Buttons/ArrowButton";
+import { useQuestions } from "@/Contexts/Shop/Items/QuestionsContext";
+import { Question } from "@/Contexts/Shop/Items/QuestionsContext";
 
 interface PageProps {
-  auth: {
-    user: {
-      id: number;
-      name: string;
-      email: string;
-      is_admin: boolean;
-    } | null;
-  };
+  auth: { user: { id: number; name: string; email: string; is_admin: boolean } | null };
 }
 
 interface QuestionCardProps {
@@ -36,123 +17,64 @@ interface QuestionCardProps {
 }
 
 export default function QuestionCard({ question, depth = 0 }: QuestionCardProps) {
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [localReplies, setLocalReplies] = useState<Question[]>(question.replies || []);
-
   const { auth } = usePage<PageProps>().props;
-  const isAdmin = auth?.user?.is_admin ?? false;
+  const {
+    openReplyFormId,
+    setOpenReplyFormId,
+    expandedIds,
+    toggleExpandedId,
+    addReply,
+  } = useQuestions();
 
-  function handleReplySubmit(replyText: string) {
-    const newReply: Question = {
-      author: "Current User",
-      profileImage: "https://i.pravatar.cc/150?img=12",
-      question: replyText,
-      date: new Date().toISOString(),
-      replies: [],
-      isAdmin: isAdmin,
-      likes: 0,
-      dislikes: 0,
-    };
+  const replies = question.replies_recursive ?? []; // ✅ Use recursive replies
 
-    setLocalReplies([...localReplies, newReply]);
-    setShowReplyForm(false);
-    setExpanded(true);
-  }
+  const id = question.id?.toString() || question.date;
+  const showReplyForm = openReplyFormId === id;
+  const expanded = expandedIds.has(id);
 
-  function formatDate(dateString: string) {
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    };
-    return new Date(dateString).toLocaleString(undefined, options);
-  }
+  const handleReply = (text: string) => {
+    if (!auth.user) return;
+    addReply(id, text);
+  };
 
   return (
     <div
-      className={`relative p-4 rounded-lg bg-white dark:bg-[#1e2124]/60 ${
+      className={`relative p-4 shadow-xl rounded-lg ${
         depth > 0
           ? "ml-3 pl-4 border-l-4 border-yellow-500 dark:border-[#7289da]"
           : "border border-black/20 dark:border-white/20"
       }`}
       style={{ marginLeft: depth * 12 }}
     >
-      {/* Arrow icon button top right if there are replies */}
-      {localReplies.length > 0 && (
-        <button
-          type="button"
-          aria-label={expanded ? "Collapse replies" : "Expand replies"}
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpanded(!expanded);
-          }}
-          className="absolute top-2 right-2 p-1 rounded-full hover:bg-yellow-100 dark:hover:bg-[#7289da]/30 focus:outline-none focus:ring-2 focus:ring-yellow-500 dark:focus:ring-[#7289da]"
-        >
-          <ArrowIcon isOpen={expanded} w="24" h="24" />
-        </button>
+      {replies.length > 0 && (
+        <ArrowButton
+          isOpen={expanded}
+          onClick={() => toggleExpandedId(id)}
+          w="24"
+          h="24"
+          className="absolute top-2 right-2"
+        />
       )}
 
       <div className="flex space-x-4">
-        {/* Author image */}
-        <div className="relative w-28 h-28 flex-shrink-0 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
-          <img
-            src={question.profileImage}
-            alt={`${question.author}'s profile`}
-            className="absolute top-0 left-0 w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Text content */}
-        <div className="flex flex-col flex-1 justify-between relative" style={{ minHeight: "100px" }}>
-          <div className="flex flex-col flex-grow" style={{ height: "80%" }}>
-            {/* Author and Date */}
-            <div className="flex flex-col gap-0.5 mb-2">
-              <div className="flex items-center gap-2 font-semibold text-sm text-gray-900 dark:text-white">
-                {question.author}
-                {question.isAdmin && (
-                  <FaUserShield className="text-2xl" title="Admin" aria-label="Admin" />
-                )}
-              </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {formatDate(question.date)}
-              </span>
-            </div>
-
-            {/* Main question text */}
-            <QuestionText text={question.question} />
-          </div>
-
-          <div className="flex items-end" style={{ height: "20%" }}>
-            <ReplyToggleButtons
-              showReplyForm={showReplyForm}
-              toggleReplyForm={() => setShowReplyForm(!showReplyForm)}
-              expanded={expanded}
-              toggleExpanded={() => setExpanded(!expanded)}
-              repliesCount={localReplies.length}
-            />
-          </div>
-
-          <div className="absolute bottom-0 right-0">
-            <LikeDislikeButtons
-              initialLikes={question.likes ?? 0}
-              initialDislikes={question.dislikes ?? 0}
-            />
-          </div>
-        </div>
+        <Avatar question={question} />
+        <Content question={question} />
       </div>
 
-      {/* Reply form */}
       {showReplyForm && (
-        <ReplyForm onSubmit={handleReplySubmit} onCancel={() => setShowReplyForm(false)} />
+        <ReplyForm onSubmit={handleReply} onCancel={() => setOpenReplyFormId(null)} />
       )}
 
-      {/* Replies */}
-      {expanded && localReplies.length > 0 && (
-        <RepliesList replies={localReplies} depth={depth + 1} />
+      {expanded && replies.length > 0 && (
+        <div className="mt-3 space-y-3">
+          {replies.map((reply) => (
+            <QuestionCard
+              key={reply.id?.toString() || reply.date}
+              question={reply}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

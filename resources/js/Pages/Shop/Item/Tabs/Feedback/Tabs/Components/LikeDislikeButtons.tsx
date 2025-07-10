@@ -33,7 +33,7 @@ export default function LikeDislikeButtons({ initialLikes, initialDislikes }: Li
   }, [initialLikes, initialDislikes]);
 
   return (
-    <div className="flex justify-end mt-4 space-x-4 text-sm">
+    <div className="flex justify-end  space-x-4 text-sm">
       <div
         className={`flex items-center cursor-pointer hover:scale-110 transition-transform ${
           voted === "like" ? "text-yellow-500 dark:text-[#7289da]" : "text-gray-600 dark:text-gray-300"

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Dropdown from "@/Components/Dropdown/Dropdown";
-import ArrowIcon from "@/Components/Buttons/ArrowIcon";
+import ArrowIcon from "@/Components/Buttons/ArrowButton";
 
 interface SortByDropdownProps {
   sortBy: string;

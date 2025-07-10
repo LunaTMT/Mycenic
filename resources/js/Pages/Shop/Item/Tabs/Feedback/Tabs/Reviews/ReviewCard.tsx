@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { usePage } from "@inertiajs/react";
-import LikeDislikeButtons from "../Questions/QuestionCard/LikeDislikeButtons";
-import ReplyForm from "../Questions/QuestionCard/ReplyForm";
+import LikeDislikeButtons from "../Components/LikeDislikeButtons";
+import ReplyForm from "../Components/ReplyForm";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import { FaUserShield, FaCheckCircle } from "react-icons/fa";
 import { Review } from "./ReviewsData";
-import ArrowIcon from "@/Components/Buttons/ArrowIcon";
+import ArrowIcon from "@/Components/Buttons/ArrowButton";
+import ArrowButton from "@/Components/Buttons/ArrowButton";
 
 interface ReviewCardProps {
   review: Review;
@@ -72,14 +73,14 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     >
       {/* Arrow icon button top-right if there are replies */}
       {localReplies.length > 0 && (
-        <button
-          type="button"
-          aria-label={expanded ? "Collapse replies" : "Expand replies"}
+        <ArrowButton
+          isOpen={expanded}
           onClick={() => setExpanded(!expanded)}
-          className="absolute top-2 right-2 p-1 rounded-full hover:bg-yellow-100 dark:hover:bg-[#7289da]/30 focus:outline-none focus:ring-2 focus:ring-yellow-500 dark:focus:ring-[#7289da]"
-        >
-          <ArrowIcon isOpen={expanded} w="24" h="24" />
-        </button>
+          w="24"
+          h="24"
+          className="absolute top-2 right-2 z-10"
+        />
+
       )}
 
       <div className="flex space-x-4">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown/Dropdown';
-import ArrowIcon from '@/Components/Buttons/ArrowIcon';
+import ArrowIcon from '@/Components/Buttons/ArrowButton';
 
 const categories = [
   "All", "Agar", "Apparel", "Books", "Equipment", "Foraging", "Gourmet",

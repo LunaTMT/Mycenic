@@ -118,10 +118,17 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $avatar = $request->file('avatar');
-        $filename = Str::random(40) . '.' . $avatar->getClientOriginalExtension();
+
+        // Get the original extension, fallback to jpg if missing
+        $extension = $avatar->getClientOriginalExtension();
+        if (!$extension) {
+            $extension = 'jpg'; // fallback extension
+        }
+
+        $filename = Str::random(40) . '.' . $extension;
         $destinationPath = public_path('assets/avatars');
 
-        // Make sure the directory exists
+        // Ensure the directory exists
         if (!File::exists($destinationPath)) {
             File::makeDirectory($destinationPath, 0755, true);
         }
@@ -129,7 +136,7 @@ class ProfileController extends Controller
         // Move the uploaded file to public/assets/avatars
         $avatar->move($destinationPath, $filename);
 
-        // Remove old avatar if it's local (and not default)
+        // Remove old avatar if local (not default or external URL)
         if ($user->avatar && !Str::startsWith($user->avatar, 'http') && !Str::startsWith($user->avatar, 'default-avatar.png')) {
             $oldPath = public_path($user->avatar);
             if (File::exists($oldPath)) {
@@ -137,7 +144,7 @@ class ProfileController extends Controller
             }
         }
 
-        // Save new avatar path relative to public
+        // Save new avatar path relative to public with extension
         $user->avatar = 'assets/avatars/' . $filename;
         $user->save();
 

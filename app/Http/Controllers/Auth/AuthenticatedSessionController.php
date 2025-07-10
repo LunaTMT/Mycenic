@@ -12,85 +12,46 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\ValidationException;
-
 
 class AuthenticatedSessionController extends Controller
 {
-
-
     public function create(Request $request): Response
     {
-        // Log the incoming request and check if the flash error message exists
-        Log::info('Create login request received.', [
-            'user' => $request->user(), // Optionally log the current user
-            'flash_error' => $request->session()->get('flash.error') // Log the flash message
-        ]);
-        
-        // Get the flash error message from the session
-        $flashMessage = $request->session()->get('flash.error');
-
-        
-        // Render the Inertia view and pass the necessary props
+        // You can log or handle session flash data here if needed
         return Inertia::render('Auth/Login/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
-            'flash.error' => $flashMessage,  // Pass the flash message to the Inertia view
+            'flash' => $request->session()->get('flash'),
         ]);
-
-        
-
     }
-    
-    
-
-    
-    
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        // Validate the captcha token
-        Log::info('store function triggered');
-    
+        // Recaptcha validation logic here (if you use it)
+
         $recaptcha = $request->input('g-recaptcha-response');
         $secret = env('VITE_NOCAPTCHA_SECRET');
-    
+
         $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
             'secret' => $secret,
             'response' => $recaptcha,
         ]);
-    
+
         $data = $response->json();
-    
-        // Log the reCAPTCHA response including score
-        Log::info('reCAPTCHA validation response', [
-            'captcha_score' => $data['score'] ?? 'N/A',
-            'response_data' => $data,
-        ]);
-    
-        if (!$data['success'] || $data['score'] < 0.5) {
-            // CAPTCHA validation failed
-            Log::warning('Login attempt failed: CAPTCHA validation unsuccessful.', [
-                'ip' => $request->ip(),
-                'email' => $request->email,
-                'captcha_score' => $data['score'] ?? 'N/A',
-            ]);
+
+        if (!$data['success'] || ($data['score'] ?? 0) < 0.5) {
             return back()->withErrors(['captcha' => 'CAPTCHA validation failed.']);
         }
-    
-        // If CAPTCHA passed, proceed with normal login
+
+        // Authenticate the user
         $request->authenticate();
         $request->session()->regenerate();
-    
-        Log::info('User successfully logged in.', [
-            'ip' => $request->ip(),
-            'user_id' => $request->user()?->id,
-            'email' => $request->user()?->email,
-        ]);
-    
-        return redirect()->route('home')->with('flash.success', 'Login successful!');
+
+        // Use the redirect parameter from the request, or fallback to home
+        $redirectUrl = $request->input('redirect', route('home'));
+
+        return redirect()->intended($redirectUrl)->with('flash.success', 'Login successful!');
     }
-    
 
     public function destroy(Request $request): RedirectResponse
     {
@@ -99,13 +60,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
-        
+
         return redirect('/');
     }
-
-
- 
-    
-    
-
 }

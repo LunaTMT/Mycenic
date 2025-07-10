@@ -33,6 +33,13 @@ class User extends Authenticatable
         'provider_id',
     ];
 
+    protected $visible = [
+        'id',
+        'name',
+        'email',
+        'avatar',
+    ];
+
     /**
      * The attributes that should be hidden for serialization.
      *

@@ -25,6 +25,7 @@ use App\Http\Controllers\{
     ProfileController,
     PromoCodeController,
     ShippingController,
+    QuestionController,
     
     Auth\AuthenticatedSessionController,
     Auth\SocialAuthController,
@@ -155,6 +156,9 @@ Route::post('/item/{id}/update', [ItemController::class, 'update'])->name('item.
 Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.stock');
 
 
+Route::get('/api/questions', [QuestionController::class, 'getQuestionsWithReplies']);
+
+
 /**
 |--------------------------------------------------------------------------
 | Cart Routes
@@ -177,6 +181,16 @@ Route::post('/item/update-stock/remove', function (Request $request) {
 
     return response()->json(['error' => 'Not enough stock or item not found'], 400);
 })->name('cart.updateStock.remove');
+
+
+
+
+// routes/web.php
+Route::post('/questions/{id}/reply', [QuestionController::class, 'storeReply']);
+Route::post('/questions/{question}/update', [QuestionController::class, 'update'])->middleware('auth');
+Route::delete('/questions/{id}', [QuestionController::class, 'destroy']);
+Route::middleware('auth')->post('/questions', [QuestionController::class, 'store']);
+
 
 
 /**

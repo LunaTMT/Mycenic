@@ -18,7 +18,7 @@ class UnsplashService
 
         $response = Http::get("{$this->baseUrl}/search/photos", [
             'client_id' => config('services.unsplash.access_key'),
-            'query'     => 'mushroom',
+            'query'     => 'beautiful clear mushroom',
             'order_by'  => 'popular',  // Sort by popularity
             'per_page'  => 30,         // Number of photos to get
             'orientation' => 'squarish',

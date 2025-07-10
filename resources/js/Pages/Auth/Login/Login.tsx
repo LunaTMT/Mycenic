@@ -10,7 +10,6 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useRef } from 'react';
 import Breadcrumb from '@/Components/Nav/Breadcrumb';
-import Swal from 'sweetalert2';
 import { Inertia } from '@inertiajs/inertia';
 import { load } from 'recaptcha-v3';
 import SocialLoginComponent from '../SocialLoginComponent';
@@ -23,11 +22,16 @@ export default function Login({
   canResetPassword: boolean;
 }) {
   const { flash } = usePage().props as { flash?: { error?: string } };
+
+  // Read redirect param from query string or default to '/'
+  const redirectParam = new URLSearchParams(window.location.search).get('redirect') || '/';
+
   const { data, setData, post, processing, errors } = useForm({
     email: '',
     password: '',
     remember: false,
     'g-recaptcha-response': '',
+    redirect: redirectParam,  // Include redirect in form data
   });
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,8 +56,6 @@ export default function Login({
     });
   };
 
-
-
   return (
     <GuestLayout
       header={
@@ -69,11 +71,7 @@ export default function Login({
     >
       <Head title="Log in" />
 
-      {status && (
-        <div className="mb-4 text-sm font-medium text-green-600">
-          {status}
-        </div>
-      )}
+      {status && <div className="mb-4 text-sm font-medium text-green-600">{status}</div>}
 
       <div className="relative flex justify-center items-center h-[89vh] w-full px-4 sm:px-6 lg:px-8">
         <video
@@ -87,11 +85,8 @@ export default function Login({
           Your browser does not support the video tag.
         </video>
 
-        <div className="relative  w-full max-w-md bg-white dark:bg-[#424549] border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
-          <form
-            onSubmit={submit}
-            className="w-f/ flex flex-col p-8 gap-4"
-          >
+        <div className="relative w-full max-w-md bg-white dark:bg-[#424549] border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
+          <form onSubmit={submit} className="w-full flex flex-col p-8 gap-4">
             <h2 className="text-2xl font-bold font-Poppins text-left dark:text-white">
               LOGIN
             </h2>
@@ -132,10 +127,11 @@ export default function Login({
                   checked={data.remember}
                   onChange={(e) => setData('remember', e.target.checked)}
                 />
-                <span className="ml-2 text-sm text-black dark:text-white">
-                  Remember me
-                </span>
+                <span className="ml-2 text-sm text-black dark:text-white">Remember me</span>
               </div>
+
+              {/* Hidden input to submit redirect param */}
+              <input type="hidden" name="redirect" value={data.redirect} />
 
               <PrimaryButton className="w-full p-2" disabled={processing}>
                 Sign in

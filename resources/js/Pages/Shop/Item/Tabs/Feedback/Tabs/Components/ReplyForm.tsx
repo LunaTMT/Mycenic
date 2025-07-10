@@ -5,6 +5,7 @@ import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import InputLabel from "@/Components/Login/InputLabel";
 import InputError from "@/Components/Login/InputError";
 import { toast } from "react-toastify";
+import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 
 // Define expected props from Inertia page
 interface PageProps {
@@ -25,17 +26,7 @@ interface ReplyFormProps {
 
 const MAX_LENGTH = 300;
 
-function AuthNotice() {
-  return (
-    <div className="rounded-lg text-gray-600 dark:text-gray-300 p-4 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#2c2f33]">
-      You must{" "}
-      <a href="/login" className="underline font-semibold">
-        sign in
-      </a>{" "}
-      to leave a reply.
-    </div>
-  );
-}
+
 
 export default function ReplyForm({ onSubmit, onCancel }: ReplyFormProps) {
   const { auth } = usePage<PageProps>().props;
@@ -75,6 +66,7 @@ export default function ReplyForm({ onSubmit, onCancel }: ReplyFormProps) {
       if (errors.reply) setErrors({});
     }
   };
+
   // 🔒 Show notice if not logged in
   if (!authUser) {
     return (
@@ -110,7 +102,7 @@ export default function ReplyForm({ onSubmit, onCancel }: ReplyFormProps) {
           </span>
 
           <div className="flex space-x-2">
-            <PrimaryButton disabled={processing} className="px-6 py-2 text-md">
+            <PrimaryButton disabled={processing} className="text-[13px] font-semibold px-3 py-2">
               Submit 
             </PrimaryButton>
             <SecondaryButton

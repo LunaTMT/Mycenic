@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, EffectCoverflow } from "swiper/modules";
-import { useItemContext } from "@/Contexts/Shop/ItemContext";
+import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 
 import "swiper/css";
 import "swiper/css/pagination";

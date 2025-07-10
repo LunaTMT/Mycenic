@@ -1,7 +1,7 @@
 import React from "react";
 import ItemCounter from "./ItemCounter";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
-import { useItemContext } from "@/Contexts/Shop/ItemContext";
+import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 const AddToCartSection: React.FC = () => {

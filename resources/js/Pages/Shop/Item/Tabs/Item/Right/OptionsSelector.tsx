@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import ArrowIcon from "@/Components/Buttons/ArrowIcon";
-import { useItemContext } from "@/Contexts/Shop/ItemContext";
+import ArrowIcon from "@/Components/Buttons/ArrowButton";
+import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 
 
 const OptionsSelector: React.FC = () => {

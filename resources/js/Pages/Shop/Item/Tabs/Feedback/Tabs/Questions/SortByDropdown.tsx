@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Dropdown from "@/Components/Dropdown/Dropdown";
-import ArrowIcon from "@/Components/Buttons/ArrowIcon";
+import ArrowButton from "@/Components/Buttons/ArrowButton";
+import { useQuestions } from "@/Contexts/Shop/Items/QuestionsContext";
 
 const sortOptions = [
   { label: "Newest", value: "newest" },
@@ -9,13 +10,10 @@ const sortOptions = [
   { label: "Least Liked", value: "least_liked" },
 ];
 
-interface SortByDropdownProps {
-  sortBy: string;
-  onSortChange: (value: string) => void;
-}
-
-export default function SortByDropdown({ sortBy, onSortChange }: SortByDropdownProps) {
+export default function SortByDropdown() {
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const { sortBy, handleSortChange } = useQuestions();
 
   return (
     <div
@@ -33,7 +31,12 @@ export default function SortByDropdown({ sortBy, onSortChange }: SortByDropdownP
                 {sortOptions.find((o) => o.value === sortBy)?.label || "Sort"}
               </span>
             </p>
-            <ArrowIcon w="20" h="20" isOpen={showDropdown} />
+            <ArrowButton
+              w="20"
+              h="20"
+              isOpen={showDropdown}
+              onClick={() => setShowDropdown(!showDropdown)}
+            />
           </div>
         </Dropdown.Trigger>
 
@@ -46,7 +49,7 @@ export default function SortByDropdown({ sortBy, onSortChange }: SortByDropdownP
                   sortBy === option.value ? "font-semibold text-yellow-600 dark:text-[#7289da]" : ""
                 }`}
                 onClick={() => {
-                  onSortChange(option.value);
+                  handleSortChange(option.value);
                   setShowDropdown(false);
                 }}
               >
