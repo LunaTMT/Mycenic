@@ -31,7 +31,7 @@ export default function TabNavigation({
      hover:scale-[1.03]`;
 
   return (
-    <div className="flex items-center border-b border-black/20 dark:border-white/20 mb-6">
+    <div className="flex items-center border-b border-black/20 dark:border-white/20 ">
       <div className="flex space-x-4">
         {tabs.map((tab) => (
           <button

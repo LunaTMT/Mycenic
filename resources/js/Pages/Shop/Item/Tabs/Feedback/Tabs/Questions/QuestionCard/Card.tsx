@@ -39,7 +39,7 @@ export default function QuestionCard({ question, depth = 0 }: QuestionCardProps)
 
   return (
     <div
-      className={`relative p-4 shadow-xl rounded-lg ${
+      className={`relative p-4 shadow-xl rounded-lg bg-white dark:bg-[#1e2124]/60 ${
         depth > 0
           ? "ml-3 pl-4 border-l-4 border-yellow-500 dark:border-[#7289da]"
           : "border border-black/20 dark:border-white/20"

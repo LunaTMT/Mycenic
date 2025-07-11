@@ -11,7 +11,7 @@ function QuestionsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="p-4 space-y-4 rounded-md">
+      <div className=" space-y-4 rounded-md">
         <div className="flex justify-between items-center mb-4">
           {/* Add Question button on the left */}
           <button
