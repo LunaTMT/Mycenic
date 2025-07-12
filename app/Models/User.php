@@ -33,6 +33,11 @@ class User extends Authenticatable
         'provider_id',
     ];
 
+    /**
+     * The attributes that should be visible in arrays.
+     *
+     * @var array<int, string>
+     */
     protected $visible = [
         'id',
         'name',
@@ -71,7 +76,10 @@ class User extends Authenticatable
         return !is_null($this->password);
     }
 
-    public function isAdmin()
+    /**
+     * Check if user is an admin.
+     */
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
@@ -82,5 +90,13 @@ class User extends Authenticatable
     public function addresses()
     {
         return $this->hasMany(Address::class);
+    }
+
+    /**
+     * Get all reviews written by the user.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }

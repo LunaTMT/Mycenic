@@ -1,82 +1,54 @@
 import React, { useState } from "react";
-import { usePage } from "@inertiajs/react";
-import ReviewForm from "./ReviewForm";
-
-import { placeholderReviews } from "./ReviewsData";
+import ReviewForm from "./Form/ReviewForm";
 import SortByDropdown from "./SortByDropdown";
+
 import ReviewCard from "./ReviewCard";
-import { Review } from "./ReviewsData";
+import { ReviewsProvider, useReviews } from "@/Contexts/Shop/Items/ReviewsContext";
 
-export default function Reviews() {
-  const { auth } = usePage().props as { auth: { user: any } };
-  const authUser = auth?.user ?? null;
+function ReviewsContent() {
+  const { currentReviews, currentPage, setCurrentPage, totalPages, showForm, setShowForm } = useReviews();
 
-  const [localReviews, setLocalReviews] = useState<Review[]>(placeholderReviews);
-  const [rating, setRating] = useState<number>(0);
-  const [sortBy, setSortBy] = useState<string>("newest");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-
-  const reviewsPerPage = 5;  // <-- Set to 3 here
-
-  const getLikes = (review: Review) => {
-    return typeof review.likes === "number" ? review.likes : 0;
-  };
-
-  const sortedReviews = [...localReviews]
-    .filter((review) => review.verified)
-    .sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (sortBy === "oldest") return new Date(a.date).getTime() - new Date(b.date).getTime();
-      if (sortBy === "most_liked") return getLikes(b) - getLikes(a);
-      if (sortBy === "least_liked") return getLikes(a) - getLikes(b);
-      return 0;
-    });
-
-  const indexOfLastReview = currentPage * reviewsPerPage;
-  const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
-  const currentReviews = sortedReviews.slice(indexOfFirstReview, indexOfLastReview);
-  const totalPages = Math.ceil(sortedReviews.length / reviewsPerPage);
-
-  const handleSortChange = (value: string) => {
-    setSortBy(value);
-    setCurrentPage(1);
-  };
-
+  console.log("current_reviews : ", currentReviews);
   return (
     <div className="space-y-6">
-      <ReviewForm
-        rating={rating}
-        setRating={setRating}
-        setReviews={setLocalReviews}
-        resetRating={() => setRating(0)}
-        authUser={authUser}
-      />
+      <div className="space-y-4 rounded-md">
+        <div className="flex justify-between items-center mb-4">
+          {/* Add Review button on the left */}
+          <button
+            onClick={() => setShowForm((prev) => !prev)}
+            className="px-3 py-1 bg-yellow-500 dark:bg-[#7289da] text-white rounded-md text-sm font-semibold hover:brightness-110 transition"
+          >
+            {showForm ? "Close" : "Add Review"}
+          </button>
 
-      <div className="border border-gray-300 dark:border-gray-600 rounded-md p-4 bg-gray-50 dark:bg-[#2c2f33]">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Customer Reviews</h2>
-          <SortByDropdown sortBy={sortBy} onSortChange={handleSortChange} />
+          {/* Sort dropdowns on the right */}
+          <div className="flex gap-2 items-center">
+
+            <SortByDropdown />
+          </div>
         </div>
 
-        <div className="rounded-lg space-y-2">
-          {currentReviews.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No reviews yet.</p>
-          ) : (
-            currentReviews.map((review, index) => (
-              <ReviewCard key={index} review={review} />
-            ))
-          )}
-        </div>
+        {showForm && <ReviewForm />}
+
+        {currentReviews.length === 0 ? (
+          <p className="text-gray-500 dark:text-gray-400">No reviews yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {currentReviews.map((review) => (
+              <ReviewCard key={review.id || review.date} review={review} />
+            ))}
+          </div>
+        )}
 
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-4">
+          <div className="flex justify-center gap-2 mt-6">
             {Array.from({ length: totalPages }, (_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${
                   currentPage === i + 1
-                    ? "bg-yellow-500 dark:bg-[#7289da]  text-white"
+                    ? "bg-yellow-500 dark:bg-[#7289da] text-white"
                     : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                 }`}
               >
@@ -87,5 +59,13 @@ export default function Reviews() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function   Reviews() {
+  return (
+    <ReviewsProvider>
+      <ReviewsContent />
+    </ReviewsProvider>
   );
 }

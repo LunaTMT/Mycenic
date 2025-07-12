@@ -17,7 +17,11 @@ const categories = [
   { value: "product", label: "Product" },
 ];
 
-export default function QuestionForm() {
+interface QuestionFormProps {
+  onSubmitted?: () => void;
+}
+
+export default function QuestionForm({ onSubmitted }: QuestionFormProps) {
   const { auth } = usePage().props;
   const authUser = auth?.user;
 
@@ -54,14 +58,13 @@ export default function QuestionForm() {
     setProcessing(true);
 
     try {
-      await axios.post("/questions", {
-        question,
-        category,
-      });
+      await axios.post("/questions", { question, category });
 
       toast.success("Question submitted successfully!");
       setQuestion("");
       refreshQuestions();
+
+      if (onSubmitted) onSubmitted(); // ✅ Close form on submit
     } catch (error: any) {
       if (error.response?.status === 422) {
         setErrors(error.response.data.errors || {});
@@ -90,7 +93,7 @@ export default function QuestionForm() {
       ) : (
         <form
           onSubmit={submit}
-          className="space-y-6 p-6 border   border-black/20 dark:border-white/20 rounded-lg bg-white dark:bg-[#1e2124]/30"
+          className="space-y-6 p-6 border border-black/20 dark:border-white/20 rounded-lg bg-white dark:bg-[#1e2124]/30"
         >
           <div className="w-full">
             <InputLabel

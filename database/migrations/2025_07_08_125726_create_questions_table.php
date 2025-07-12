@@ -12,7 +12,6 @@ class CreateQuestionsTable extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // user link
             $table->text('question');
-            $table->dateTime('date');
             $table->boolean('is_admin')->default(false);
             $table->integer('likes')->default(0);
             $table->integer('dislikes')->default(0);

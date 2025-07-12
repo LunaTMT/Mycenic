@@ -37,11 +37,11 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-6 sm:px-0"
+                className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-6 sm:px-0 "
                 onClose={close}
             >
                 {/* Modal background */}
-                <div className="fixed inset-0" aria-hidden="true">
+                <div className="fixed inset-0 " aria-hidden="true">
                     <TransitionChild
                         as={Fragment}
                         enter="ease-out duration-300"
@@ -51,7 +51,7 @@ export default function Modal({
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                     >
-                        <div className="absolute inset-0 bg-gray-500/75 dark:bg-black/70 transition-opacity" />
+                        <div className="absolute inset-0  bg-black/60 dark:bg-white/30 transition-opacity" />
                     </TransitionChild>
                 </div>
 
@@ -67,7 +67,7 @@ export default function Modal({
                 >
                     <DialogPanel
                         className={`mb-6 transform overflow-hidden rounded-lg shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}
-                            bg-white text-gray-900 dark:bg-[#2a2d31] dark:text-white border border-black/10 dark:border-white/10`}
+                            bg-white text-gray-900 dark:bg-[#2a2d31] dark:text-white border border-black/50 dark:border-white/50`}
                     >
                         {children}
                     </DialogPanel>

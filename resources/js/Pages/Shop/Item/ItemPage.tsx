@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import { ToastContainer } from "react-toastify";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -9,13 +9,11 @@ import { ItemProvider } from "@/Contexts/Shop/Items/ItemContext";
 import { AnimatePresence, motion } from "framer-motion";
 import TabNavigation, { TabKey } from "./TabNavigation";
 
-// Updated imports without "TabContent"
 import Item from "./Tabs/Item/Item";
 import Guides from "./Tabs/Guides/Guides";
 import Feedback from "./Tabs/Feedback/Feedback";
 
 interface ItemPageProps {
-  auth: { user: any } | null;
   item: {
     id: number;
     name: string;
@@ -30,8 +28,11 @@ interface ItemPageProps {
   };
 }
 
-const ItemPage: React.FC<ItemPageProps> = ({ auth, item }) => {
-  const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
+const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
+  const { auth } = usePage().props as { auth?: { user?: any } };
+  const user = auth?.user;
+  const Layout = user ? AuthenticatedLayout : GuestLayout;
+
   const { getStock } = useCart();
 
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
@@ -39,7 +40,6 @@ const ItemPage: React.FC<ItemPageProps> = ({ auth, item }) => {
     return (savedTab as TabKey) || "Item";
   });
 
-  // Save active tab to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("activeItemTab", activeTab);
   }, [activeTab]);

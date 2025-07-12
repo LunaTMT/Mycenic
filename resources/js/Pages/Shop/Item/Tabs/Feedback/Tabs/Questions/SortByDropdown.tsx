@@ -12,7 +12,6 @@ const sortOptions = [
 
 export default function SortByDropdown() {
   const [showDropdown, setShowDropdown] = useState(false);
-
   const { sortBy, handleSortChange } = useQuestions();
 
   return (

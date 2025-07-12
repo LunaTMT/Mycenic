@@ -54,7 +54,6 @@ export default function ReplyForm({ onSubmit, onCancel }: ReplyFormProps) {
 
     setTimeout(() => {
       onSubmit(replyText.trim());
-      toast.success("Reply submitted!");
       setReplyText("");
       setProcessing(false);
     }, 500);

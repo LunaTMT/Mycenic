@@ -12,13 +12,14 @@ export interface Question {
     email: string;
   };
   question: string;
-  date: string;
+
   replies_recursive: Question[];
   isAdmin?: boolean;
   likes?: number;
   dislikes?: number;
   parent_id?: number | null;
-  category?: string;          // Added category field
+  category?: string;
+  created_at: string;
 }
 
 interface QuestionsContextType {
@@ -35,7 +36,7 @@ interface QuestionsContextType {
 
   questionText: string;
   setQuestionText: React.Dispatch<React.SetStateAction<string>>;
-  category: string;                                // Added category state
+  category: string;
   setCategory: React.Dispatch<React.SetStateAction<string>>;
   errors: { question?: string };
   setErrors: React.Dispatch<React.SetStateAction<{ question?: string }>>;
@@ -61,12 +62,12 @@ export const QuestionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { auth } = usePage().props as any;
 
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [sortBy, setSortByState] = useState<"newest" | "oldest">("newest");
+  const [sortBy, setSortByState] = useState<string>("newest");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const questionsPerPage = 5;
 
   const [questionText, setQuestionText] = useState<string>("");
-  const [category, setCategory] = useState<string>("general");   // Default category state
+  const [category, setCategory] = useState<string>("general");
   const [errors, setErrors] = useState<{ question?: string }>({});
   const [processing, setProcessing] = useState<boolean>(false);
 
@@ -77,7 +78,6 @@ export const QuestionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     { value: "product", label: "Product" },
   ];
 
-  // Load questions from API
   const refreshQuestions = async () => {
     try {
       const response = await axios.get<Question[]>("/api/questions");
@@ -93,34 +93,40 @@ export const QuestionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     refreshQuestions();
   }, []);
 
-  // Sort questions by date
   const sortedQuestions = useMemo(() => {
-    return [...questions].sort((a, b) =>
-      sortBy === "newest"
-        ? +new Date(b.date) - +new Date(a.date)
-        : +new Date(a.date) - +new Date(b.date)
-    );
+    return [...questions].sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return +new Date(b.created_at) - +new Date(a.created_at);
+        case "oldest":
+          return +new Date(a.created_at) - +new Date(b.created_at);
+        case "most_liked":
+          return (b.likes || 0) - (a.likes || 0);
+        case "least_liked":
+          return (a.likes || 0) - (b.likes || 0);
+        default:
+          return 0;
+      }
+    });
   }, [questions, sortBy]);
 
-  // Filter questions by category (if category is null or "all", show all)
   const filteredQuestions = useMemo(() => {
     if (!category || category === "all") return sortedQuestions;
     return sortedQuestions.filter((q) => q.category === category);
   }, [sortedQuestions, category]);
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
   const currentQuestions = useMemo(() => {
     const start = (currentPage - 1) * questionsPerPage;
     return filteredQuestions.slice(start, start + questionsPerPage);
   }, [filteredQuestions, currentPage]);
 
-  const setSortBy = (v: "newest" | "oldest") => {
+  const setSortBy = (v: string) => {
     setSortByState(v);
     setCurrentPage(1);
   };
 
-  const handleSortChange = (v: string) => setSortBy(v as any);
+  const handleSortChange = (v: string) => setSortBy(v);
 
   const [openReplyFormId, setOpenReplyFormId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -142,6 +148,7 @@ export const QuestionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setOpenReplyFormId(null);
       setExpandedIds((prev) => new Set(prev).add(questionId));
       await refreshQuestions();
+      toast.success("Reply added!");
     } catch {
       toast.error("Reply failed.");
     }
@@ -196,18 +203,18 @@ export const QuestionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           email: authUser.email,
         },
         question: questionText,
-        date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
         replies_recursive: [],
         isAdmin: authUser.role === "admin",
         likes: 0,
         dislikes: 0,
         parent_id: null,
-        category,              // category from state included here
+        category,
       };
       setQuestions((prev) => [newQ, ...prev]);
       toast.success("Question submitted!");
       setQuestionText("");
-      setCategory("general");  // Reset category after submit
+      setCategory("general");
       setProcessing(false);
       return true;
     } catch {

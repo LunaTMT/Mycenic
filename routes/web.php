@@ -10,10 +10,10 @@ use Inertia\Inertia;
 use App\Models\{Item, Order};
 
 // Controllers
-
 use App\Http\Controllers\{
     AddressController,
     ReturnController,
+    ReviewController,
     AboutController,
     CartController,
     CheckoutController,
@@ -26,10 +26,10 @@ use App\Http\Controllers\{
     PromoCodeController,
     ShippingController,
     QuestionController,
-    
+
     Auth\AuthenticatedSessionController,
     Auth\SocialAuthController,
-    Auth\GoogleController // Only needed if used elsewhere
+    Auth\GoogleController // Only if used elsewhere
 };
 
 // Middleware
@@ -46,6 +46,9 @@ use App\Mail\OrderConfirmation;
 |--------------------------------------------------------------------------
 | Home & Static Pages
 |--------------------------------------------------------------------------
+|
+| Routes for the homepage and static informational pages.
+|
 */
 Route::get('/', function () {
     return Inertia::render('Home/Welcome', [
@@ -65,6 +68,9 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 | Authentication Routes
 |--------------------------------------------------------------------------
+|
+| Login, logout, and social authentication routes.
+|
 */
 require __DIR__.'/auth.php';
 
@@ -77,24 +83,23 @@ Route::get('login/{provider}/callback', [SocialAuthController::class, 'handlePro
 
 /**
 |--------------------------------------------------------------------------
-| Profile Routes (Authenticated Users Only)
+| Profile & User Management (Authenticated Users Only)
 |--------------------------------------------------------------------------
+|
+| Routes managing user profiles, shipping info, avatars, and addresses.
+|
 */
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
     Route::patch('/profile/shipping', [ProfileController::class, 'updateShipping'])->name('profile.update-shipping');
-    
-    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
-    Route::post('/profile/addresses', [ProfileController::class, 'storeAddress'])->name('profile.addresses.store');
 
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+
+    Route::post('/profile/addresses', [ProfileController::class, 'storeAddress'])->name('profile.addresses.store');
     Route::get('/profile/addresses', [AddressController::class, 'index'])->name('profile.addresses.index');
 
-    
-    
-    
     Route::get('/profile/shipping-details', function () {
         $user = auth()->user();
 
@@ -106,40 +111,43 @@ Route::middleware('auth')->group(function () {
     })->name('profile.shipping-details');
 });
 
-
-
-
-
+/**
+ * User addresses accessible outside profile namespace.
+ */
 Route::get('/user/addresses', [AddressController::class, 'index'])->name('user.addresses.index');
 Route::post('/user/addresses', [AddressController::class, 'store'])->name('user.addresses.store');
 
 
-
-
 /**
 |--------------------------------------------------------------------------
-| User Info (Authenticated)
+| User Shipping Address Info (Authenticated)
 |--------------------------------------------------------------------------
+|
+| Routes for getting user's shipping address info or checking completeness.
+|
 */
-Route::get('/user/shipping-address', function () {
-    return response()->json(auth()->user()?->only(['name', 'address', 'city', 'zip', 'email']));
-})->name('user.shipping.address')->middleware('auth');
+Route::middleware('auth')->group(function () {
+    Route::get('/user/shipping-address', function () {
+        return response()->json(auth()->user()?->only(['name', 'address', 'city', 'zip', 'email']));
+    })->name('user.shipping.address');
 
+    Route::get('/user/has-shipping-address', function () {
+        $user = auth()->user();
+        $requiredFields = ['name', 'address', 'city', 'zip'];
+        $hasCompleteAddress = $user && collect($requiredFields)->every(fn($field) => filled($user->$field));
 
-Route::get('/user/has-shipping-address', function () {
-    $user = auth()->user();
-
-    $requiredFields = ['name', 'address', 'city', 'zip'];
-    $hasCompleteAddress = $user && collect($requiredFields)->every(fn($field) => filled($user->$field));
-
-    return response()->json(['hasShippingAddress' => $hasCompleteAddress]);
-})->name('user.has.shipping.address')->middleware('auth');
+        return response()->json(['hasShippingAddress' => $hasCompleteAddress]);
+    })->name('user.has.shipping.address');
+});
 
 
 /**
 |--------------------------------------------------------------------------
-| Shop Routes
+| Shop & Item Routes
 |--------------------------------------------------------------------------
+|
+| Routes related to displaying and managing shop items.
+|
 */
 Route::get('/shop', [ItemController::class, 'index'])->name('shop');
 Route::resource('items', ItemController::class);
@@ -156,13 +164,13 @@ Route::post('/item/{id}/update', [ItemController::class, 'update'])->name('item.
 Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.stock');
 
 
-Route::get('/api/questions', [QuestionController::class, 'getQuestionsWithReplies']);
-
-
 /**
 |--------------------------------------------------------------------------
 | Cart Routes
 |--------------------------------------------------------------------------
+|
+| Routes to manage shopping cart and shipping details.
+|
 */
 Route::get('/shop/cart', [CartController::class, 'index'])->name('cart');
 Route::get('/shop/cart/fetch-shipping-details', [CartController::class, 'getShippingDetails'])->name('cart.get.shipping.details');
@@ -170,6 +178,7 @@ Route::post('/shop/cart/store-shipping-details', [CartController::class, 'storeS
 Route::post('/shop/cart/fetch-shipping-estimate', [CartController::class, 'getShippingEstimate'])->name('cart.shipping.estimate');
 Route::post('/shop/cart/fetch-shipping-rates', [CartController::class, 'getShippingRates'])->name('cart.shipping.rates');
 
+// Update item stock (remove stock)
 Route::post('/item/update-stock/remove', function (Request $request) {
     $item = Item::find($request->itemId);
 
@@ -183,20 +192,50 @@ Route::post('/item/update-stock/remove', function (Request $request) {
 })->name('cart.updateStock.remove');
 
 
-
-
-// routes/web.php
+/**
+|--------------------------------------------------------------------------
+| Questions Routes
+|--------------------------------------------------------------------------
+|
+| Routes for managing questions and replies.
+|
+*/
+Route::get('/api/questions', [QuestionController::class, 'getQuestionsWithReplies']);
 Route::post('/questions/{id}/reply', [QuestionController::class, 'storeReply']);
 Route::post('/questions/{question}/update', [QuestionController::class, 'update'])->middleware('auth');
 Route::delete('/questions/{id}', [QuestionController::class, 'destroy']);
 Route::middleware('auth')->post('/questions', [QuestionController::class, 'store']);
 
 
+/**
+|--------------------------------------------------------------------------
+| Reviews Routes
+|--------------------------------------------------------------------------
+|
+| Routes for reviews and replies, with authentication protection where needed.
+|
+*/
+
+
+Route::get('/reviews', [ReviewController::class, 'index']);
+
+Route::middleware('auth')->group(function () {
+    Route::get('/reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::get('/reviews/{reviewId}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
+    Route::put('/reviews/{reviewId}', [ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{reviewId}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+});
+
+ Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
 
 /**
 |--------------------------------------------------------------------------
 | Checkout & Payment Routes
 |--------------------------------------------------------------------------
+|
+| Routes for handling checkout and payment processes.
+|
 */
 Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
 Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
@@ -209,67 +248,70 @@ Route::controller(PaymentController::class)->prefix('payment')->name('payment.')
 
 Route::post('/payment/intent', [PaymentController::class, 'createPaymentIntent'])->name('payment.intent');
 
+
 /**
 |--------------------------------------------------------------------------
-| Orders (Authenticated)
+| Orders Routes (Authenticated)
 |--------------------------------------------------------------------------
+|
+| Authenticated routes for managing orders and returns.
+|
 */
 Route::middleware(['auth'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
 
-    // Routes related to returns should be protected by auth as well:
     Route::get('/orders/{order}/return', [OrderController::class, 'returnInstructions'])->name('orders.return');
     Route::post('/orders/{order}/return/fetch-return-options', [OrderController::class, 'fetchReturnOptions'])->name('orders.return.options');
     Route::post('/orders/{order}/return/create-payment-intent', [OrderController::class, 'getPaymentIntent'])->name('orders.return.payment-intent');
     Route::post('/orders/{order}/return/finish', [OrderController::class, 'finishReturn']);
-    
     Route::get('/orders/{order}/is-returnable', [OrderController::class, 'isReturnable']);
 
-    // Test route can be inside or outside auth, depending on use case. If private:
+    // Test route
     Route::get('/orders-test', fn () => 'working');
 });
 
+
 /**
 |--------------------------------------------------------------------------
-| Orders (Admin only)
+| Orders Routes (Admin Only)
 |--------------------------------------------------------------------------
+|
+| Routes restricted to admin users for order management.
+|
 */
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/orders/{order}/toggle-completed', [OrderController::class, 'toggleCompleted']);
 });
 
+
 /**
 |--------------------------------------------------------------------------
-| Public Orders (if any publicly accessible routes)
+| Public Orders Routes
 |--------------------------------------------------------------------------
+|
+| Public routes related to orders such as creation and shipment tracking.
+|
 */
-// If /orders/create is truly public, leave it outside middleware, otherwise protect it
 Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
-
-// The shipment tracking can be public or protected based on your app logic, here left public:
 Route::get('/orders/track/{carrier}/{tracking_id}', [ShippingController::class, 'trackShipment']);
 
 
-
+/**
+|--------------------------------------------------------------------------
+| Returns Routes (Authenticated)
+|--------------------------------------------------------------------------
+|
+| Routes for managing product returns.
+|
+*/
 Route::middleware(['auth'])->group(function () {
-    // List all returns (admin sees all, users see theirs)
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
-
-    // Show a single return
     Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('returns.show');
-
-    // Create or update a return
     Route::post('/returns', [ReturnController::class, 'store'])->name('returns.store');
-
-    // Update return status or approval (admin only)
     Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('returns.update');
-
-
     Route::get('/returns/{id}/details', [ReturnController::class, 'details'])->name('returns.details');
 });
-
-
 
 
 /**
@@ -285,23 +327,24 @@ Route::post('/promo-code/validate', [PromoCodeController::class, 'validatePromoC
 | Shipping Routes
 |--------------------------------------------------------------------------
 */
-
 Route::prefix('/shipping')->group(function () {
     Route::get('/rates/{orderId}', [ShippingController::class, 'getRates']);
     Route::post('/purchase', [ShippingController::class, 'purchaseLabel']);
-    
 
     Route::get('/track/{carrier}/{trackingNumber}', [ShippingController::class, 'trackShipment']);
     Route::post('/validate-address', [ShippingController::class, 'validateAddress'])->name('shipping.validate.address');
 
-    
     Route::post('/return-{orderId}-options', [ShippingController::class, 'getReturnOptions'])->name('shipping.return.options');
-
 });
+
+
 /**
 |--------------------------------------------------------------------------
 | About / Legal / Help / Info Pages
 |--------------------------------------------------------------------------
+|
+| Grouped routes for informational pages including legal, help, and about pages.
+|
 */
 Route::prefix('about')->name('about.')->group(function () {
     Route::get('/', [AboutController::class, 'index'])->name('index');
@@ -334,8 +377,11 @@ Route::prefix('about')->name('about.')->group(function () {
 
 /**
 |--------------------------------------------------------------------------
-| Email Testing & Transactional
+| Email Testing & Transactional Routes
 |--------------------------------------------------------------------------
+|
+| Routes for testing emails and sending transactional mails.
+|
 */
 Route::post('/send-email', [EmailController::class, 'send']);
 Route::get('/send-order-email', [EmailController::class, 'sendOrderEmail']);
@@ -352,5 +398,9 @@ Route::get('/welcome', function () {
 })->name('welcome');
 
 
-
+/**
+|--------------------------------------------------------------------------
+| Customer Routes (Authenticated)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->get('/customers/{id}', [CustomerController::class, 'show']);

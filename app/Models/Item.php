@@ -22,5 +22,6 @@ class Item extends Model
         'isPsyilocybinSpores',
         'image_sources',        
         'options',
+        'item_id'
     ];
 }

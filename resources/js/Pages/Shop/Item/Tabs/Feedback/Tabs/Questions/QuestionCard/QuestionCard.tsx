@@ -25,7 +25,7 @@ export default function QuestionCard({ question, depth = 0 }: QuestionCardProps)
     toggleExpandedId,
     addReply,
   } = useQuestions();
-
+  console.log(question);
   const replies = question.replies_recursive ?? []; // ✅ Use recursive replies
 
   const id = question.id?.toString() || question.date;

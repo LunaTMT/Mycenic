@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import QuestionForm from "./QuestionForm";
 import SortByDropdown from "./SortByDropdown";
 import SortByCategory from "./SortByCategory";
-import QuestionCard from "./QuestionCard/Card";
+import QuestionCard from "./QuestionCard/QuestionCard";
 import { QuestionsProvider, useQuestions } from "@/Contexts/Shop/Items/QuestionsContext";
 
 function QuestionsContent() {
@@ -11,7 +11,7 @@ function QuestionsContent() {
 
   return (
     <div className="space-y-6">
-      <div className=" space-y-4 rounded-md">
+      <div className="space-y-4 rounded-md">
         <div className="flex justify-between items-center mb-4">
           {/* Add Question button on the left */}
           <button
@@ -28,14 +28,14 @@ function QuestionsContent() {
           </div>
         </div>
 
-        {showForm && <QuestionForm />}
+        {showForm && <QuestionForm onSubmitted={() => setShowForm(false)} />}
 
         {currentQuestions.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400">No questions yet.</p>
         ) : (
           <div className="space-y-4">
             {currentQuestions.map((q) => (
-              <QuestionCard key={q.id || q.date} question={q} />
+              <QuestionCard key={q.id || q.created_at} question={q} />
             ))}
           </div>
         )}

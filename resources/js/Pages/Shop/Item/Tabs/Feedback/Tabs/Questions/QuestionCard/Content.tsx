@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { FaUserShield } from "react-icons/fa";
 import { useQuestions } from "@/Contexts/Shop/Items/QuestionsContext";
 import formatDate from "@/Functions/formatDate";
-import QuestionText from "./Text";
 import LikeDislikeButtons from "../../Components/LikeDislikeButtons";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
@@ -10,8 +9,6 @@ import DangerButton from "@/Components/Buttons/DangerButton";
 import Modal from "@/Components/Login/Modal";
 import { Question } from "@/Contexts/Shop/Items/QuestionsContext";
 import { usePage } from "@inertiajs/react";
-import axios from "axios";
-import { toast } from "react-toastify";
 
 interface ContentProps {
   question: Question;
@@ -24,6 +21,8 @@ export default function Content({ question }: ContentProps) {
     expandedIds,
     toggleExpandedId,
     refreshQuestions,
+    updateQuestion,
+    deleteQuestion,
   } = useQuestions();
 
   const page = usePage();
@@ -55,43 +54,8 @@ export default function Content({ question }: ContentProps) {
     setIsEditing(false);
   };
 
-  const saveEdit = async () => {
-    try {
-      await axios.post(`/questions/${question.id}/update`, {
-        question: editedText,
-      });
-      setIsEditing(false);
-      question.question = editedText;
-      toast.success("Question updated!");
-    } catch (error) {
-      console.error("Failed to update question:", error);
-      toast.error("Failed to update question.");
-    }
-  };
-
   const confirmDelete = () => setConfirmingDelete(true);
   const closeDeleteModal = () => setConfirmingDelete(false);
-
-  const deleteQuestion = async () => {
-    setDeleting(true);
-    try {
-      await axios.delete(`/questions/${question.id}`);
-
-      if (question.parent_id === null) {
-        toast.success("Question and its replies deleted");
-      } else {
-        toast.success("Reply deleted");
-      }
-
-      setConfirmingDelete(false);
-      refreshQuestions();
-    } catch (error) {
-      console.error("Failed to delete question:", error);
-      toast.error("Failed to delete question.");
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   return (
     <>
@@ -111,9 +75,9 @@ export default function Content({ question }: ContentProps) {
 
             <div className="flex items-center gap-2 text-xs">
               <span className="text-gray-500 dark:text-gray-400">
-                {formatDate(question.date)}
+                {formatDate(question.created_at)}
               </span>
-
+              
               {question.parent_id === null && question.category && (
                 <span className="inline-block text-white bg-yellow-500 dark:bg-[#7289da] px-2 py-0.5 rounded-md shadow font-semibold">
                   {question.category}
@@ -122,17 +86,20 @@ export default function Content({ question }: ContentProps) {
             </div>
           </div>
 
-
           {isEditing ? (
             <textarea
-              className="rounded-lg bg-white text-gray-900 dark:text-white dark:bg-[#1e2124]/30 mt-2 border border-black/20 dark:border-white/20 p-3"
+              className="text-gray-800 dark:text-gray-100 text-sm leading-relaxed border rounded-md border-black/20 dark:border-white/20 p-2" 
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
             />
           ) : (
-            <QuestionText text={question.question} />
+            <div className="text-gray-800 dark:text-gray-100 text-sm leading-relaxed">
+              {question.question}
+            </div>
           )}
         </div>
+
+
 
         {!isEditing && (
           <div className="flex items-center justify-between mt-2 w-full">
@@ -186,7 +153,11 @@ export default function Content({ question }: ContentProps) {
         {isEditing && (
           <div className="flex gap-2 mt-2">
             <PrimaryButton
-              onClick={saveEdit}
+              onClick={() =>
+                updateQuestion(question.id!, editedText).then((success) => {
+                  if (success) setIsEditing(false);
+                })
+              }
               className="text-[13px] font-semibold px-3 py-1"
             >
               Save
@@ -203,11 +174,12 @@ export default function Content({ question }: ContentProps) {
 
       <Modal show={confirmingDelete} onClose={closeDeleteModal}>
         <div className="p-6 flex flex-col items-center font-Poppins text-center">
-          <h2 className="text-lg font-medium text-black dark:text-black">
+          <h2 className="text-lg font-medium text-black  dark:text-white">
             Are you sure you want to delete this question?
           </h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Once deleted, this question and all its replies will be permanently removed.
+          <p className="mt-1 text-sm text-gray-600  dark:text-gray-300">
+            Once deleted, this question and all its replies will be permanently
+            removed.
           </p>
           <div className="mt-6 flex justify-center gap-3 w-full">
             <SecondaryButton
@@ -217,7 +189,13 @@ export default function Content({ question }: ContentProps) {
               Cancel
             </SecondaryButton>
             <DangerButton
-              onClick={deleteQuestion}
+              onClick={() => {
+                setDeleting(true);
+                deleteQuestion(question.id!).then((success) => {
+                  if (success) setConfirmingDelete(false);
+                  setDeleting(false);
+                });
+              }}
               disabled={deleting}
               className="rounded-lg p-2 px-4"
             >

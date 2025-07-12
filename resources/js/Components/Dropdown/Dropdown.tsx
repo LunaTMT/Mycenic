@@ -44,7 +44,8 @@ const Trigger = ({ children }: PropsWithChildren) => {
     <div
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      className="relative w-full" // changed from inline-block to w-full here
+      // Absolute and inset-0 fills entire parent container (which must be relative and sized)
+      className="inset-0 w-full h-full cursor-pointer"
     >
       {children}
     </div>
@@ -53,12 +54,12 @@ const Trigger = ({ children }: PropsWithChildren) => {
 
 const Content = ({
   align = 'right',
-  width = '48',
+  width = 'fit',  // default changed to 'fit'
   contentClasses = '',
   children,
 }: PropsWithChildren<{
   align?: 'left' | 'right';
-  width?: '48';
+  width?: '48' | 'fit';  // support for 'fit'
   contentClasses?: string;
 }>) => {
   const { open, setOpen } = useContext(DropDownContext);
@@ -70,7 +71,7 @@ const Content = ({
     alignmentClasses = 'ltr:origin-top-right rtl:origin-top-left end-0';
   }
 
-  const widthClasses = width === '48' ? 'w-48' : '';
+  const widthClasses = width === '48' ? 'w-48' : width === 'fit' ? 'w-fit' : '';
 
   return (
     <Transition
@@ -85,7 +86,7 @@ const Content = ({
       <div
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className={`absolute mt-2 z-50  shadow-2xl border-[1px] border-black/30 dark:border-gray-500 ${alignmentClasses} ${widthClasses}`}
+        className={`absolute mt-2 z-50 shadow-2xl  ${alignmentClasses} ${widthClasses}`}
       >
         <div className={`${contentClasses}`}>
           {children}
@@ -103,7 +104,7 @@ const DropdownLink = ({
   <Link
     {...props}
     className={
-      'block w-full  text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out focus:bg-gray-100 focus:outline-none ' +
+      'block w-full text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out focus:bg-gray-100 focus:outline-none ' +
       className
     }
   >

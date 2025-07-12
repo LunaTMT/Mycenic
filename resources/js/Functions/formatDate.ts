@@ -1,4 +1,4 @@
-export default function formatDate(dateString: string): string {
+export default function formatDate(date: string | Date): string {
   const options: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "short",
@@ -7,5 +7,5 @@ export default function formatDate(dateString: string): string {
     minute: "2-digit",
     hour12: true,
   };
-  return new Date(dateString).toLocaleString(undefined, options);
+  return new Date(date).toLocaleString(undefined, options);
 }

@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Dropdown from "@/Components/Dropdown/Dropdown";
 import ArrowIcon from "@/Components/Buttons/ArrowButton";
-import { useReviews } from "@/Contexts/Shop/Items/ReviewsContext";
+
+interface SortByDropdownProps {
+  sortBy: string;
+  onSortChange: (value: string) => void;
+}
 
 const sortOptions = [
   { label: "Newest", value: "newest" },
@@ -10,13 +14,9 @@ const sortOptions = [
   { label: "Least Liked", value: "least_liked" },
 ];
 
-export default function SortByDropdown() {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const { sortBy, handleSortChange } = useReviews();
 
-  const handleDropdownStateChange = (isOpen: boolean) => {
-    setShowDropdown(isOpen);
-  };
+const SortByDropdown = ({ sortBy, onSortChange }: SortByDropdownProps) => {
+  const [showDropdown, setShowDropdown] = useState(false);
 
   return (
     <div
@@ -25,31 +25,28 @@ export default function SortByDropdown() {
       onMouseLeave={() => setShowDropdown(false)}
       onClick={() => setShowDropdown((prev) => !prev)}
     >
-      <Dropdown onOpenChange={handleDropdownStateChange}>
+      <Dropdown onOpenChange={setShowDropdown}>
         <Dropdown.Trigger>
-          <div className="flex justify-center items-center gap-2 cursor-pointer">
-            <p className="font-Poppins text-sm hover:text-black dark:text-white/70 dark:hover:text-white">
+          <div className="flex items-center gap-2 cursor-pointer">
+            <p className="font-Poppins text-sm text-gray-700 dark:text-white/70 hover:text-black dark:hover:text-white">
               Sort By:{" "}
               <span className="font-semibold text-yellow-600 dark:text-[#7289da] capitalize">
-                {sortOptions.find((o) => o.value === sortBy)?.label || "Sort"}
+                {sortOptions.find((o) => o.value === sortBy)?.label}
               </span>
             </p>
-            <ArrowIcon w="25" h="25" isOpen={showDropdown} />
+            <ArrowIcon w="20" h="20" isOpen={showDropdown} />
           </div>
         </Dropdown.Trigger>
 
         <Dropdown.Content>
-          <ul className="relative text-right w-full bg-white dark:bg-[#424549] shadow-lg z-50">
+          <ul className="text-right bg-white dark:bg-[#424549] shadow-lg z-50 w-48 rounded-md overflow-hidden">
             {sortOptions.map((option) => (
               <li
                 key={option.value}
-                className={`cursor-pointer px-4 py-2 font-Poppins hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70 text-gray-700 dark:text-gray-300 ${
+                className={`px-4 py-2 cursor-pointer text-sm font-Poppins text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#7289da]/70 ${
                   sortBy === option.value ? "font-semibold text-yellow-600 dark:text-[#7289da]" : ""
                 }`}
-                onClick={() => {
-                  handleSortChange(option.value);
-                  setShowDropdown(false);
-                }}
+                onClick={() => onSortChange(option.value)}
               >
                 {option.label}
               </li>
@@ -59,4 +56,6 @@ export default function SortByDropdown() {
       </Dropdown>
     </div>
   );
-}
+};
+
+export default SortByDropdown;

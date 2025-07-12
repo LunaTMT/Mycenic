@@ -21,7 +21,7 @@ class QuestionController extends Controller
                     'repliesRecursive.user'
                 ])
                 ->whereNull('parent_id')  
-                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc') 
                 ->get();
 
             Log::info('Fetching questions with replies succeeded.', ['count' => $questions->count()]);
@@ -153,12 +153,12 @@ class QuestionController extends Controller
         ], 201);
     }
 
-
-    // Hard delete question; reassign replies to parent; admins can delete any question, users only their own
+    // Delete question and replies recursively
     public function destroy($id)
     {
         try {
-            $question = Question::findOrFail($id);
+            $question = Question::with('repliesRecursive')->findOrFail($id); // eager load replies
+
             $user = Auth::user();
 
             if (!$user) {
@@ -169,16 +169,7 @@ class QuestionController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
-            if ($question->parent_id === null) {
-                // Top-level question: delete it and all nested replies
-                $this->deleteWithReplies($question);
-            } else {
-                // Reply: reassign its replies to its own parent
-                Question::where('parent_id', $question->id)
-                    ->update(['parent_id' => $question->parent_id]);
-
-                $question->delete();
-            }
+            $this->deleteWithReplies($question);
 
             return response()->json(['message' => 'Question deleted successfully.']);
         } catch (\Exception $e) {
@@ -191,14 +182,15 @@ class QuestionController extends Controller
         }
     }
 
-
-    protected function deleteWithReplies(Question $question)
+    // Recursive delete helper
+    protected function deleteWithReplies($question)
     {
-        foreach ($question->repliesRecursive as $reply) {
-            $this->deleteWithReplies($reply);
+        if ($question->replies()->count() > 0) {
+            foreach ($question->replies as $reply) {
+                $this->deleteWithReplies($reply);
+            }
         }
 
         $question->delete();
     }
-
 }

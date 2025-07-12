@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { FaChevronRight } from "react-icons/fa";
 
 import StarRating from "./StarRating";
-import { Review } from "../../types";
+import { Review } from "../../../types";
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 
 interface ReviewFormProps {

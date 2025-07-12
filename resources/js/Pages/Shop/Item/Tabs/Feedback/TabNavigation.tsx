@@ -1,5 +1,5 @@
 import React from "react";
-import SortByDropdown from "./Tabs/Reviews/SortByDropdown";
+import SortByDropdown from "./Tabs/Reviews/test/SortByDropdown";
 
 interface Tab {
   key: string;
