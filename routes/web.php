@@ -222,12 +222,15 @@ Route::get('/reviews', [ReviewController::class, 'index']);
 Route::middleware('auth')->group(function () {
     Route::get('/reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-    Route::get('/reviews/{reviewId}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
-    Route::put('/reviews/{reviewId}', [ReviewController::class, 'update'])->name('reviews.update');
-    Route::delete('/reviews/{reviewId}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
+    Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    
+    Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
 });
 
- Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
+// Add this GET route for fetching a single review (can be outside or inside middleware depending on your needs)
+Route::get('/reviews/{review}', [ReviewController::class, 'show'])->name('reviews.show');
 
 /**
 |--------------------------------------------------------------------------

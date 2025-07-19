@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Dropdown from "@/Components/Dropdown/Dropdown";
 import ArrowIcon from "@/Components/Buttons/ArrowButton";
-import { useReviews } from "@/Contexts/Shop/Items/ReviewsContext";
+import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 
 const sortOptions = [
   { label: "Newest", value: "newest" },

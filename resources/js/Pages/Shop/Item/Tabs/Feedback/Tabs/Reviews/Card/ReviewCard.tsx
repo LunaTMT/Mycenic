@@ -1,13 +1,14 @@
 import React from "react";
 import { usePage } from "@inertiajs/react";
-import ReplyForm from "../Components/ReplyForm";
-import Avatar from "./Author";
-import Content from "./Content/Content";
+import ReplyForm from "../../Components/ReplyForm";
+import Avatar from "./Content/Author";
+import Content from "./Content/ReviewContent";
 import ArrowButton from "@/Components/Buttons/ArrowButton";
-import { useReviews } from "@/Contexts/Shop/Items/ReviewsContext";
-import { Review } from "@/Contexts/Shop/Items/ReviewsContext";
 
-import ActionsDropdown from "../../ActionDropdown"; // make sure this path is correct
+import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+
+
 
 interface PageProps {
   auth: {
@@ -23,7 +24,6 @@ interface ReviewCardProps {
 export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
   const { auth } = usePage<PageProps>().props;
   const {
-    openReplyFormId,
     setOpenReplyFormId,
     expandedIds,
     toggleExpandedId,

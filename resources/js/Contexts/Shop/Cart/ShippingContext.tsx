@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useCart } from '@/Contexts/Shop/Cart/CartContext'; // Assuming this hook is available in your app
+import { useCart } from './CartContext';
 import { router } from "@inertiajs/react";
 
 // TYPES

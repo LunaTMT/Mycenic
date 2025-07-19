@@ -1,8 +1,12 @@
 import React, { useState } from "react";
-import { useReviews } from "@/Contexts/Shop/Items/ReviewsContext"; // Adjust import path as needed
 
-export default function StarRating({ size = 40 }: { size?: number }) {
-  const { rating, setRating } = useReviews();
+interface StarRatingProps {
+  size?: number;
+  rating: number;
+  setRating: React.Dispatch<React.SetStateAction<number>>;
+}
+
+export default function StarRating({ size = 30, rating, setRating }: StarRatingProps) {
   const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   const activeClass = `
@@ -101,4 +105,3 @@ export default function StarRating({ size = 40 }: { size?: number }) {
     </div>
   );
 }
-  

@@ -6,10 +6,10 @@ import Dropdown from "@/Components/Dropdown/Dropdown";
 import ArrowIcon from "@/Components/Buttons/ArrowButton";
 import { toast } from "react-toastify";
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
-import { useReviews } from "@/Contexts/Shop/Items/ReviewsContext";
+import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import axios from "axios";
 import { FiUpload } from "react-icons/fi";
-import StarRating from "../test/StarRating";
+import StarRating from "./StarRating";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 
 const categories = [

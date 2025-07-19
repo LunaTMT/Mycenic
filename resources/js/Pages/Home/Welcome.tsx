@@ -2,8 +2,8 @@ import React from "react";
 import { Head, usePage } from "@inertiajs/react";
 import { ToastContainer, toast } from 'react-toastify';
 
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import GuestLayout from "@/Layouts/GuestLayout";
+import Authenticated from "@/Layouts/AuthenticatedLayout";
+import Guest from "@/Layouts/GuestLayout";
 
 import VideoPlayer from "@/Components/Video/VideoPlayer";
 import CustomerReviews from "./CustomerReviews";
@@ -24,8 +24,8 @@ interface WelcomeProps {
 
 const Welcome: React.FC<WelcomeProps> = () => {
   const { auth } = usePage().props as { auth: { user: any } };
-  const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
-  const { darkMode } = useDarkMode();
+  const Layout = auth?.user ? Authenticated : Guest;
+
 
   return (
     <Layout>

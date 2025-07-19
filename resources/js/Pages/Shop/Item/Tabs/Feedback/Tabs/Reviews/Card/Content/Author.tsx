@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Review } from "@/Contexts/Shop/Items/ReviewsContext";
+
+import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 
 interface AvatarProps {
   review: Review;

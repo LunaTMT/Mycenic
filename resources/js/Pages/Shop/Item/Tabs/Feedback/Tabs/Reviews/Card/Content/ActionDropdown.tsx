@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Dropdown from "@/Components/Dropdown/Dropdown";
 import { BsThreeDots } from "react-icons/bs";
-import { useReviews } from "@/Contexts/Shop/Items/ReviewsContext";
+import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import Modal from "@/Components/Login/Modal";
 import { usePage } from "@inertiajs/react";
 
