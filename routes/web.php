@@ -227,10 +227,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     
     Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
+    
 });
 
 // Add this GET route for fetching a single review (can be outside or inside middleware depending on your needs)
 Route::get('/reviews/{review}', [ReviewController::class, 'show'])->name('reviews.show');
+Route::post('/reviews/{review}/vote', [ReviewController::class, 'vote']);
 
 /**
 |--------------------------------------------------------------------------

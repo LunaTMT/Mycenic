@@ -145,7 +145,24 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
     });
   };
 
-  const [isEditingId, setIsEditingId] = useState<string | null>(null);
+  // Persisted isEditingId state
+  const [isEditingIdState, setIsEditingIdState] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("isEditingId");
+    }
+    return null;
+  });
+
+  const setIsEditingId = (id: string | null) => {
+    setIsEditingIdState(id);
+    if (typeof window !== "undefined") {
+      if (id === null) {
+        localStorage.removeItem("isEditingId");
+      } else {
+        localStorage.setItem("isEditingId", id);
+      }
+    }
+  };
 
   const [editedTextById, setEditedTextByIdState] = useState<Record<number, string>>({});
   const [editedRatingById, setEditedRatingByIdState] = useState<Record<number, number>>({});
@@ -340,11 +357,7 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
         formData.append(`deleted_image_ids[${index}]`, id.toString());
       });
 
-      const response = await axios.post(`/reviews/${reviewId}`, formData, {
-        headers: {
-          // Let axios set Content-Type including boundary
-        },
-      });
+      await axios.post(`/reviews/${reviewId}`, formData);
 
       await refreshReviews();
 
@@ -465,7 +478,7 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
         updateReview,
         deleteReview,
 
-        isEditingId,
+        isEditingId: isEditingIdState,
         setIsEditingId,
         editedText: "", // unused but needed in type
         setEditedText: () => {}, // unused
@@ -498,7 +511,7 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
 
         revertUnsavedImages,
 
-        clearImagesForReview, // <--- added here
+        clearImagesForReview,
       }}
     >
       {children}

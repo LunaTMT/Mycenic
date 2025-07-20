@@ -40,7 +40,7 @@ export default function ReviewContent({ review }: ReviewContentProps) {
     removeImage,
     markImageForDeletion,
     addReply,
-    clearImagesForReview,  // <-- new function assumed from context
+    clearImagesForReview,
   } = useReviews();
 
   const { auth } = usePage().props;
@@ -58,13 +58,9 @@ export default function ReviewContent({ review }: ReviewContentProps) {
   const isOwner = review.user?.id === authUser?.id;
   const isAdmin = authUser?.is_admin || authUser?.isAdmin;
 
-  // Images from editing state (includes new uploads)
   const images = imagesByReviewId[review.id!] || [];
-  // IDs of images marked for deletion
   const imagesToDelete = deletedImageIdsByReviewId[review.id!] || [];
 
-  // Decide images to display in gallery:
-  // Show no images if editing (because we cleared them), until user adds new images
   const displayImages = isEditing
     ? images
     : (review.images ?? []).filter(img => !imagesToDelete.includes(img.id));
@@ -79,15 +75,16 @@ export default function ReviewContent({ review }: ReviewContentProps) {
   const [deleting, setDeleting] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<number | null>(null);
 
+  const prevIsEditingRef = useRef(false);
+
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing && !prevIsEditingRef.current) {
       setLocalContent(review.content ?? "");
       setLocalRating(review.rating ?? 0);
-
-      // Clear uploaded images on edit start
-     // clearImagesForReview(review.id!);
+      // clearImagesForReview(review.id!);
     }
-  }, [isEditing, review, clearImagesForReview]);
+    prevIsEditingRef.current = isEditing;
+  }, [isEditing, review.content, review.rating]);
 
   useEffect(() => {
     const objectUrls: string[] = [];
@@ -104,23 +101,29 @@ export default function ReviewContent({ review }: ReviewContentProps) {
     };
   }, [images]);
 
-  const handleSave = async () => {
+  // Save content on blur WITHOUT closing editing
+  const saveContent = async () => {
     if (!review.id) return;
 
+    setSaving(true);
     setEditedTextById(review.id!, localContent);
     setEditedRatingById(review.id!, localRating);
 
-    setSaving(true);
     const newFiles = images.filter((img) => img.id < 0 && img.file).map((img) => img.file!) ?? [];
 
     const success = await updateReview(review.id, localContent, localRating, newFiles, imagesToDelete);
 
-    if (success) {
-      setIsEditingId(null);
-    } else {
+    if (!success) {
       console.error("Failed to update review");
     }
+
     setSaving(false);
+  };
+
+  // Save and close editing mode
+  const handleSave = async () => {
+    await saveContent();
+    setIsEditingId(null);
   };
 
   const handleReply = (text: string) => {
@@ -172,6 +175,7 @@ export default function ReviewContent({ review }: ReviewContentProps) {
                   setLocalContent(e.target.value);
                 }
               }}
+              onBlur={saveContent} // save on blur but keep editing open
               placeholder="Write your review here..."
               rows={5}
               className="resize-none w-full bg-white dark:bg-[#1e2124] text-gray-900 dark:text-gray-100 px-4 pt-3 pb-12 rounded-md border-none focus:outline-none focus:ring-0 min-h-[120px]"
@@ -344,6 +348,7 @@ export default function ReviewContent({ review }: ReviewContentProps) {
               </div>
               <div className="flex items-center gap-2">
                 <LikeDislikeButtons
+                  reviewId={review.id!}
                   initialLikes={review.likes || 0}
                   initialDislikes={review.dislikes || 0}
                 />

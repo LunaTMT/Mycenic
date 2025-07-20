@@ -45,4 +45,11 @@ class Review extends Model
     {
         return $this->belongsTo(Review::class, 'parent_id');
     }
+
+
+    public function votes()
+    {
+        return $this->hasMany(ReviewVote::class);
+    }
+
 }

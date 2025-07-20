@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+
 use App\Models\ReviewImage;
 use OpenAI;
 use Illuminate\Support\Facades\Storage;
+use App\Models\ReviewVote;
+
 
 class ReviewController extends Controller
 {
@@ -114,6 +117,121 @@ class ReviewController extends Controller
             return response()->json(['error' => 'Failed to submit reply'], 500);
         }
     }
+    
+
+    
+
+    public function vote(Request $request, Review $review)
+    {
+        $vote = $request->input('vote'); // 'like' or 'dislike'
+        $user = $request->user();
+
+        // Get guest token from cookie or request input
+        $guestToken = $user ? null : ($request->cookie('guest_token') ?? $request->input('guest_token'));
+
+        Log::info('Incoming vote request', [
+            'user_id' => $user?->id,
+            'guest_token' => $guestToken,
+            'vote' => $vote,
+            'review_id' => $review->id,
+        ]);
+
+        // Validate vote
+        if (!in_array($vote, ['like', 'dislike'])) {
+            Log::warning('Invalid vote value', ['vote' => $vote]);
+            return response()->json(['error' => 'Invalid vote value'], 400);
+        }
+
+        if (!$user && !$guestToken) {
+            Log::warning('Missing guest token for anonymous vote');
+            return response()->json(['error' => 'Missing guest token'], 400);
+        }
+
+        Log::info('Checking for existing vote...');
+        // Check if user (or guest token) already voted
+        $existingVote = $review->votes()
+            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when(!$user, fn($q) => $q->where('guest_token', $guestToken))
+            ->first();
+
+        if ($existingVote) {
+            Log::info('Existing vote found', ['existing_vote' => $existingVote->vote]);
+
+            if ($existingVote->vote === $vote) {
+                Log::info('Vote is the same as before, removing vote (toggle off)');
+
+                // Update counts
+                if ($existingVote->vote === 'like') {
+                    $review->likes = max(0, $review->likes - 1);
+                } else {
+                    $review->dislikes = max(0, $review->dislikes - 1);
+                }
+                $review->save();
+
+                $existingVote->delete();
+
+                return response()->json([
+                    'message' => 'Vote removed',
+                    'likes' => $review->likes,
+                    'dislikes' => $review->dislikes,
+                ]);
+            } else {
+                Log::info('Vote changed, updating vote record');
+
+                // Update counts: remove old vote, add new vote
+                if ($existingVote->vote === 'like') {
+                    $review->likes = max(0, $review->likes - 1);
+                } else {
+                    $review->dislikes = max(0, $review->dislikes - 1);
+                }
+
+                if ($vote === 'like') {
+                    $review->likes += 1;
+                } else {
+                    $review->dislikes += 1;
+                }
+
+                $review->save();
+
+                $existingVote->vote = $vote;
+                $existingVote->save();
+
+                return response()->json([
+                    'message' => 'Vote updated',
+                    'likes' => $review->likes,
+                    'dislikes' => $review->dislikes,
+                ]);
+            }
+        } else {
+            Log::info('No existing vote, creating new vote');
+
+            // Add new vote count
+            if ($vote === 'like') {
+                $review->likes += 1;
+            } else {
+                $review->dislikes += 1;
+            }
+            $review->save();
+
+            $review->votes()->create([
+                'user_id' => $user?->id,
+                'guest_token' => $guestToken,
+                'vote' => $vote,
+            ]);
+
+            return response()->json([
+                'message' => 'Vote added',
+                'likes' => $review->likes,
+                'dislikes' => $review->dislikes,
+            ]);
+        }
+    }
+
+
+
+
+
+
 
     public function update(Request $request, Review $review)
     {
