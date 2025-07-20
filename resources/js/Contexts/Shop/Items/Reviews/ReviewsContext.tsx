@@ -372,12 +372,11 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
     }
   };
 
-  const deleteReview = async (reviewId: number) => {
+  const deleteReview = async (reviewId: number, parentId: number | null) => {
     try {
       setDeleting(true);
       await axios.delete(`/reviews/${reviewId}`);
       await refreshReviews();
-      toast.success("Review deleted");
       setDeleting(false);
       return true;
     } catch {

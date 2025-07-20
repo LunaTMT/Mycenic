@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ReviewInputArea from "../../Form/ReviewInputArea";
-import ReviewImageGallery from "./ImageGallery/ReviewImageGallery";
+import ReviewImageGallery from "./ImageGallery/ImageGallery";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import axios from "axios";

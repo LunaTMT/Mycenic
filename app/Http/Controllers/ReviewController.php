@@ -320,7 +320,7 @@ class ReviewController extends Controller
         Log::info('Attempting to delete review', ['user_id' => $user?->id, 'review_id' => $reviewId]);
 
         try {
-            $review = Review::findOrFail($reviewId);
+            $review = Review::with(['images', 'repliesRecursive.images'])->findOrFail($reviewId);
 
             if (!$user) {
                 return response()->json(['error' => 'Unauthenticated'], 401);
@@ -330,12 +330,7 @@ class ReviewController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
-            if ($review->parent_id === null) {
-                $this->deleteWithReplies($review);
-            } else {
-                Review::where('parent_id', $review->id)->update(['parent_id' => $review->parent_id]);
-                $review->delete();
-            }
+            $this->deleteWithReplies($review);
 
             Log::info('Review deleted successfully', ['review_id' => $reviewId]);
             return response()->json(['message' => 'Review deleted successfully.'], 200);
@@ -347,12 +342,17 @@ class ReviewController extends Controller
 
     protected function deleteWithReplies(Review $review)
     {
+        // Delete all associated images
         foreach ($review->images as $image) {
             Storage::disk('public')->delete($image->image_path);
             $image->delete();
         }
 
-        foreach ($review->replies as $reply) {
+        // Delete all votes
+        $review->votes()->delete();
+
+        // Recursively delete child replies (with their images and votes)
+        foreach ($review->repliesRecursive as $reply) {
             $this->deleteWithReplies($reply);
         }
 
