@@ -21,20 +21,64 @@ export default function StaticStarRating({ rating, size = 16 }: StaticStarRating
   return (
     <div className="flex gap-[2px] items-center">
       {[...Array(5)].map((_, i) => {
-        const isActive = rating >= i + 1;
-        return (
-          <svg
-            key={i}
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="currentColor"
-            className={isActive ? activeClass : inactiveClass}
-          >
-            <path d={starPath} />
-          </svg>
-        );
+        const starValue = i + 1;
+        const isFull = rating >= starValue;
+        const isHalf = rating >= starValue - 0.5 && rating < starValue;
+
+        if (isFull) {
+          return (
+            <svg
+              key={i}
+              width={size}
+              height={size}
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="currentColor"
+              className={activeClass}
+            >
+              <path d={starPath} />
+            </svg>
+          );
+        } else if (isHalf) {
+          return (
+            <svg
+              key={i}
+              width={size}
+              height={size}
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={activeClass}
+            >
+              <defs>
+                <linearGradient id={`halfStaticGrad${i}`}>
+                  <stop offset="50%" stopColor="currentColor" />
+                  <stop offset="50%" stopColor="transparent" />
+                </linearGradient>
+              </defs>
+              <path fill={`url(#halfStaticGrad${i})`} d={starPath} stroke="none" />
+              <path d={starPath} />
+            </svg>
+          );
+        } else {
+          return (
+            <svg
+              key={i}
+              width={size}
+              height={size}
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={inactiveClass}
+            >
+              <path d={starPath} />
+            </svg>
+          );
+        }
       })}
     </div>
   );

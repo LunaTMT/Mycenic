@@ -1,7 +1,7 @@
 import React from "react";
 import { usePage } from "@inertiajs/react";
 import ReplyForm from "../../Components/ReplyForm";
-import Avatar from "./Content/Author";
+import Avatar from "./Content/Avatar";
 import Content from "./Content/ReviewContent";
 import ArrowButton from "@/Components/Buttons/ArrowButton";
 
@@ -51,7 +51,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       style={{ marginLeft: depth * 12 }}
     >
       {replies.length > 0 && (
-        <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
+        <div className="absolute top-2 right-2 flex items-center space-x-2">
           <ArrowButton
             isOpen={expanded}
             onClick={() => toggleExpandedId(id)}
@@ -70,9 +70,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
         </div>
       </div>
 
-      {isReplyFormOpen && (
-        <ReplyForm onSubmit={handleReply} onCancel={() => setOpenReplyFormId(null)} />
-      )}
 
       {expanded && replies.length > 0 && (
         <div className="mt-3 space-y-3">

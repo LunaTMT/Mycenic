@@ -6,7 +6,6 @@ import React, {
   useEffect,
   Dispatch,
   SetStateAction,
-  useRef,
 } from "react";
 import { usePage } from "@inertiajs/react";
 import axios from "axios";
@@ -35,7 +34,7 @@ export interface Review {
 interface Image {
   id: number;
   image_path: string;
-  file?: File; // present if newly added image
+  file?: File;
 }
 
 interface ReviewsContextType {
@@ -109,7 +108,11 @@ interface ReviewsContextType {
   getEditedRatingById: (id: number) => number;
   setEditedRatingById: (id: number, value: number) => void;
 
-  saveReviewChanges: (reviewId: number, newFiles: File[], deletedIds: number[]) => Promise<void>;
+  saveReviewChanges: (reviewId: number) => Promise<void>;
+
+  revertUnsavedImages: (reviewId: number) => void;
+
+  clearImagesForReview: (reviewId: number) => void; // <--- Added here
 }
 
 const ReviewsContext = createContext<ReviewsContextType | undefined>(undefined);
@@ -151,8 +154,6 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
 
   const setEditedTextById = (id: number, value: string) => {
     setEditedTextByIdState((prev) => {
-      const prevValue = prev[id] ?? "";
-      console.log(`[ReviewsContext] setEditedTextById called for id=${id}: previous="${prevValue}", new="${value}"`);
       return { ...prev, [id]: value };
     });
   };
@@ -161,8 +162,6 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
 
   const setEditedRatingById = (id: number, value: number) => {
     setEditedRatingByIdState((prev) => {
-      const prevValue = prev[id] ?? 0;
-      console.log(`[ReviewsContext] setEditedRatingById called for id=${id}: previous=${prevValue}, new=${value}`);
       return { ...prev, [id]: value };
     });
   };
@@ -177,35 +176,13 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
   const [deleting, setDeleting] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
+  // Images and deleted images per review
   const [imagesByReviewId, setImagesByReviewId] = useState<Record<number, Image[]>>({});
   const [deletedImageIdsByReviewId, setDeletedImageIdsByReviewId] = useState<Record<number, number[]>>({});
-  const deletedImageIdsRef = useRef<Record<number, number[]>>({});
-
-  const [category, setCategory] = useState<string>("");
-  const [itemId, setItemId] = useState<number>(0);
-
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (!initialized.current && reviews.length > 0) {
-      const initialTexts: Record<number, string> = {};
-      const initialRatings: Record<number, number> = {};
-      reviews.forEach((review) => {
-        if (review.id !== undefined) {
-          initialTexts[review.id] = review.content;
-          initialRatings[review.id] = review.rating ?? 0;
-        }
-      });
-      setEditedTextByIdState(initialTexts);
-      setEditedRatingByIdState(initialRatings);
-      initialized.current = true;
-    }
-  }, [reviews]);
 
   const addImage = (reviewId: number, file: File) => {
-    console.log("Adding image to reviewId:", reviewId, file);
     const newImage: Image = {
-      id: Date.now() * -1,
+      id: Date.now() * -1, // negative temporary id
       image_path: URL.createObjectURL(file),
       file,
     };
@@ -237,6 +214,35 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
       ...prev,
       [reviewId]: (prev[reviewId] || []).filter((id) => id !== imageId),
     }));
+  };
+
+  // New: revert newly added images on cancel (discard images with negative id)
+  const revertUnsavedImages = (reviewId: number) => {
+    setImagesByReviewId((prev) => {
+      const savedImages = (prev[reviewId] || []).filter((img) => img.id >= 0);
+      return {
+        ...prev,
+        [reviewId]: savedImages,
+      };
+    });
+    setDeletedImageIdsByReviewId((prev) => {
+      const copy = { ...prev };
+      delete copy[reviewId];
+      return copy;
+    });
+  };
+
+  // NEW FUNCTION: clear all images (saved + uploaded) for review
+  const clearImagesForReview = (reviewId: number) => {
+    setImagesByReviewId((prev) => ({
+      ...prev,
+      [reviewId]: [],
+    }));
+    setDeletedImageIdsByReviewId((prev) => {
+      const copy = { ...prev };
+      delete copy[reviewId];
+      return copy;
+    });
   };
 
   const refreshReviews = async () => {
@@ -322,12 +328,11 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
   ): Promise<boolean> => {
     try {
       const formData = new FormData();
-      formData.append("_method", "PUT"); // Spoof PUT method
-      formData.append("content", newText);
+      formData.append("_method", "PUT");
+      formData.append("content", newText.trim());
       formData.append("rating", newRating.toString());
 
       newFiles.forEach((file, index) => {
-        console.log(`[Upload] File ${index}: name=${file.name}, type=${file.type}`);
         formData.append(`images[${index}]`, file);
       });
 
@@ -335,99 +340,90 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
         formData.append(`deleted_image_ids[${index}]`, id.toString());
       });
 
-      // Do NOT set Content-Type manually, let Axios handle boundaries
-      await axios.post(`/reviews/${reviewId}`, formData);
+      const response = await axios.post(`/reviews/${reviewId}`, formData, {
+        headers: {
+          // Let axios set Content-Type including boundary
+        },
+      });
+
+      await refreshReviews();
 
       return true;
-    } catch (err) {
-      console.error("Error uploading images:", err);
+    } catch (err: any) {
+      if (err.response?.data?.errors) {
+        console.error("Validation errors:", err.response.data.errors);
+      } else {
+        console.error("Error uploading images:", err);
+      }
       return false;
     }
   };
 
   const deleteReview = async (reviewId: number) => {
     try {
+      setDeleting(true);
       await axios.delete(`/reviews/${reviewId}`);
       await refreshReviews();
       toast.success("Review deleted");
-      setConfirmingDeleteId(null);
+      setDeleting(false);
       return true;
     } catch {
-      toast.error("Delete failed.");
+      toast.error("Delete failed");
+      setDeleting(false);
       return false;
-    }
-  };
-
-  const submitReview = async () => {
-    setErrors({});
-
-    if (!reviewText.trim()) {
-      setErrors({ review: "Please enter your review." });
-      return false;
-    }
-
-    if (reviewText.length > MAX_LENGTH) {
-      setErrors({ review: `Max ${MAX_LENGTH} characters.` });
-      return false;
-    }
-
-    if (!auth?.user || !category || rating <= 0) {
-      toast.error("All fields required.");
-      return false;
-    }
-
-    setProcessing(true);
-    try {
-      await axios.post("/reviews", {
-        content: reviewText,
-        category,
-        rating,
-        itemId,
-      });
-
-      setReviewText("");
-      setRating(0);
-      await refreshReviews();
-      toast.success("Review submitted");
-      return true;
-    } catch {
-      toast.error("Submit failed");
-      return false;
-    } finally {
-      setProcessing(false);
     }
   };
 
   const saveReviewChanges = async (reviewId: number) => {
+    const newText = getEditedTextById(reviewId);
+    const newRating = getEditedRatingById(reviewId);
+    const newImages =
+      imagesByReviewId[reviewId]
+        ?.filter((img) => img.id < 0)
+        .map((img) => img.file!)
+        .filter(Boolean) || [];
+    const deletedIds = deletedImageIdsByReviewId[reviewId] || [];
+
+    const success = await updateReview(reviewId, newText, newRating, newImages, deletedIds);
+
+    if (success) {
+      setIsEditingId(null);
+      setEditedTextById(reviewId, "");
+      setEditedRatingById(reviewId, 0);
+      setImagesByReviewId((prev) => ({ ...prev, [reviewId]: [] }));
+      setDeletedImageIdsByReviewId((prev) => ({ ...prev, [reviewId]: [] }));
+    }
+  };
+
+  const submitReview = async (): Promise<boolean> => {
+    if (!auth?.user?.id) {
+      toast.error("Please log in to submit a review");
+      return false;
+    }
+
+    if (!reviewText.trim()) {
+      setErrors({ review: "Review cannot be empty" });
+      return false;
+    }
+
+    if (reviewText.length > MAX_LENGTH) {
+      setErrors({ review: `Review cannot exceed ${MAX_LENGTH} characters.` });
+      return false;
+    }
+
     try {
-      const content = getEditedTextById(reviewId);
-      const rating = getEditedRatingById(reviewId);
-      const deletedIds = deletedImageIdsByReviewId[reviewId] || [];
-      const allImages = imagesByReviewId[reviewId] || [];
-
-      const newFiles = allImages
-        .filter((img) => img.id < 0 && img.file)
-        .map((img) => img.file as File);
-
-      const success = await updateReview(
-        reviewId,
-        content,
-        rating,
-        newFiles,
-        deletedIds
-      );
-
-      if (success) {
-        setIsEditingId(null);
-        setEditedTextById(reviewId, "");
-        setEditedRatingById(reviewId, 0);
-        setDeletedImageIdsByReviewId((prev) => ({
-          ...prev,
-          [reviewId]: [],
-        }));
-      }
-    } catch (error) {
-      console.error("Error saving review changes:", error);
+      setProcessing(true);
+      await axios.post("/reviews", { content: reviewText, rating });
+      toast.success("Review submitted");
+      setReviewText("");
+      setRating(0);
+      await refreshReviews();
+      setProcessing(false);
+      return true;
+    } catch {
+      setProcessing(false);
+      toast.error("Failed to submit review");
+      return false;
     }
   };
 
@@ -444,6 +440,7 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
         totalPages,
         currentReviews,
         handleSortChange,
+
         reviewText,
         setReviewText,
         rating,
@@ -453,43 +450,55 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
         processing,
         submitReview,
         MAX_LENGTH,
+
         openReplyFormId,
         setOpenReplyFormId,
         toggleReplyForm,
         showReplyForm,
+
         expandedIds,
         toggleExpandedId,
+
         addReply,
         refreshReviews,
+
         updateReview,
         deleteReview,
+
         isEditingId,
         setIsEditingId,
-        editedText: "",
-        setEditedText: () => {},
+        editedText: "", // unused but needed in type
+        setEditedText: () => {}, // unused
         cancelEdit,
+
         confirmingDeleteId,
         setConfirmingDeleteId,
         closeDeleteModal,
+
         deleting,
         setDeleting,
+
         showForm,
         setShowForm,
+
         imagesByReviewId,
         addImage,
         removeImage,
+
         deletedImageIdsByReviewId,
         markImageForDeletion,
         unmarkImageForDeletion,
+
         getEditedTextById,
         setEditedTextById,
         getEditedRatingById,
         setEditedRatingById,
+
         saveReviewChanges,
-        category,
-        setCategory,
-        itemId,
-        setItemId,
+
+        revertUnsavedImages,
+
+        clearImagesForReview, // <--- added here
       }}
     >
       {children}
@@ -497,10 +506,10 @@ export const ReviewsProvider = ({ children }: { children: React.ReactNode }) => 
   );
 };
 
-export const useReviews = (): ReviewsContextType => {
+export function useReviews() {
   const context = useContext(ReviewsContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useReviews must be used within a ReviewsProvider");
   }
   return context;
-};
+}

@@ -69,7 +69,7 @@ export default function ReplyForm({ onSubmit, onCancel }: ReplyFormProps) {
   // 🔒 Show notice if not logged in
   if (!authUser) {
     return (
-      <div className="p-4">
+      <div className="py-4 px-2">
         <AuthNotice />
       </div>
     );

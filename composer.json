@@ -16,6 +16,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.20",
         "laravel/tinker": "^2.9",
+        "openai-php/client": "^0.14.0",
         "shippo/shippo-php": "^2.0",
         "tightenco/ziggy": "^2.0"
     },

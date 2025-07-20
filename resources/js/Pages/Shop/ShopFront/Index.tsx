@@ -73,11 +73,15 @@ const ShopContent: React.FC<ShopProps> = ({ auth, items, category, message, clea
             </h1>
         </div>
         ) : (
-        <div className="grid grid-cols-4 gap-6 rounded-lg py-5 transition-all duration-500">
+          <div
+            className="grid grid-cols-4 gap-6 rounded-lg py-5 transition-all duration-500"
+
+          >
             {filteredItems?.map((product) => (
-            <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} />
             ))}
-        </div>
+          </div>
+
         )}
       </div>
     </Layout>

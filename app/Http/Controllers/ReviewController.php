@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Models\ReviewImage;
+use OpenAI;
 use Illuminate\Support\Facades\Storage;
 
 class ReviewController extends Controller
@@ -26,56 +27,53 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
+   
+
     public function store(Request $request)
     {
-        $user = Auth::user();
-        Log::info('Attempting to submit a review', ['user_id' => $user?->id, 'request' => $request->all()]);
-
-        $validator = Validator::make($request->all(), [
-            'content' => 'nullable|max:300',
-            'category' => 'nullable|string',
-            'rating' => 'required|numeric|min:1|max:5',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'images' => 'array|max:5',
+        $request->validate([
+            'content' => 'required|string|max:5000',
+            'rating' => 'required|integer|min:1|max:5',
         ]);
 
-        if ($validator->fails()) {
-            Log::warning('Review validation failed', ['errors' => $validator->errors()]);
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        // Initialize OpenAI client
+        $client = OpenAI::client(env('OPENAI_API_KEY'));
 
-        try {
-            $review = new Review();
-            $review->user_id = $user->id;
-            $review->content = $request->input('content');
-            $review->category = $request->input('category', 'general');
-            $review->rating = $request->input('rating');
-            $review->likes = 0;
-            $review->dislikes = 0;
-            $review->parent_id = null;
-            $review->item_id = $request->input('item_id');
-            $review->save();
+        // Run moderation check
+        $moderation = $client->moderations()->create([
+            'input' => $request->input('content'),
+        ]);
 
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $imageFile) {
-                    $path = $imageFile->store('review_images', 'public');
-                    ReviewImage::create([
-                        'review_id' => $review->id,
-                        'image_path' => $path,
-                    ]);
-                }
-            }
+        $result = $moderation->results[0];
 
-            Log::info('Review submitted successfully', ['review_id' => $review->id]);
+        // Log the full moderation response
+        Log::info('OpenAI Moderation Response:', [
+            'input' => $request->input('content'),
+            'result' => $result,
+        ]);
+
+        if ($result->flagged) {
             return response()->json([
-                'message' => 'Review submitted successfully',
-                'review' => $review->load(['user', 'images'])
-            ], 201);
-        } catch (\Exception $e) {
-            Log::error('Failed to submit review', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Failed to submit review'], 500);
+                'message' => 'Your content was flagged as inappropriate.',
+                'categories' => $result->categories,
+                'scores' => $result->categoryScores,
+            ], 422);
         }
+
+        // If passed, store the review
+        $review = Review::create([
+            'user_id' => auth()->id(),
+            'content' => $request->input('content'),
+            'rating' => $request->input('rating'),
+        ]);
+
+        return response()->json([
+            'message' => 'Review submitted successfully.',
+            'review' => $review,
+        ]);
     }
+
+    
 
     public function reply(Request $request, int $reviewId)
     {

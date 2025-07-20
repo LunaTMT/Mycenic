@@ -49,7 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       : "/assets/images/missing_image.png";
 
   return (
-    <div className="relative bg-white dark:bg-[#424549] dark:border-white/20 border border-black/20 shadow-2xl rounded-md">
+    <div className="relative w-full h-full bg-white dark:bg-[#424549] dark:border-white/20 border border-black/20 shadow-2xl rounded-md overflow-hidden">
       {role === 'admin' && (
         <div className="absolute top-2 right-2 flex gap-2">
           <button
@@ -66,11 +66,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className="flex flex-col items-center justify-center text-center"
       >
-        <div className="w-full aspect-square overflow-hidden rounded-t-md flex items-center justify-center bg-white/10">
+        <div className="w-full aspect-square rounded-t-md flex items-center justify-center bg-white/10">
           <img
             src={imageSrc}
             alt="Product Image"
-            className="max-h-full max-w-full object-contain"
+            className="w-full h-full object-contain"
           />
         </div>
 

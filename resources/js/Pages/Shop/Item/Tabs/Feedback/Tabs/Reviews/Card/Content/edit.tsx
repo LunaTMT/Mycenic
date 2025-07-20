@@ -97,7 +97,7 @@ export default function ReviewEdit({ review, onCancel }: ReviewEditProps) {
         <PrimaryButton
           onClick={handleSave}
           disabled={saving}
-          className="text-[13px] font-semibold px-3 py-1"
+          className="text-[13px] bg-amber-400 font-semibold px-3 py-1"
         >
           {saving ? "Saving..." : "Save"}
         </PrimaryButton>

@@ -1,28 +1,32 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { FaTrashAlt, FaPlus } from "react-icons/fa";
 import ZoomModal from "./ZoomModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 
 interface Image {
   id: number;
   image_path: string;
-  isNew?: boolean;
   file?: File;
 }
 
 interface Props {
+  reviewId: number;
   images: Image[];
-  addImage?: (file: File) => void;
-  removeImage?: (imageId: number) => void;
   isEditing: boolean;
 }
 
 export default function ReviewImageGallery({
+  reviewId,
   images,
-  addImage,
-  removeImage,
   isEditing,
 }: Props) {
+  const {
+    addImage,
+    removeImage,
+    markImageForDeletion,
+  } = useReviews();
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
@@ -32,51 +36,62 @@ export default function ReviewImageGallery({
 
   const remaining = 5 - images.length;
 
-  // Return preview URL for image:
-  // If new file -> local preview with URL.createObjectURL
-  // Else if backend path -> full URL for storage
   const getImageUrl = (img: Image) => {
-    if (img.isNew && img.file) {
+    if (img.file) {
       return URL.createObjectURL(img.file);
     }
-    // existing backend image
     return img.image_path.startsWith("http")
       ? img.image_path
       : `/storage/${img.image_path}`;
   };
 
+  useEffect(() => {
+    const objectUrls: string[] = [];
+
+    images.forEach((img) => {
+      if (img.file) {
+        const url = URL.createObjectURL(img.file);
+        objectUrls.push(url);
+      }
+    });
+
+    return () => {
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
+
   const openZoom = (img: Image) => {
     const fullUrl = getImageUrl(img);
-    console.log("[Zoom] Opening image:", fullUrl);
     setZoomedImage(fullUrl);
   };
 
   const closeZoom = () => {
-    console.log("[Zoom] Closed");
     setZoomedImage(null);
   };
 
   const openDeleteModal = (imageId: number) => {
-    console.log("[Delete] Request to delete image ID:", imageId);
     setImageToDelete(imageId);
     setConfirmingDelete(true);
   };
 
   const closeDeleteModal = () => {
-    console.log("[Delete] Cancelled deletion");
     setConfirmingDelete(false);
     setImageToDelete(null);
   };
 
   const handleDelete = async () => {
-    if (imageToDelete === null || !removeImage) return;
+    if (
+      imageToDelete === null
+    )
+      return;
+
     setDeleting(true);
-    console.log("[Delete] Confirming delete for image ID:", imageToDelete);
     try {
-      removeImage(imageToDelete);
+      removeImage(reviewId, imageToDelete);
+      markImageForDeletion(reviewId, imageToDelete);
       closeDeleteModal();
     } catch (err) {
-      console.error("[Delete] Failed to delete image", err);
+      console.error("Failed to delete image", err);
     } finally {
       setDeleting(false);
     }
@@ -95,8 +110,7 @@ export default function ReviewImageGallery({
     }
 
     files.slice(0, remainingSlots).forEach((file) => {
-      console.log("[Add] Adding image:", file.name);
-      addImage(file);
+      addImage(reviewId, file);
     });
 
     e.target.value = "";
@@ -104,11 +118,11 @@ export default function ReviewImageGallery({
 
   return (
     <>
-      <div className="mt-6 my-3 flex flex-wrap gap-2 relative">
+      <div className="flex flex-wrap gap-2 relative">
         {images.map((img) => (
           <div
             key={img.id}
-            className="relative group w-30 h-30 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600"
+            className="relative w-30 h-30 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 transform transition-transform duration-300 hover:scale-105"
           >
             <img
               src={getImageUrl(img)}
@@ -118,7 +132,7 @@ export default function ReviewImageGallery({
             />
             {isEditing && removeImage && (
               <>
-                <div className="absolute inset-0 bg-black/30 bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity z-5" />
+                <div className="absolute inset-0 bg-black/30 opacity-20 hover:opacity-100 transition-opacity z-5" />
                 <button
                   type="button"
                   onClick={(e) => {
@@ -138,10 +152,7 @@ export default function ReviewImageGallery({
         {isEditing && addImage && remaining > 0 && (
           <button
             type="button"
-            onClick={() => {
-              console.log("[Add] Triggering file input...");
-              inputRef.current?.click();
-            }}
+            onClick={() => inputRef.current?.click()}
             className="w-30 h-30 flex items-center justify-center border border-dashed border-gray-400 dark:border-gray-600 rounded-md text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           >
             <FaPlus />
