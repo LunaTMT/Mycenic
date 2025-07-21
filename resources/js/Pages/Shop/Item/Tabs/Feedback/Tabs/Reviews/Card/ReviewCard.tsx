@@ -31,6 +31,8 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     showReplyForm,
   } = useReviews();
 
+
+
   const replies = review.replies_recursive ?? [];
   const id = review.id?.toString() || review.created_at;
   const isReplyFormOpen = showReplyForm(id);

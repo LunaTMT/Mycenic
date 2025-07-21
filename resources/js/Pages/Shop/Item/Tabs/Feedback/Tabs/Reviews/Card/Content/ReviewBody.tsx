@@ -1,6 +1,7 @@
 import React from "react";
 import InputLabel from "@/Components/Login/InputLabel";
 import StarRating from "../../Form/StarRating";
+import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 
 interface ReviewBodyProps {
   isEditing: boolean;
@@ -12,6 +13,7 @@ interface ReviewBodyProps {
   errors: { review?: string };
   MAX_LENGTH: number;
   reviewContent?: string;
+  review: Review;
 }
 
 const ReviewBody: React.FC<ReviewBodyProps> = ({
@@ -24,12 +26,16 @@ const ReviewBody: React.FC<ReviewBodyProps> = ({
   errors,
   MAX_LENGTH,
   reviewContent,
+  review,
 }) => {
   return (
     <div className="space-y-2">
       {isEditing ? (
         <>
-          <InputLabel htmlFor="review" value="Your Review" />
+          <InputLabel
+            htmlFor="review"
+            value={review.parent_id === null ? "Your Review" : "Your Reply"}
+          />
           <div className="relative text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] shadow-sm flex flex-col">
             <textarea
               id="review"
@@ -47,7 +53,9 @@ const ReviewBody: React.FC<ReviewBodyProps> = ({
               <div className="text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
                 {localContent.length} / {MAX_LENGTH}
               </div>
-              <StarRating rating={localRating} setRating={setLocalRating} />
+              {review.parent_id === null && (
+                <StarRating rating={localRating} setRating={setLocalRating} />
+              )}
             </div>
           </div>
           {errors.review && <span className="text-red-500">{errors.review}</span>}

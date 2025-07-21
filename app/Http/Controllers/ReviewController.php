@@ -7,88 +7,139 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-
-use App\Models\ReviewImage;
-use OpenAI;
 use Illuminate\Support\Facades\Storage;
-use App\Models\ReviewVote;
-
+use App\Services\OpenAIModerationService;
 
 class ReviewController extends Controller
 {
+    protected OpenAIModerationService $moderationService;
+
+    public function __construct(OpenAIModerationService $moderationService)
+    {
+        $this->moderationService = $moderationService;
+    }
+
+    /**
+     * Fetch all top-level reviews with relations.
+     */
     public function index()
     {
         Log::info('Fetching all top-level reviews');
-        
         $reviews = Review::with(['user', 'repliesRecursive', 'images'])
             ->whereNull('parent_id')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        Log::info('Number of top-level reviews fetched: ' . $reviews->count());
-
+        Log::info('Fetched ' . $reviews->count() . ' top-level reviews');
         return response()->json($reviews);
     }
 
-   
-
+    /**
+     * Store a new review with moderation and image handling.
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'content' => 'required|string|max:5000',
-            'rating' => 'required|integer|min:1|max:5',
+        Log::info('Received review submission', [
+            'user_id' => auth()->id(),
+            'input' => $request->all(),
         ]);
 
-        // Initialize OpenAI client
-        $client = OpenAI::client(env('OPENAI_API_KEY'));
-
-        // Run moderation check
-        $moderation = $client->moderations()->create([
-            'input' => $request->input('content'),
-        ]);
-
-        $result = $moderation->results[0];
-
-        // Log the full moderation response
-        Log::info('OpenAI Moderation Response:', [
-            'input' => $request->input('content'),
-            'result' => $result,
-        ]);
-
-        if ($result->flagged) {
-            return response()->json([
-                'message' => 'Your content was flagged as inappropriate.',
-                'categories' => $result->categories,
-                'scores' => $result->categoryScores,
-            ], 422);
+        // Validate request inputs
+        try {
+            $validated = $request->validate([
+                'content' => 'required|string|max:5000',
+                'rating' => 'required|numeric|min:1|max:5',
+                'item_id' => 'required|integer|exists:items,id',
+                'images' => 'sometimes|array',
+                'images.*' => 'image|mimes:jpeg,jpg,png,bmp,gif,svg,webp|max:2048',
+            ]);
+            Log::info('Review input validation passed');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Review input validation failed', ['errors' => $e->errors()]);
+            return response()->json(['errors' => $e->errors()], 422);
         }
 
-        // If passed, store the review
-        $review = Review::create([
-            'user_id' => auth()->id(),
-            'content' => $request->input('content'),
-            'rating' => $request->input('rating'),
-        ]);
+        // === Moderation logic commented out ===
+        /*
+        try {
+            $moderationResult = $this->moderationService->moderateText($validated['content']);
+            Log::info('Moderation result', [
+                'flagged' => $moderationResult['flagged'],
+                'categories' => $moderationResult['categories'],
+                'category_scores' => $moderationResult['category_scores'] ?? null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Moderation service error: ' . $e->getMessage());
+            return response()->json(['message' => 'Moderation service unavailable'], 503);
+        }
+
+        if ($moderationResult['flagged']) {
+            Log::warning('Review content flagged by moderation', [
+                'user_id' => auth()->id(),
+                'content' => $validated['content'],
+                'categories' => $moderationResult['categories'],
+            ]);
+            return response()->json([
+                'message' => 'Your content was flagged as inappropriate.',
+                'categories' => $moderationResult['categories'],
+                'scores' => $moderationResult['category_scores'] ?? null,
+            ], 422);
+        }
+        */
+
+        // Create the review
+        try {
+            $review = Review::create([
+                'user_id' => auth()->id(),
+                'content' => $validated['content'],
+                'rating' => $validated['rating'],
+                'item_id' => $validated['item_id'],
+            ]);
+            Log::info('Review created', ['review_id' => $review->id]);
+        } catch (\Exception $e) {
+            Log::error('Error creating review', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to create review'], 500);
+        }
+
+        // Handle uploaded images
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
+            Log::info('Processing uploaded images', ['count' => count($files)]);
+
+            foreach ($files as $imageFile) {
+                try {
+                    $path = $imageFile->store('review_images', 'public');
+                    $review->images()->create(['image_path' => $path]);
+                    Log::info('Stored review image', ['path' => $path]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to store image', ['error' => $e->getMessage()]);
+                }
+            }
+        }
+
+        Log::info('Review store process completed successfully', ['review_id' => $review->id]);
 
         return response()->json([
             'message' => 'Review submitted successfully.',
-            'review' => $review,
+            'review' => $review->load('images', 'user'),
         ]);
     }
 
-    
 
+    /**
+     * Submit a reply to an existing review.
+     */
     public function reply(Request $request, int $reviewId)
     {
         $user = Auth::user();
-        Log::info('Attempting to submit a reply', [
+        Log::info('Submitting reply', [
             'user_id' => $user?->id,
-            'reviewId' => $reviewId,
-            'request' => $request->all()
+            'review_id' => $reviewId,
+            'input' => $request->all(),
         ]);
 
         $validator = Validator::make($request->all(), [
-            'content' => 'required|max:300',
+            'content' => 'required|string|max:300',
         ]);
 
         if ($validator->fails()) {
@@ -99,15 +150,16 @@ class ReviewController extends Controller
         try {
             $parentReview = Review::findOrFail($reviewId);
 
-            $reply = new Review();
-            $reply->user_id = $user->id;
-            $reply->content = $request->input('content');
-            $reply->category = $parentReview->category;
-            $reply->item_id = $parentReview->item_id;
-            $reply->likes = 0;
-            $reply->dislikes = 0;
-            $reply->parent_id = $parentReview->id;
-            $reply->rating = 0;
+            $reply = new Review([
+                'user_id' => $user->id,
+                'content' => $request->input('content'),
+                'category' => $parentReview->category,
+                'item_id' => $parentReview->item_id,
+                'likes' => 0,
+                'dislikes' => 0,
+                'parent_id' => $parentReview->id,
+                'rating' => 0,
+            ]);
             $reply->save();
 
             Log::info('Reply submitted successfully', ['reply_id' => $reply->id]);
@@ -117,26 +169,23 @@ class ReviewController extends Controller
             return response()->json(['error' => 'Failed to submit reply'], 500);
         }
     }
-    
 
-    
-
+    /**
+     * Handle voting on a review (like/dislike).
+     */
     public function vote(Request $request, Review $review)
     {
         $vote = $request->input('vote'); // 'like' or 'dislike'
         $user = $request->user();
-
-        // Get guest token from cookie or request input
         $guestToken = $user ? null : ($request->cookie('guest_token') ?? $request->input('guest_token'));
 
-        Log::info('Incoming vote request', [
+        Log::info('Vote request', [
             'user_id' => $user?->id,
             'guest_token' => $guestToken,
             'vote' => $vote,
             'review_id' => $review->id,
         ]);
 
-        // Validate vote
         if (!in_array($vote, ['like', 'dislike'])) {
             Log::warning('Invalid vote value', ['vote' => $vote]);
             return response()->json(['error' => 'Invalid vote value'], 400);
@@ -147,27 +196,22 @@ class ReviewController extends Controller
             return response()->json(['error' => 'Missing guest token'], 400);
         }
 
-        Log::info('Checking for existing vote...');
-        // Check if user (or guest token) already voted
         $existingVote = $review->votes()
             ->when($user, fn($q) => $q->where('user_id', $user->id))
             ->when(!$user, fn($q) => $q->where('guest_token', $guestToken))
             ->first();
 
         if ($existingVote) {
-            Log::info('Existing vote found', ['existing_vote' => $existingVote->vote]);
+            Log::info('Existing vote found', ['vote' => $existingVote->vote]);
 
             if ($existingVote->vote === $vote) {
-                Log::info('Vote is the same as before, removing vote (toggle off)');
-
-                // Update counts
-                if ($existingVote->vote === 'like') {
+                // Toggle off
+                if ($vote === 'like') {
                     $review->likes = max(0, $review->likes - 1);
                 } else {
                     $review->dislikes = max(0, $review->dislikes - 1);
                 }
                 $review->save();
-
                 $existingVote->delete();
 
                 return response()->json([
@@ -176,9 +220,7 @@ class ReviewController extends Controller
                     'dislikes' => $review->dislikes,
                 ]);
             } else {
-                Log::info('Vote changed, updating vote record');
-
-                // Update counts: remove old vote, add new vote
+                // Update vote
                 if ($existingVote->vote === 'like') {
                     $review->likes = max(0, $review->likes - 1);
                 } else {
@@ -190,7 +232,6 @@ class ReviewController extends Controller
                 } else {
                     $review->dislikes += 1;
                 }
-
                 $review->save();
 
                 $existingVote->vote = $vote;
@@ -203,9 +244,8 @@ class ReviewController extends Controller
                 ]);
             }
         } else {
-            Log::info('No existing vote, creating new vote');
+            Log::info('No existing vote found, creating new vote');
 
-            // Add new vote count
             if ($vote === 'like') {
                 $review->likes += 1;
             } else {
@@ -227,21 +267,12 @@ class ReviewController extends Controller
         }
     }
 
-
-
-
-
-
-
+    /**
+     * Update a review with content, rating, image additions and deletions.
+     */
     public function update(Request $request, Review $review)
     {
-        \Log::info('HIT UPDATE METHOD', ['review_id' => $review->id]);
-
-        // Log raw input data
-        \Log::info('Raw Request Data', [
-            'all_inputs' => $request->all(),
-            'file_keys' => $request->files->keys(),
-        ]);
+        Log::info('Updating review', ['review_id' => $review->id]);
 
         try {
             $validated = $request->validate([
@@ -249,41 +280,31 @@ class ReviewController extends Controller
                 'rating' => 'required|numeric|min:0.5|max:5',
                 'deleted_image_ids' => 'sometimes|array',
                 'deleted_image_ids.*' => 'integer|exists:review_images,id',
-                // Explicitly allow common image MIME types:
                 'images' => 'sometimes|array',
-                'images.*' => 'mimes:jpeg,jpg,png,bmp,gif,svg,webp|max:2048',
+                'images.*' => 'image|mimes:jpeg,jpg,png,bmp,gif,svg,webp|max:2048',
             ]);
+            Log::info('Review update validation passed');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation failed:', $e->errors());
-            throw $e;
+            Log::warning('Review update validation failed', ['errors' => $e->errors()]);
+            return response()->json(['errors' => $e->errors()], 422);
         }
 
-        \Log::info('Validated data received for update', [
-            'review_id' => $review->id,
-            'content' => $validated['content'],
-            'rating' => $validated['rating'],
-            'deleted_image_ids' => $validated['deleted_image_ids'] ?? [],
-            'new_images_count' => $request->hasFile('images') ? count($request->file('images')) : 0,
-        ]);
-
-        // Update review content and rating
         $review->content = $validated['content'];
         $review->rating = $validated['rating'];
         $review->save();
+
+        Log::info('Review content and rating updated', ['review_id' => $review->id]);
 
         // Delete images marked for deletion
         if (!empty($validated['deleted_image_ids'])) {
             foreach ($validated['deleted_image_ids'] as $imageId) {
                 $image = $review->images()->find($imageId);
                 if ($image) {
-                    \Log::info('Deleting review image', [
-                        'image_id' => $image->id,
-                        'image_path' => $image->image_path,
-                    ]);
                     Storage::disk('public')->delete($image->image_path);
                     $image->delete();
+                    Log::info('Deleted review image', ['image_id' => $imageId]);
                 } else {
-                    \Log::warning('Attempted to delete non-existing image', ['image_id' => $imageId]);
+                    Log::warning('Attempt to delete non-existent image', ['image_id' => $imageId]);
                 }
             }
         }
@@ -292,20 +313,14 @@ class ReviewController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $imageFile) {
                 $path = $imageFile->store('review_images', 'public');
-                $createdImage = $review->images()->create([
-                    'image_path' => $path,
-                ]);
-                \Log::info('Added new review image', [
-                    'image_id' => $createdImage->id,
-                    'image_path' => $path,
-                ]);
+                $review->images()->create(['image_path' => $path]);
+                Log::info('Added new review image', ['path' => $path]);
             }
         }
 
-        // Reload review images after changes
         $review->load('images');
 
-        \Log::info('Review update completed successfully', ['review_id' => $review->id]);
+        Log::info('Review update process completed', ['review_id' => $review->id]);
 
         return response()->json([
             'message' => 'Review updated successfully',
@@ -313,57 +328,76 @@ class ReviewController extends Controller
         ]);
     }
 
-
+    /**
+     * Delete a review and its replies recursively.
+     */
     public function destroy(int $reviewId)
     {
         $user = Auth::user();
-        Log::info('Attempting to delete review', ['user_id' => $user?->id, 'review_id' => $reviewId]);
+        Log::info('Delete review request', ['user_id' => $user?->id, 'review_id' => $reviewId]);
 
         try {
             $review = Review::with(['images', 'repliesRecursive.images'])->findOrFail($reviewId);
 
             if (!$user) {
+                Log::warning('Unauthenticated user tried to delete review');
                 return response()->json(['error' => 'Unauthenticated'], 401);
             }
 
             if (!$user->isAdmin() && $review->user_id !== $user->id) {
+                Log::warning('Unauthorized user tried to delete review', ['user_id' => $user->id]);
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
             $this->deleteWithReplies($review);
 
             Log::info('Review deleted successfully', ['review_id' => $reviewId]);
-            return response()->json(['message' => 'Review deleted successfully.'], 200);
+            return response()->json(['message' => 'Review deleted successfully.']);
         } catch (\Exception $e) {
             Log::error('Failed to delete review', ['error' => $e->getMessage(), 'review_id' => $reviewId]);
             return response()->json(['error' => 'Failed to delete review'], 500);
         }
     }
 
+    /**
+     * Helper to recursively delete review and all child replies, images and votes.
+     */
     protected function deleteWithReplies(Review $review)
     {
-        // Delete all associated images
+        // Delete images
         foreach ($review->images as $image) {
             Storage::disk('public')->delete($image->image_path);
             $image->delete();
+            Log::info('Deleted image from review', ['image_id' => $image->id]);
         }
 
-        // Delete all votes
+        // Delete votes
         $review->votes()->delete();
+        Log::info('Deleted votes for review', ['review_id' => $review->id]);
 
-        // Recursively delete child replies (with their images and votes)
+        // Recursively delete replies
         foreach ($review->repliesRecursive as $reply) {
             $this->deleteWithReplies($reply);
         }
 
+        // Delete review itself
         $review->delete();
+        Log::info('Deleted review', ['review_id' => $review->id]);
     }
 
+    /**
+     * Increment like or dislike count.
+     */
     public function likeDislike(Request $request, int $reviewId)
     {
         $user = Auth::user();
         $action = $request->input('action');
-        Log::info('Like/dislike action', ['user_id' => $user?->id, 'review_id' => $reviewId, 'action' => $action]);
+
+        Log::info('Like/dislike action received', [
+            'user_id' => $user?->id,
+            'review_id' => $reviewId,
+            'action' => $action,
+        ]);
 
         try {
             $review = Review::findOrFail($reviewId);
@@ -373,27 +407,30 @@ class ReviewController extends Controller
             } elseif ($action === 'dislike') {
                 $review->dislikes += 1;
             } else {
+                Log::warning('Invalid like/dislike action', ['action' => $action]);
                 return response()->json(['error' => 'Invalid action'], 400);
             }
 
             $review->save();
 
+            Log::info('Like/dislike updated successfully', ['review_id' => $reviewId]);
             return response()->json([
                 'message' => 'Review updated successfully',
-                'review' => $review
-            ], 200);
+                'review' => $review,
+            ]);
         } catch (\Exception $e) {
+            Log::error('Failed to update like/dislike', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to update review'], 500);
         }
     }
 
     /**
-     * GET /reviews/{id}
-     * Returns a single review with images, user, and replies
+     * Show a single review with relations.
      */
     public function show($id)
     {
         $review = Review::with(['user', 'images', 'repliesRecursive'])->findOrFail($id);
+        Log::info('Fetched single review', ['review_id' => $id]);
         return response()->json($review);
     }
 }

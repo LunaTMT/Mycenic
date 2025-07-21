@@ -6,14 +6,11 @@ import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import LikeDislikeButtons from "../../../Components/LikeDislikeButtons";
 import ActionsDropdown from "./ActionDropdown";
 import StaticStarRating from "./StaticStarRating";
-import InputLabel from "@/Components/Login/InputLabel";
-import StarRating from "../../Form/StarRating";
-import ReplyForm from "../../../Components/ReplyForm";
-import ZoomModal from "./ImageGallery/ZoomModal";
-import DeleteConfirmationModal from "./ImageGallery/DeleteConfirmationModal";
-import { FaUserShield, FaTrashAlt, FaPlus } from "react-icons/fa";
 import ReviewBody from "./ReviewBody";
 import ImageGallery from "./ImageGallery/ImageGallery";
+import ReplyForm from "../../../Components/ReplyForm";
+import { FaUserShield } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 interface ReviewContentProps {
   review: Review;
@@ -63,7 +60,6 @@ export default function ReviewContent({ review }: ReviewContentProps) {
   const images = imagesByReviewId[review.id!] || [];
   const imagesToDelete = deletedImageIdsByReviewId[review.id!] || [];
 
-  // Combine backend images minus deleted plus new uploads (files with negative IDs)
   const backendImages = (review.images ?? []).filter(img => !imagesToDelete.includes(img.id));
   const newUploadedImages = images.filter(img => img.id < 0 && img.file);
   const displayImages = isEditing
@@ -84,26 +80,32 @@ export default function ReviewContent({ review }: ReviewContentProps) {
     prevIsEditingRef.current = isEditing;
   }, [isEditing]);
 
-  // Save content on blur WITHOUT closing editing
   const saveContent = async () => {
     if (!review.id) return;
 
     setSaving(true);
-    setEditedTextById(review.id!, localContent);
-    setEditedRatingById(review.id!, localRating);
+    setEditedTextById(review.id, localContent);
+    setEditedRatingById(review.id, localRating);
 
     const newFiles = images.filter((img) => img.id < 0 && img.file).map((img) => img.file!) ?? [];
 
-    const success = await updateReview(review.id, localContent, localRating, newFiles, imagesToDelete);
+    const result = await updateReview(
+      review.id,
+      localContent,
+      localRating,
+      newFiles,
+      imagesToDelete
+    );
 
-    if (!success) {
-      console.error("Failed to update review");
+    if (!result.success) {
+      toast.error(`Failed to update review: ${result.message}`);
+    } else {
+      clearImagesForReview(review.id);
     }
 
     setSaving(false);
   };
 
-  // Save and close editing mode
   const handleSave = async () => {
     await saveContent();
     setIsEditingId(null);
@@ -114,22 +116,6 @@ export default function ReviewContent({ review }: ReviewContentProps) {
     addReply(id, text);
     setOpenReplyFormId(null);
   };
-
-  // === ImageGallery component inside ReviewContent ===
-  interface Image {
-    id: number;
-    image_path?: string;
-    file?: File;
-  }
-
-  interface ImageGalleryProps {
-    images: Image[];
-    isEditing: boolean;
-    addImage: (file: File) => void;
-    removeImage: (imageId: number) => void;
-    markImageForDeletion: (imageId: number) => void;
-    maxImages?: number;
-  }
 
   const ReviewHeader = () => (
     <div className="flex flex-col gap-0.5">
@@ -173,7 +159,7 @@ export default function ReviewContent({ review }: ReviewContentProps) {
         />
       )}
 
-      <div className="">
+      <div>
         {isEditing ? (
           <div className="flex gap-2">
             <PrimaryButton
@@ -225,9 +211,9 @@ export default function ReviewContent({ review }: ReviewContentProps) {
               {authUser && (
                 <ActionsDropdown
                   reviewId={review.id!}
-                  isOwner={review.user.id === authUser?.id}
+                  isOwner={isOwner}
                   canEdit={canEdit}
-                  isAdmin={authUser?.is_admin || authUser?.isAdmin}
+                  isAdmin={isAdmin}
                   review={review}
                 />
               )}
@@ -261,7 +247,9 @@ export default function ReviewContent({ review }: ReviewContentProps) {
           errors={errors}
           MAX_LENGTH={MAX_LENGTH}
           reviewContent={review.content}
+          review={review}
         />
+
       </div>
       <div className="mt-4">
         <ReviewFooter />

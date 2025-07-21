@@ -16,7 +16,7 @@ class OpenAIModerationService
     public function moderateText(string $text): array
     {
         $response = $this->client->moderations()->create([
-            'model' => 'omni-moderation-latest',
+            'model' => 'text-moderation-latest',
             'input' => $text,
         ]);
 

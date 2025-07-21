@@ -12,7 +12,6 @@
                 $table->id();
                 $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
                 $table->text('content')->nullable();
-                $table->string('category')->nullable();
                 $table->decimal('rating', 2, 1)->default(0);
                 $table->integer('likes')->default(0);
                 $table->integer('dislikes')->default(0);

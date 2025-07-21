@@ -45,12 +45,13 @@ export default function Modal({
                     <TransitionChild
                         as={Fragment}
                         enter="ease-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
+                        enterFrom="opacity-0 scale-90"
+                        enterTo="opacity-100 scale-100"
                         leave="ease-in duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
+                        leaveFrom="opacity-100 scale-100"
+                        leaveTo="opacity-0 scale-90"
                     >
+
                         <div className="absolute inset-0  bg-black/60 dark:bg-white/30 transition-opacity" />
                     </TransitionChild>
                 </div>

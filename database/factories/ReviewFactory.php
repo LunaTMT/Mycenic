@@ -16,7 +16,6 @@ class ReviewFactory extends Factory
         return [
             'user_id' => User::inRandomOrder()->first()->id,
             'content' => $this->faker->paragraph,
-            'category' => $this->faker->word,
             'likes' => $this->faker->numberBetween(0, 100),
             'dislikes' => $this->faker->numberBetween(0, 100),
             'parent_id' => null,
