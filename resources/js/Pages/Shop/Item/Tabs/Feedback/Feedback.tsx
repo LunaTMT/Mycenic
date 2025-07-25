@@ -1,50 +1,53 @@
 import React, { useState, useEffect } from "react";
 import { usePage } from "@inertiajs/react";
 
-import TabNavigation from "./TabNavigation";
-import TabContent from "../../TabContent";
+import SubNavigation from "@/Components/Tabs/SubTab/SubNavigation";
+import SubContent from "@/Components/Tabs/SubTab/SubContent";
+
 import Reviews from "./Tabs/Reviews/Reviews";
 import Questions from "./Tabs/Questions/Questions";
 
+import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
+import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import { Tab } from "@/types/tabs";
+
+type TabKey = "reviews" | "questions";
+
+const tabs: Tab<TabKey>[] = [
+  { key: "reviews", label: "Reviews" },
+  { key: "questions", label: "Questions" },
+];
+
 export default function Feedback() {
   const { auth } = usePage().props as { auth: { user: any } };
+  const { item } = useItemContext();
 
-  // Initialize state from localStorage if present, else default to 'reviews'
-  const [activeTab, setActiveTab] = useState<"reviews" | "questions">(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("feedbackActiveTab");
-      if (saved === "reviews" || saved === "questions") {
-        return saved;
-      }
-    }
-    return "reviews";
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (typeof window === "undefined") return "reviews";
+    const saved = localStorage.getItem("feedbackActiveTab");
+    return saved === "reviews" || saved === "questions" ? saved : "reviews";
   });
 
-  // Save active tab to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("feedbackActiveTab", activeTab);
   }, [activeTab]);
 
-  const tabs = [
-    { key: "reviews", label: "Reviews" },
-    { key: "questions", label: "Questions" },
-  ];
-
   return (
     <div className="space-y-6">
-      <TabNavigation
-        tabs={tabs}
-        activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as "reviews" | "questions")}
-      />
+      <SubNavigation tabs={tabs} activeKey={activeTab} onChange={setActiveTab} />
 
-      <TabContent activeKey={activeTab} tabKey="reviews">
-        <Reviews />
-      </TabContent>
+      <SubContent activeKey={activeTab} tabKey="reviews">
+        <p> sklfsdkjfh</p>
+        {/*
+        <ReviewsProvider initialReviews={item?.reviews || []}>
+          <Reviews />
+        </ReviewsProvider>
+        */}
+      </SubContent>
 
-      <TabContent activeKey={activeTab} tabKey="questions">
+      <SubContent activeKey={activeTab} tabKey="questions">
         <Questions />
-      </TabContent>
+      </SubContent>
     </div>
   );
 }

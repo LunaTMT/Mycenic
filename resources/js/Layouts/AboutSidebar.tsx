@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown/Dropdown';
-import ArrowIcon from '@/Components/Buttons/ArrowButton';
+import ArrowIcon from '@/Components/Icon/ArrowIcon';
 
 interface SectionGroup {
   Masterheading: string;

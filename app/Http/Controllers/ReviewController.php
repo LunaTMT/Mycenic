@@ -59,7 +59,7 @@ class ReviewController extends Controller
             return response()->json(['errors' => $e->errors()], 422);
         }
 
-        // === Moderation logic commented out ===
+        // === Moderation logic commented out === couldnt get this working, kept saying rate limit. maybe need to add £5 onto it  (open ai)
         /*
         try {
             $moderationResult = $this->moderationService->moderateText($validated['content']);

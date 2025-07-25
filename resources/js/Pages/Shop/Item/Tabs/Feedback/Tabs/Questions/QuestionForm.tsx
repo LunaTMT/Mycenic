@@ -5,7 +5,7 @@ import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import InputLabel from "@/Components/Login/InputLabel";
 import InputError from "@/Components/Login/InputError";
 import Dropdown from "@/Components/Dropdown/Dropdown";
-import ArrowIcon from "@/Components/Buttons/ArrowButton";
+import ArrowIcon from "@/Components/Icon/ArrowIcon";
 import { toast } from "react-toastify";
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 import { useQuestions } from "@/Contexts/Shop/Items/QuestionsContext";

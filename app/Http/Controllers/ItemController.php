@@ -11,163 +11,99 @@ use Stripe\Stripe;
 use Stripe\Product;
 use Stripe\Price;
 use Stripe\Subscription;
+use App\Models\Review;
 
 class ItemController extends Controller
 {
+
     public function index(Request $request)
     {
+        \Log::info('ItemController@index called');
+
         try {
-            $category = $request->query('category', 'ALL');
-            $sort = $request->query('sort', 'Newest');
-            $filter = $request->query('filter'); // Add this line
-            $showFilter = $request->query('showFilter');
-    
-            $query = Item::query();
-    
-            if ($category !== 'ALL') {
-                $query->where('category', $category);
-            }
-    
-            if ($filter === 'new') {
-                $query->orderBy('created_at', 'desc');
-            } elseif ($filter === 'best-sellers') {
-                $query->orderBy('stock', 'asc'); // You can define how to decide "best sellers"
-            } elseif ($filter === 'price-asc') {
-                $query->orderBy('price', 'asc');
-            } elseif ($filter === 'price-desc') {
-                $query->orderBy('price', 'desc');
-            } else {
-                // fallback sorting
-                if ($sort === 'LOW - HIGH') {
-                    $query->orderBy('price', 'asc');
-                } elseif ($sort === 'HIGH - LOW') {
-                    $query->orderBy('price', 'desc');
-                } else {
-                    $query->orderBy('created_at', 'desc');
-                }
-            }
-    
-            $items = $query->select('id', 'name', 'price', 'images', 'weight', 'stock',  'isPsyilocybinSpores')->get();
-    
-            Log::info('Items fetched from database:', $items->toArray());
-    
-            return Inertia::render('Shop/ShopFront/Index', [
+            \Log::info('Fetching all items with reviews and users');
+
+            $items = Item::with(['reviews.user'])->get();
+
+            \Log::info('Items fetched successfully', ['count' => $items->count()]);
+
+            return Inertia::render('Shop/ShopFront/ShopFront', [
                 'items' => $items,
-                'category' => $category,
-                'showFilter' => $showFilter,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching items: ' . $e->getMessage());
+            \Log::error('Error fetching items in ItemController@index', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return response()->json(['error' => 'Unable to fetch items'], 500);
         }
     }
-    
-    
 
+
+
+    
     public function store(Request $request)
     {
         try {
-            Log::info('Store method called.');
-
-            // Validate input data
-            $data = $request->validate([
-                'name'      => 'required|string|max:255',
-                'category'  => 'nullable|string',
-                'price'     => 'required|numeric',
-                'description' => 'nullable|string|max:1000',
-                'stock'     => 'nullable|integer',
-                'images'    => 'nullable|array|max:5',
-                'images.*'  => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
-                'weight'    => 'nullable|numeric', // Validate weight
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'category' => 'nullable|string|max:255',
+                'images' => 'nullable|array',
+                'images.*' => 'nullable|string',
             ]);
 
-            Log::info('Validated data: ', $data);
+            $item = new Item($validated);
 
-            // Create the item in the database
-            $item = Item::create([
-                'name'        => $data['name'],
-                'category'    => $data['category'] ?? 'Uncategorized',
-                'price'       => $data['price'],
-                'description' => $data['description'] ?? null,
-                'stock'       => $data['stock'] ?? 0,
-                'weight'      => $data['weight'] ?? 0, // Store weight
-            ]);
-
-            Log::info('Item created: ', $item->toArray());
-
-            // Handle the images if any are uploaded
-            if ($request->hasFile('images')) {
-                $imagePaths = [];
-                foreach ($request->file('images') as $index => $image) {
-                    $imageName = $index . '.' . $image->getClientOriginalExtension();
-                    $path = $image->move(public_path('assets/images/products/' . $item->id), $imageName);
-                    $imagePaths[] = 'assets/images/products/' . $item->id . '/' . $imageName;
-                }
-                $item->images = json_encode($imagePaths);
-                $item->save();
-
-                Log::info('Images saved: ', $imagePaths);
+            if ($request->has('images')) {
+                $item->images = json_encode($request->input('images'));
             }
 
-            // Register the product and price in Stripe
-            Stripe::setApiKey(env('STRIPE_SECRET'));
-
-            $product = Product::create([
-                'name' => $data['name'],
-                'description' => $data['description'] ?? "Category: " . ($data['category'] ?? 'Uncategorized'),
-            ]);
-
-            Log::info('Stripe product created: ', $product->toArray());
-
-            $price = Price::create([
-                'unit_amount' => intval($data['price'] * 100), // Convert to cents
-                'currency' => 'gbp',
-                'product' => $product->id,
-            ]);
-
-            Log::info('Stripe price created: ', $price->toArray());
-
-            // Save Stripe product and price IDs in the database
-            $item->stripe_product_id = $product->id;
-            $item->stripe_price_id = $price->id;
             $item->save();
 
-            Log::info('Redirecting to Shop.');
-            $items = Item::all();
+            return redirect()
+                ->route('shop.index')
+                ->with('flash.success', 'Item created successfully.');
 
-            return Inertia::render('Shop', [
-                'message' => 'Item added successfully and registered with Stripe.',
-                'items' => $items,
-            ]);
         } catch (\Exception $e) {
-            Log::error('Error storing item: ' . $e->getMessage());
-            return Inertia::render('Shop/AddItem', [
-                'error' => 'Unable to store item',
-            ]);
+            return redirect()
+                ->route('shop.add')
+                ->with('flash.error', 'Unable to store item');
         }
     }
 
     public function show($id)
     {
+        \Log::info("Fetching item with ID: {$id}");
+
         try {
-            $item = Item::findOrFail($id);
+            // Eager load relationships
+            $item = Item::with([
+                'reviews.user',
+                'reviews.images',
+                'reviews.replies.user',
+            ])->findOrFail($id);
 
-            // Retrieve the corresponding product and price from Stripe
-            Stripe::setApiKey(env('STRIPE_SECRET'));
+            \Log::info("Item retrieved: ", ['item' => $item]);
 
-            $product = Product::retrieve($item->stripe_product_id);
-            $price = Price::retrieve($item->stripe_price_id);
-
-            return response()->json([
-                'item' => $item,
-                'stripe_product' => $product,
-                'stripe_price' => $price,
+            return Inertia::render('Shop/Item/ItemPage', [
+                'item' => $item
             ]);
+
         } catch (\Exception $e) {
-            Log::error('Error retrieving item: ' . $e->getMessage());
+            \Log::error('Error retrieving item or Stripe data', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json(['error' => 'Unable to retrieve item'], 500);
         }
     }
+
+
+
 
     public function update(Request $request, $id)
     {

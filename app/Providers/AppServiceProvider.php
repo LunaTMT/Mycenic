@@ -33,14 +33,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
-        Inertia::share([
-            'flash' => function () {
-                return [
-                    'success' => session('flash.success'),
-                    'error'   => session('flash.error'),
-                ];
-            },
-        ]);
 
         // ✅ Register the observer properly
         User::observe(app(UserObserver::class));

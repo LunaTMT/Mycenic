@@ -36,7 +36,7 @@ class HandleInertiaRequests extends Middleware
 
             'auth' => [
                 'user' => $user ? array_merge(
-                    $user->only('id', 'name', 'email', 'avatar'),  // Add 'avatar' here
+                    $user->only('id', 'name', 'email', 'avatar'),
                     ['is_admin' => $user->isAdmin()]
                 ) : null,
             ],
@@ -48,5 +48,6 @@ class HandleInertiaRequests extends Middleware
             ],
         ];
     }
+
 
 }

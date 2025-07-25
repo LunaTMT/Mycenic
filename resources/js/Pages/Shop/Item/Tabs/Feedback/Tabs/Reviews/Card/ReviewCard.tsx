@@ -3,12 +3,10 @@ import { usePage } from "@inertiajs/react";
 import ReplyForm from "../../Components/ReplyForm";
 import Avatar from "./Content/Avatar";
 import Content from "./Content/ReviewContent";
-import ArrowButton from "@/Components/Buttons/ArrowButton";
+import ArrowButton from "@/Components/Icon/ArrowIcon";
 
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
-
-
 
 interface PageProps {
   auth: {
@@ -31,10 +29,8 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     showReplyForm,
   } = useReviews();
 
-
-
   const replies = review.replies_recursive ?? [];
-  const id = review.id?.toString() || review.created_at;
+  const id = review.id?.toString() ?? review.created_at;
   const isReplyFormOpen = showReplyForm(id);
   const expanded = expandedIds.has(id);
 
@@ -72,12 +68,17 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
         </div>
       </div>
 
+      {isReplyFormOpen && (
+        <div className="mt-2">
+          <ReplyForm onSubmit={handleReply} />
+        </div>
+      )}
 
       {expanded && replies.length > 0 && (
         <div className="mt-3 space-y-3">
           {replies.map((reply) => (
             <ReviewCard
-              key={reply.id?.toString() || reply.created_at}
+              key={reply.id?.toString() ?? reply.created_at}
               review={reply}
               depth={depth + 1}
             />

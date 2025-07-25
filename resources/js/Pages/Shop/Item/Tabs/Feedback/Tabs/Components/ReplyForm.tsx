@@ -1,120 +1,112 @@
-import React, { useState, FormEventHandler } from "react";
-import { usePage } from "@inertiajs/react"; // ✅ Required!
-import PrimaryButton from "@/Components/Buttons/PrimaryButton";
-import SecondaryButton from "@/Components/Buttons/SecondaryButton";
+import React, { useState, FormEvent, useEffect, useRef } from "react";
 import InputLabel from "@/Components/Login/InputLabel";
 import InputError from "@/Components/Login/InputError";
+import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import { usePage } from "@inertiajs/react";
 import { toast } from "react-toastify";
-import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
-
-// Define expected props from Inertia page
-interface PageProps {
-  auth: {
-    user: {
-      id: number;
-      name: string;
-      email: string;
-      is_admin: boolean;
-    } | null;
-  };
-}
-
-interface ReplyFormProps {
-  onSubmit: (text: string) => void;
-  onCancel: () => void;
-}
+import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 
 const MAX_LENGTH = 300;
 
+interface Props {
+  review: Review;
+}
 
+export default function ReplyForm({ review }: Props) {
+  const { openReplyFormId, setOpenReplyFormId, addReply } = useReviews();
+  const { auth } = usePage().props;
+  const authUser = auth?.user;
 
-export default function ReplyForm({ onSubmit, onCancel }: ReplyFormProps) {
-  const { auth } = usePage<PageProps>().props;
-  const authUser = auth.user;
+  const id = review.id?.toString() || "";
+  const showReplyForm = openReplyFormId === id;
 
   const [replyText, setReplyText] = useState("");
-  const [errors, setErrors] = useState<{ reply?: string }>({});
-  const [processing, setProcessing] = useState(false);
+  const [replyErrors, setReplyErrors] = useState<{ reply?: string }>({});
+  const [replyProcessing, setReplyProcessing] = useState(false);
 
-  const handleSubmit: FormEventHandler = (e) => {
-    e.preventDefault();
-    setErrors({});
+  const firstRender = useRef(true);
 
-    if (!replyText.trim()) {
-      setErrors({ reply: "Please enter your reply." });
-      return;
-    }
-
-    if (replyText.length > MAX_LENGTH) {
-      setErrors({ reply: `Reply cannot exceed ${MAX_LENGTH} characters.` });
-      return;
-    }
-
-    setProcessing(true);
-
-    setTimeout(() => {
-      onSubmit(replyText.trim());
+  useEffect(() => {
+    if (!showReplyForm && !firstRender.current) {
+      // reset when form is closed
       setReplyText("");
-      setProcessing(false);
-    }, 500);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (e.target.value.length <= MAX_LENGTH) {
-      setReplyText(e.target.value);
-      if (errors.reply) setErrors({});
+      setReplyErrors({});
+      setReplyProcessing(false);
     }
-  };
+    firstRender.current = false;
+  }, [showReplyForm]);
 
-  // 🔒 Show notice if not logged in
+  if (!showReplyForm) return null;
+
   if (!authUser) {
     return (
       <div className="py-4 px-2">
-        <AuthNotice />
+        <p className="text-center text-red-500">Please log in to reply.</p>
       </div>
     );
   }
 
+  function handleReplyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    if (e.target.value.length <= MAX_LENGTH) {
+      setReplyText(e.target.value);
+      if (replyErrors.reply) setReplyErrors({});
+    }
+  }
+
+  async function handleReplySubmit(e: FormEvent) {
+    e.preventDefault();
+    setReplyErrors({});
+
+    if (!replyText.trim()) {
+      setReplyErrors({ reply: "Please enter your reply." });
+      return;
+    }
+
+    if (replyText.length > MAX_LENGTH) {
+      setReplyErrors({ reply: `Reply cannot exceed ${MAX_LENGTH} characters.` });
+      return;
+    }
+
+    setReplyProcessing(true);
+
+    try {
+      await addReply(id, replyText.trim());
+      setOpenReplyFormId(null);
+      setReplyText("");
+    } catch {
+      toast.error("Failed to submit reply.");
+    } finally {
+      setReplyProcessing(false);
+    }
+  }
+
+  function handleReplyCancel() {
+    setOpenReplyFormId(null);
+    setReplyText("");
+    setReplyErrors({});
+    setReplyProcessing(false);
+  }
 
   return (
-    <div className="rounded-lg bg-white dark:bg-[#1e2124]/30 mt-2 border border-black/20 dark:border-white/20 p-3">
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
-          <InputLabel htmlFor="reply-text" />
-          <textarea
-            id="reply-text"
-            name="reply-text"
-            rows={5}
-            value={replyText}
-            onChange={handleChange}
-            placeholder="Write your reply here..."
-            className="mt-1 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm resize-none"
-          />
-          <div className="mt-1">
-            <InputError message={errors.reply} />
-          </div>
+    <form onSubmit={handleReplySubmit} className="space-y-1">
+      <div className="relative">
+        <InputLabel htmlFor="reply-text" />
+        <textarea
+          id="reply-text"
+          name="reply-text"
+          rows={5}
+          value={replyText}
+          onChange={handleReplyChange}
+          placeholder="Write your reply here..."
+          className="mt-1 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm resize-none"
+        />
+        <div className="mt-1">
+          <InputError message={replyErrors.reply} />
         </div>
-
-        <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-          <span className="px-3">
-            {replyText.length} / {MAX_LENGTH}
-          </span>
-
-          <div className="flex space-x-2">
-            <PrimaryButton disabled={processing} className="text-[13px] font-semibold px-3 py-2">
-              Submit 
-            </PrimaryButton>
-            <SecondaryButton
-              type="button"
-              onClick={onCancel}
-              disabled={processing}
-              className="text-[13px] font-semibold px-3 py-1"
-            >
-              Cancel
-            </SecondaryButton>
-          </div>
+        <span className="absolute top-4 right-4 text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
+          {replyText.length} / {MAX_LENGTH}
+        </span>
         </div>
-      </form>
-    </div>
+    </form>
   );
 }

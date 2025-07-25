@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import TextInput from "@/Components/Login/TextInput";
-import ArrowIcon from "@/Components/Buttons/ArrowButton";
+import ArrowIcon from "@/Components/Icon/ArrowIcon";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 const PromoCodeSection: React.FC = () => {

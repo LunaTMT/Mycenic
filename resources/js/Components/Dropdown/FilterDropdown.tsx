@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Dropdown from '@/Components/Dropdown/Dropdown';
-import ArrowIcon from "@/Components/Buttons/ArrowButton";
+import ArrowIcon from "@/Components/Icon/ArrowIcon";
 import { useShop } from "@/Contexts/Shop/ShopContext";
 import { Inertia } from "@inertiajs/inertia";
 

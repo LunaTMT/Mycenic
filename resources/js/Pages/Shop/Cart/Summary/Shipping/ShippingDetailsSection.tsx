@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useShipping } from "@/Contexts/Shop/Cart/ShippingContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { usePage } from "@inertiajs/react";
-import ArrowIcon from "@/Components/Buttons/ArrowButton";
+import ArrowIcon from "@/Components/Icon/ArrowIcon";
 import UpdateShippingDetailsForm from "./Components/UpdateShippingDetailsForm";
 import AddressSelector from "./Components/AddressSelector";
 import ShippingOptions from "./Components/ShippingOptions";

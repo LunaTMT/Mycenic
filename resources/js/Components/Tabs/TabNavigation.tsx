@@ -1,21 +1,22 @@
 import React from "react";
-import { FaBox, FaBookOpen, FaStar } from "react-icons/fa";
-import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 
-export type TabKey = "Item" | "Guides" | "Feedback";
-
-interface TabNavigationProps {
-  activeTab: TabKey;
-  setActiveTab: (tab: TabKey) => void;
+export interface Tab<T = string> {
+  key: T;
+  label: string;
+  icon?: React.ReactNode;
 }
 
-export default function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
-  const tabs = [
-    { key: "Item", label: "Item", icon: <FaBox size={20} className="inline mr-2" /> },
-    { key: "Guides", label: "Guides", icon: <FaBookOpen size={20} className="inline mr-2" /> },
-    { key: "Feedback", label: "Feedback", icon: <FaStar size={20} className="inline mr-2" /> },
-  ];
+interface TabNavigationProps<T = string> {
+  tabs: Tab<T>[];
+  activeTab: T;
+  setActiveTab: (tab: T) => void;
+}
 
+export default function TabNavigation<T extends string>({
+  tabs,
+  activeTab,
+  setActiveTab,
+}: TabNavigationProps<T>) {
   return (
     <div className="flex border-b gap-0 bg-transparent border-gray-300 dark:border-gray-600">
       {tabs.map(({ key, label, icon }, index, arr) => {

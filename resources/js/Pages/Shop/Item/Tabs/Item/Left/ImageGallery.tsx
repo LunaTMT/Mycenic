@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, EffectCoverflow } from "swiper/modules";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
+import { resolveSrc } from "@/utils/resolveSrc";
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -19,16 +20,6 @@ const ImageGallery: React.FC = () => {
     swiperRef,
     setSwiperRef,
   } = useItemContext();
-
-  const resolveSrc = (src: string, source?: string) => {
-    if (source && (source.startsWith("http://") || source.startsWith("https://"))) {
-      return source;
-    }
-    if (src.startsWith("http://") || src.startsWith("https://")) {
-      return src;
-    }
-    return `/${src}`;
-  };
 
   useEffect(() => {
     if (images.length === 0) {
@@ -57,14 +48,14 @@ const ImageGallery: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col border rounded-lg bg-white dark:bg-[#1e2124]/30  border-black/20 dark:border-white/20 overflow-hidden">
+    <div className="w-full h-full flex flex-col border rounded-lg bg-white dark:bg-[#1e2124]/30 border-black/20 dark:border-white/20 overflow-hidden">
       {/* Main image container with rounded corners and overflow hidden */}
-      <div className="h-[75%] flex items-center justify-center p-5   ">
+      <div className="h-[75%] flex items-center justify-center rounded-lg rounded-b-none overflow-hidden">
         {selectedImage ? (
           <img
             src={selectedImage}
             alt="Selected"
-            className="object-contain w-full h-full "
+            className="object-cover w-full h-full"
           />
         ) : (
           <p className="text-gray-700 dark:text-gray-300">No image available</p>
@@ -75,7 +66,7 @@ const ImageGallery: React.FC = () => {
       <div className="h-[25%] py-5 border-t border-black/10 dark:border-white/10">
         <Swiper
           slidesPerView="auto"
-          initialSlide={4}
+          initialSlide={2}
           centeredSlides
           spaceBetween={10}
           effect="coverflow"

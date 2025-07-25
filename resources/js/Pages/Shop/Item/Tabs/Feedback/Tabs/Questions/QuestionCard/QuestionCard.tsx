@@ -3,7 +3,7 @@ import { usePage } from "@inertiajs/react";
 import ReplyForm from "../../Components/ReplyForm";
 import Avatar from "./Author/Avatar";
 import Content from "./Content";
-import ArrowButton from "@/Components/Buttons/ArrowButton";
+import ArrowButton from "@/Components/Icon/ArrowIcon";
 import { useQuestions } from "@/Contexts/Shop/Items/QuestionsContext";
 import { Question } from "@/Contexts/Shop/Items/QuestionsContext";
 

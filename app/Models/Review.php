@@ -14,25 +14,19 @@ class Review extends Model
         'content',
         'likes',
         'dislikes',
-        'parent_id',
         'rating',
-        'item_id',   // make sure this is fillable if you use it
+        'item_id',
     ];
 
+    // Relationships
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function replies()
+    public function item()
     {
-        return $this->hasMany(Review::class, 'parent_id');
-    }
-
-    public function repliesRecursive()
-    {
-        return $this->hasMany(Review::class, 'parent_id')
-            ->with(['user', 'repliesRecursive', 'images']);
+        return $this->belongsTo(Item::class);
     }
 
     public function images()
@@ -40,15 +34,16 @@ class Review extends Model
         return $this->hasMany(ReviewImage::class);
     }
 
-    public function parent()
-    {
-        return $this->belongsTo(Review::class, 'parent_id');
-    }
-
-
     public function votes()
     {
         return $this->hasMany(ReviewVote::class);
     }
 
+    /**
+     * Polymorphic relation: all replies to this review
+     */
+    public function replies()
+    {
+        return $this->morphMany(Reply::class, 'replyable')->latest();
+    }
 }

@@ -5,16 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Address extends Model
+class Reply extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'address', 'city', 'zip', 'country',
+        'content', 'user_id', 'likes', 'dislikes',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function replyable()
+    {
+        return $this->morphTo();
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ReplyImage::class);
     }
 }

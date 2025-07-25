@@ -1,29 +1,37 @@
 import React from "react";
 
-interface ArrowButtonProps {
+interface ArrowIconProps {
   w: string;
   h: string;
   isOpen: boolean;
-  onClick: () => void;
+  onClick?: () => void;
   className?: string;
   ariaLabel?: string;
 }
 
-const ArrowButton: React.FC<ArrowButtonProps> = ({
+const ArrowIcon: React.FC<ArrowIconProps> = ({
   w,
   h,
   isOpen,
   onClick,
   className = "",
-  ariaLabel = "Toggle replies",
+  ariaLabel = "Toggle",
 }) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       aria-label={ariaLabel}
-      className={`flex items-center justify-center  
-        transition duration-300  ${className}`}
+      onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      className={`flex items-center justify-center ${onClick ? "cursor-pointer" : ""} transition duration-300 ${className}`}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -43,8 +51,8 @@ const ArrowButton: React.FC<ArrowButtonProps> = ({
           d="M19 9l-7 7-7-7"
         />
       </svg>
-    </button>
+    </div>
   );
 };
 
-export default ArrowButton;
+export default ArrowIcon;

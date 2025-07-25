@@ -53,7 +53,7 @@ class UnsplashService
 
     public function getImages(string $query, int $count = 8): array
     {
-        Log::info("UnsplashService: Fetching {$count} images for '{$query}'.");
+        Log::info("UnsplashService: Fetching {$count} images for query '{$query}'");
 
         $response = Http::get("{$this->baseUrl}/search/photos", [
             'client_id' => config('services.unsplash.access_key'),
@@ -64,23 +64,62 @@ class UnsplashService
         ]);
 
         if (!$response->successful()) {
-            Log::error('UnsplashService: Failed to fetch images.', [
+            Log::error('UnsplashService: Failed to fetch images from Unsplash.', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
             return [];
         }
 
-        $images = collect($response->json()['results'] ?? [])
+        $results = $response->json()['results'] ?? [];
+
+        $images = collect($results)
             ->pluck('urls.regular')
             ->filter()
             ->values()
             ->all();
 
-        Log::info("UnsplashService: Retrieved images for '{$query}'", $images);
+        Log::info("UnsplashService: Successfully retrieved " . count($images) . " image(s) for '{$query}'");
+
+        // Optionally log the image URLs for debugging (comment out in production)
+        Log::debug("UnsplashService: Image URLs for '{$query}'", $images);
 
         return $images;
     }
+
+    public function getRandomImages(string $query, int $count = 1): array
+    {
+        Log::info("UnsplashService: Getting {$count} random image(s) for query '{$query}'");
+
+        $response = Http::get("{$this->baseUrl}/photos/random", [
+            'client_id' => config('services.unsplash.access_key'),
+            'query' => $query,
+            'count' => $count,
+            'orientation' => 'squarish',
+        ]);
+
+        if (!$response->successful()) {
+            Log::error("UnsplashService: Failed to fetch random images.", [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return [];
+        }
+
+        $results = $response->json();
+
+        // If only one image is returned, wrap it in an array
+        if (isset($results['urls'])) {
+            $results = [$results];
+        }
+
+        return collect($results)
+            ->pluck('urls.regular')
+            ->filter()
+            ->values()
+            ->all();
+    }
+
 
 
 }

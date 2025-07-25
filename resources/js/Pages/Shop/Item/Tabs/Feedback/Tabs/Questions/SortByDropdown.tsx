@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Dropdown from "@/Components/Dropdown/Dropdown";
-import ArrowButton from "@/Components/Buttons/ArrowButton";
+import ArrowButton from "@/Components/Icon/ArrowIcon";
 import { useQuestions } from "@/Contexts/Shop/Items/QuestionsContext";
 
 const sortOptions = [
