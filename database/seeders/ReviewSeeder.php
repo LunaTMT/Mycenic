@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Database\Seeders;
 
 use App\Models\Review;
@@ -13,6 +12,18 @@ class ReviewSeeder extends Seeder
     public function run()
     {
         Log::info('Starting ReviewSeeder...');
+
+        // Explicitly add images to existing review with ID 9
+        $review = Review::find(9);
+        if ($review) {
+            $imageCount = rand(1, 5);
+            ReviewImage::factory()
+                ->count($imageCount)
+                ->create(['review_id' => $review->id]);
+            Log::info("Added {$imageCount} images to review ID {$review->id}.");
+        } else {
+            Log::warning('Review with ID 9 not found.');
+        }
 
         // Create 5 top-level parent reviews
         $parentReviews = Review::factory()
@@ -28,7 +39,6 @@ class ReviewSeeder extends Seeder
                 ReviewImage::factory()
                     ->count($imageCount)
                     ->create(['review_id' => $parent->id]);
-
                 Log::info("Added {$imageCount} images to review ID {$parent->id}.");
             }
 

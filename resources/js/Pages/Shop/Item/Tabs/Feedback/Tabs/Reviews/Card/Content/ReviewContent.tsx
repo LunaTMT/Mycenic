@@ -1,6 +1,6 @@
 import React from "react";
 import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
-import ReviewHeader from "../../../Components/UserContentHeader";
+import ReviewHeader from "./ReviewHeader";
 import ReviewBody from "./ReviewBody";
 import ReplyForm from "../../../Components/ReplyForm";
 import FooterButtons from "../../../Components/FooterButton";

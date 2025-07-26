@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Item;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\ReviewImage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
 use Stripe\Stripe;
@@ -22,7 +23,7 @@ class ItemSeeder extends Seeder
             \App\Models\User::factory()->count(10)->create();
         }
 
-        // Create 10 items using the factory
+        // Create 20 items using the factory
         Item::factory()->count(20)->create()->each(function (Item $item) {
             try {
                 $product = Product::create([
@@ -52,7 +53,14 @@ class ItemSeeder extends Seeder
                 ->withReplies()
                 ->create([
                     'item_id' => $item->id,
-                ]);
+                ])
+                ->each(function (Review $review) {
+                    // Attach 1-5 images to each review
+                    $imageCount = rand(1, 5);
+                    ReviewImage::factory()
+                        ->count($imageCount)
+                        ->create(['review_id' => $review->id]);
+                });
         });
     }
 }

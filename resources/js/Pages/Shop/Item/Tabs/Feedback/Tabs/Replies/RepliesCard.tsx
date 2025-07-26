@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { usePage } from "@inertiajs/react";
 import ReplyForm from "../Components/ReplyForm";
 import Avatar from "../Reviews/Card/Content/Avatar";
-import ReviewHeader from "../Components/UserContentHeader";
+import ReviewHeader from "../Reviews/Card/Content/ReviewHeader";
 import ReviewBody from "../Reviews/Card/Content/ReviewBody";
 import RightActions from "../Components/RightActions";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";

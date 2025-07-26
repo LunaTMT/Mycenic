@@ -22,6 +22,7 @@ export default function ImageGallery({
 }: ImageGalleryProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
+
   // Manage images locally, default to empty array if undefined
   const [images, setImages] = useState<Image[]>(initialImages);
 
