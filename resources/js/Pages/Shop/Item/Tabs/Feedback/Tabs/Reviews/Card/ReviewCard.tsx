@@ -7,12 +7,9 @@ import ReviewBody from "./Content/ReviewBody";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import RepliesCard from "../../Replies/RepliesCard";
-import LikeDislikeButtons from "../../Components/LikeDislikeButtons";
-import Dropdown from "@/Components/Dropdown/Dropdown";
 import { Review } from "@/types/types";
-import { BsThreeDots } from "react-icons/bs";
-import DeleteConfirmationModal from "../../Components/ImageGallery/DeleteConfirmationModal";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import RightActions from "../../Components/RightActions";
 
 interface PageProps {
   auth: {
@@ -33,14 +30,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     toggleExpandedId,
     localRepliesMap,
     addReply,
-    showDropdownId,
-    setShowDropdown,
-    deleteConfirmId,
-    openDeleteConfirm,
-    closeDeleteConfirm,
-    confirmDelete,
-    deleting,
-    startEditing,
     editingReviewId,
     cancelEditing,
     saveEditedReview,
@@ -51,24 +40,13 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
   const reviewId = review.id?.toString() ?? "";
 
   const isOwner = auth.user?.id === review.user?.id;
-  const isAdmin = auth.user?.is_admin ?? false;
-  const canEdit = isOwner;
-  const canDelete = isOwner || isAdmin;
+  const isEditing = editingReviewId === reviewId;
 
   const isExpanded = expandedIds.has(reviewId);
   const isReplyFormOpen = openReplyFormId === reviewId;
   const localReplies = localRepliesMap[reviewId] ?? review.replies ?? [];
-  const dropdownOpen = showDropdownId === reviewId;
-  const isConfirmingDelete = deleteConfirmId === reviewId;
-
-  const isEditing = editingReviewId === reviewId;
 
   // Handlers
-  const handleEdit = () => {
-    console.log(`[Edit] Starting edit for Review ID: ${reviewId}`);
-    startEditing(reviewId, review);
-  };
-
   const handleCancelEdit = () => {
     console.log(`[Edit] Cancel editing for Review ID: ${reviewId}`);
     cancelEditing();
@@ -77,11 +55,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
   const handleSaveEdit = () => {
     console.log(`[Edit] Saving changes for Review ID: ${reviewId}`);
     saveEditedReview(reviewId);
-  };
-
-  const handleDelete = () => {
-    console.log(`[Delete] Requesting delete confirmation for Review ID: ${reviewId}`);
-    openDeleteConfirm(reviewId);
   };
 
   const toggleReplyForm = () => {
@@ -153,80 +126,20 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
                         </SecondaryButton>
                       )}
 
-                      {canEdit && (
+                      {isOwner && (
                         <PrimaryButton
-                          onClick={handleEdit}
+                          onClick={() => startEditing(reviewId, review)}
                           className="text-[13px] font-semibold px-3 py-1"
                         >
                           Edit
                         </PrimaryButton>
                       )}
-
-      
                     </>
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 ml-auto">
-                  <LikeDislikeButtons
-                    reviewId={review.id!}
-                    initialLikes={review.likes || 0}
-                    initialDislikes={review.dislikes || 0}
-                  />
-
-                  <Dropdown
-                    onOpenChange={(open) => {
-                      console.log(`[Dropdown] ${open ? "Opened" : "Closed"} for Review ID: ${reviewId}`);
-                      setShowDropdown(open ? reviewId : null);
-                    }}
-                  >
-                    <Dropdown.Trigger>
-                      <div className="flex justify-center items-center cursor-pointer p-1 rounded text-gray-700 dark:text-white/70 hover:text-black dark:hover:text-white">
-                        <BsThreeDots size={20} />
-                      </div>
-                    </Dropdown.Trigger>
-
-                    <Dropdown.Content
-                      width="fit"
-                      contentClasses="bg-white dark:bg-[#424549] shadow-lg z-50"
-                    >
-                      <ul className="text-sm font-Poppins text-right w-full">
-                        {(isOwner && canEdit) || isAdmin ? (
-                          <li
-                            onClick={handleEdit}
-                            className="cursor-pointer px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70"
-                          >
-                            Edit
-                          </li>
-                        ) : null}
-
-                        {canDelete && (
-                          <li
-                            onClick={handleDelete}
-                            className="cursor-pointer px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70"
-                          >
-                            Delete
-                          </li>
-                        )}
-                      </ul>
-                    </Dropdown.Content>
-                  </Dropdown>
-
-                  <DeleteConfirmationModal
-                    show={isConfirmingDelete}
-                    onClose={() => {
-                      console.log(`[DeleteModal] Closed for Review ID: ${reviewId}`);
-                      closeDeleteConfirm();
-                    }}
-                    onConfirm={() => {
-                      console.log(`[DeleteModal] Confirmed deletion for Review ID: ${reviewId}`);
-                      confirmDelete(reviewId);
-                    }}
-                    deleting={deleting}
-                    item="review"
-                    message="Once deleted, this review and all its replies will be permanently removed."
-                  />
-                </div>
+                {/* Right actions encapsulated */}
+                <RightActions review={review} />
               </div>
             </div>
           </div>

@@ -23,15 +23,8 @@ class Reply extends Model
         return $this->morphTo();
     }
 
-    public function images()
-    {
-        return $this->hasMany(ReplyImage::class);
-    }
-   
-
     public function replies()
     {
         return $this->morphMany(Reply::class, 'replyable')->with('replies');
     }
-
 }
