@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 
 import GuestLayout from "@/Layouts/GuestLayout";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+
 import FilterButton from "@/Components/Buttons/FilterButton";
 import SortDropdown from "@/Components/Dropdown/SortDropdown";
 import AddItemButton from "@/Components/Buttons/AddItemButton";
@@ -15,6 +17,8 @@ import ItemsTab from "./Tabs/ItemsTab";
 import CartTab from "./Tabs/CartTab";
 
 import { FaBoxOpen, FaShoppingCart } from "react-icons/fa";
+
+import { User } from "@/types/types";
 
 const tabs = [
   {
@@ -33,12 +37,11 @@ const ShopContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState("items");
 
   return (
-    <GuestLayout
-    >
+    <>
       <Head title="Shop" />
 
       <div className="relative w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
-        <div className="w-full h-[88vh] dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl overflow-hidden">
+        <div className="w-full h-full dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl overflow-hidden">
           <TabNavigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
           <TabContent activeKey={activeTab} tabKey="items">
@@ -50,7 +53,7 @@ const ShopContent: React.FC = () => {
           </TabContent>
         </div>
       </div>
-    </GuestLayout>
+    </>
   );
 };
 
@@ -59,10 +62,19 @@ interface ShopProps {
   cartItems?: any[];
 }
 
-const Shop: React.FC<ShopProps> = ({ items }) => (
-  <ShopProvider items={items} >
-    <ShopContent />
-  </ShopProvider>
-);
+const Shop: React.FC<ShopProps> = ({ items }) => {
+  const { auth } = usePage().props as { auth?: { user?: User } };
+
+  // Choose layout based on authentication
+  const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
+
+  return (
+    <Layout>
+      <ShopProvider items={items}>
+        <ShopContent />
+      </ShopProvider>
+    </Layout>
+  );
+};
 
 export default Shop;

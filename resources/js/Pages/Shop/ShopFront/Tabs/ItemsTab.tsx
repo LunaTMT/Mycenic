@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { useShop } from "@/Contexts/Shop/ShopContext";
 import ItemCard from "@/Pages/Shop/ShopFront/ItemCard";
-
 import SubNavigation from "@/Components/Tabs/SubTab/SubNavigation";
 import FilterButton from "@/Components/Buttons/FilterButton";
 import SortDropdown from "@/Components/Dropdown/SortDropdown";
@@ -17,8 +16,9 @@ const containerVariants = {
 const ITEMS_PER_PAGE = 10;
 
 const ItemsTab: React.FC = () => {
-  const { items } = useShop();
+  const { items, category } = useShop();
   const [currentPage, setCurrentPage] = useState(1);
+
 
   const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
 
@@ -28,7 +28,7 @@ const ItemsTab: React.FC = () => {
   );
 
   return (
-    <div>
+    <div className="p-4">
       <SubNavigation
         rightContent={
           <div className="flex justify-end space-x-4">
@@ -46,7 +46,7 @@ const ItemsTab: React.FC = () => {
           initial="initial"
           animate="animate"
           exit="exit"
-          style={{ minHeight: "600px" }} // enough height for 2 rows
+          style={{ minHeight: "600px" }}
         >
           {paginatedItems.map((item) => (
             <ItemCard key={item.id} item={item} />

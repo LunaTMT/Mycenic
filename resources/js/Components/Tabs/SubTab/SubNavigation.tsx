@@ -15,7 +15,7 @@ export default function SubNavigation<T extends string>({
   rightContent,
 }: SubNavigationProps<T>) {
   const getTabClass = (key: T) =>
-    `px-4 py-2 font-semibold transition-transform duration-300 border-b-2 border-transparent
+    `p-2 font-semibold transition-transform duration-300 border-b-2 border-transparent
      ${
        activeKey === key
          ? "text-yellow-500 dark:text-[#7289da] border-yellow-500 dark:border-[#7289da]"
@@ -24,8 +24,8 @@ export default function SubNavigation<T extends string>({
      hover:scale-[1.03]`;
 
   return (
-    <div className="flex items-center p-2 justify-between border-b border-black/20 dark:border-white/20 px-2">
-      <div className="flex space-x-4">
+    <div className="flex items-center justify-between border-b border-black/20 dark:border-white/20 px-2">
+      <div className="flex space-x-4 ">
         {/* Only render tabs if all necessary props are present */}
         {tabs && onChange && activeKey && tabs.map((tab) => (
           <button

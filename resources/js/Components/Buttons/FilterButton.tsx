@@ -4,45 +4,35 @@ import Dropdown from "@/Components/Dropdown/Dropdown";
 import ArrowIcon from "../Icon/ArrowIcon";
 
 const FilterButton = () => {
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
   const { category, setCategory, availableCategories } = useShop();
 
-  const handleDropdownStateChange = (isOpen: boolean) => {
-    setShowDropdown(isOpen);
-  };
-
-  const handleCategorySelect = (selectedCategory: string) => {
-    setCategory(selectedCategory);
-    setShowDropdown(false);
-  };
-
   return (
-    <div
-      className="relative"
-      onMouseEnter={() => setShowDropdown(true)}
-      onMouseLeave={() => setShowDropdown(false)}
-      onClick={() => setShowDropdown(prev => !prev)}
-    >
-      <Dropdown onOpenChange={handleDropdownStateChange}>
+    <div className="mb-4 flex-1 relative">
+      <label className="block text-sm font-medium text-gray-700 dark:text-white mb-1">
+        Category
+      </label>
+
+      <Dropdown onOpenChange={setOpen}>
         <Dropdown.Trigger>
-          <div className="flex justify-center items-center gap-2">
-            <p className="font-Poppins hover:text-black dark:text-white/70 dark:hover:text-white">
-              FILTER
-            </p>
-            <ArrowIcon w="30" h="30" isOpen={showDropdown} />
+          <div className="w-40 px-3 py-1 border rounded-md text-left cursor-pointer flex justify-between items-center text-sm text-gray-900 dark:text-white dark:bg-[#424549]/80 border-black/20 dark:border-white/20">
+            <span>{category || "Select Category"}</span>
+            <ArrowIcon w="16" h="16" isOpen={open} />
           </div>
         </Dropdown.Trigger>
 
         <Dropdown.Content>
-          <ul className="relative text-right w-fit bg-white dark:bg-[#424549] shadow-lg z-50">
-            {availableCategories.map((cat) => (
+          <ul className="w-40 bg-white dark:bg-[#424549] shadow-lg z-50 rounded-md border border-gray-300 dark:border-gray-600 text-sm">
+            {availableCategories.map((cat, i) => (
               <li
                 key={cat}
-                className={`cursor-pointer px-4 py-2 font-Poppins text-sm hover:bg-gray-200 dark:hover:bg-[#7289da]/70 text-gray-800 dark:text-gray-200
-                  
-                  ${cat === category ? "font-bold" : ""}
-                `}
-                onClick={() => handleCategorySelect(cat)}
+                onClick={() => {
+                  setCategory(cat);
+                  setOpen(false);
+                }}
+                className={`px-4 py-2 cursor-pointer text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-[#7289da]/70 ${
+                  category === cat ? "font-semibold" : ""
+                } ${i === 0 ? "rounded-t-md" : ""} ${i === availableCategories.length - 1 ? "rounded-b-md" : ""}`}
               >
                 {cat}
               </li>

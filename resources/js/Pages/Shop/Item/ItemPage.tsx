@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import { ToastContainer } from "react-toastify";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaBox, FaBookOpen, FaStar } from "react-icons/fa";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import GuestLayout from "@/Layouts/GuestLayout";
+
 import { ItemProvider } from "@/Contexts/Shop/Items/ItemContext";
 
 import Item from "./Tabs/Item/Item";
@@ -13,7 +15,7 @@ import Feedback from "./Tabs/Feedback/Feedback";
 
 import TabNavigation, { Tab } from "@/Components/Tabs/TabNavigation";
 import TabContent from "@/Components/Tabs/TabContent";
-import { Item as ItemType } from "@/types/types";
+import { Item as ItemType, User } from "@/types/types";
 
 type TabKey = "Item" | "Guides" | "Feedback";
 
@@ -28,6 +30,9 @@ const tabs: Tab<TabKey>[] = [
 ];
 
 const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
+  const { auth } = usePage().props as { auth?: { user?: User } };
+  const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
+
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     const savedTab = localStorage.getItem("activeItemTab");
     return (savedTab as TabKey) || "Item";
@@ -38,7 +43,7 @@ const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
   }, [activeTab]);
 
   return (
-    <AuthenticatedLayout>
+    <Layout>
       <Head title={`${item.category}/${item.name}`} />
 
       <ItemProvider item={item}>
@@ -71,7 +76,7 @@ const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
       </ItemProvider>
 
       <ToastContainer position="bottom-right" />
-    </AuthenticatedLayout>
+    </Layout>
   );
 };
 
