@@ -1,11 +1,11 @@
 <?php
-// database/factories/ReplyFactory.php
 
 namespace Database\Factories;
 
 use App\Models\Reply;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 class ReplyFactory extends Factory
 {
@@ -15,11 +15,19 @@ class ReplyFactory extends Factory
     {
         return [
             'content' => $this->faker->sentence,
-            'user_id' => User::inRandomOrder()->first()->id,
-            'likes' => $this->faker->numberBetween(0, 100),
-            'dislikes' => $this->faker->numberBetween(0, 100),
-            'replyable_type' => null, // Will be filled later
-            'replyable_id' => null,   // Will be filled later
+            'user_id' => User::inRandomOrder()->first()?->id,
+            'likes' => $this->faker->numberBetween(0, 50),
+            'dislikes' => $this->faker->numberBetween(0, 50),
         ];
+    }
+
+    public function forReplyable(Model $model)
+    {
+        return $this->state(function () use ($model) {
+            return [
+                'replyable_type' => get_class($model),
+                'replyable_id' => $model->id,
+            ];
+        });
     }
 }

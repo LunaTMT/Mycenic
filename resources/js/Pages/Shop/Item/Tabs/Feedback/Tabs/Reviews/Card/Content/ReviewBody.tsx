@@ -1,31 +1,30 @@
-import React from "react";
-import ImageGallery from "./ImageGallery/ImageGallery";
+import React, { useState, useMemo } from "react";
+import ImageGallery from "../../../Components/ImageGallery/ImageGallery";
 import StarRating from "../../Form/StarRating";
 import InputLabel from "@/Components/Login/InputLabel";
-import { Review, useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+
+export interface Review {
+  id: number;
+  parent_id: number | null;
+  content: string;
+  rating?: number;
+  images?: string[];
+}
 
 interface Props {
   review: Review;
 }
 
 export default function ReviewBody({ review }: Props) {
-  const {
-    isEditingId,
-    cancelEdit,
-    editedTextById,
-    setEditedTextById,
-    editedRatingById,
-    setEditedRatingById,
-    editedImagesById,
-    setEditedImagesById,
-  } = useReviews();
+  const id = review.id.toString();
+  const isTopLevel = review.parent_id === null;
 
-  const id = review.id?.toString() || "";
-  const isEditing = isEditingId === id;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(review.content);
+  const [editedRating, setEditedRating] = useState(review.rating ?? 0);
+  const [editedImages, setEditedImages] = useState<string[]>(review.images ?? []);
 
-  const content = editedTextById[review.id!] ?? review.content;
-  const rating = editedRatingById[review.id!] ?? review.rating ?? 0;
-  const images = editedImagesById[review.id!] ?? review.images ?? [];
+  const handleToggleEdit = () => setIsEditing(!isEditing);
 
   return (
     <div className="space-y-2">
@@ -33,13 +32,13 @@ export default function ReviewBody({ review }: Props) {
         <>
           <InputLabel
             htmlFor="review"
-            value={review.parent_id === null ? "Your Review" : "Your Reply"}
+            value={isTopLevel ? "Your Review" : "Your Reply"}
           />
           <div className="relative text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] shadow-sm flex flex-col">
             <textarea
               id="review"
-              value={content}
-              onChange={(e) => setEditedTextById(review.id!, e.target.value)}
+              value={editedText}
+              onChange={(e) => setEditedText(e.target.value)}
               placeholder="Write your review here..."
               rows={5}
               className="resize-none w-full bg-white dark:bg-[#1e2124] text-gray-900 dark:text-gray-100 px-4 pt-3 pb-12 rounded-md border-none focus:outline-none focus:ring-0 min-h-[120px]"
@@ -47,25 +46,23 @@ export default function ReviewBody({ review }: Props) {
             />
             <div className="absolute bottom-2 left-4 right-4 flex justify-between items-center">
               <div className="text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
-                {content.length} / 300
+                {editedText.length} / 300
               </div>
-              {review.parent_id === null && (
+              {isTopLevel && (
                 <StarRating
-                  rating={rating}
-                  setRating={(r) => setEditedRatingById(review.id!, r)}
+                  rating={editedRating}
+                  setRating={setEditedRating}
                 />
               )}
             </div>
           </div>
 
-          {(images.length > 0 || isEditing) && (
+          {(editedImages.length > 0 || isEditing) && (
             <ImageGallery
-              initialImages={images}
+              initialImages={editedImages}
               isEditing={true}
               maxImages={5}
-              onImagesChange={(newImages) =>
-                setEditedImagesById(review.id!, newImages)
-              }
+              onImagesChange={setEditedImages}
             />
           )}
         </>
@@ -83,6 +80,8 @@ export default function ReviewBody({ review }: Props) {
           )}
         </>
       )}
+
+
     </div>
   );
 }

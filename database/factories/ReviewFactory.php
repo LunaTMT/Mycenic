@@ -1,7 +1,5 @@
 <?php
 
-// database/factories/ReviewFactory.php
-
 namespace Database\Factories;
 
 use App\Models\Review;
@@ -17,31 +15,31 @@ class ReviewFactory extends Factory
     public function definition()
     {
         return [
-            'user_id' => User::inRandomOrder()->first()->id,
+            'user_id' => User::inRandomOrder()->first()?->id,
             'content' => $this->faker->paragraph,
             'likes' => $this->faker->numberBetween(0, 100),
             'dislikes' => $this->faker->numberBetween(0, 100),
-            'parent_id' => null,
             'rating' => $this->faker->randomFloat(1, 1, 5),
-            'item_id' => Item::inRandomOrder()->first()->id,
+            'item_id' => Item::inRandomOrder()->first()?->id,
         ];
     }
 
     public function withReplies(int $count = 3)
     {
         return $this->afterCreating(function (Review $review) use ($count) {
-            Reply::factory()
+            // Top-level replies
+            $topLevelReplies = Reply::factory()
                 ->count($count)
-                ->for($review, 'replyable')
+                ->forReplyable($review)
                 ->create();
 
-      
-            Reply::factory()
-                ->count(2)
-                ->create([
-                    'replyable_type' => Reply::class,
-                    'replyable_id' => $review->replies()->inRandomOrder()->first()?->id,
-                ]);
+            // Nested replies to the top-level replies
+            foreach ($topLevelReplies as $reply) {
+                Reply::factory()
+                    ->count(2)
+                    ->forReplyable($reply)
+                    ->create();
+            }
         });
     }
 }

@@ -24,7 +24,7 @@ export default function LikeDislikeButtons({
   const guestToken = getGuestToken();
 
   useEffect(() => {
-    console.log("Mounting LikeDislike");
+    
     const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${reviewId}`);
     if (saved === "like" || saved === "dislike") {
       setVoted(saved);

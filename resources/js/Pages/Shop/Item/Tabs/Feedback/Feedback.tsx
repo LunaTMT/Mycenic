@@ -11,6 +11,8 @@ import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import { Tab } from "@/types/tabs";
 
+import SortByDropdown from "./Tabs/Reviews/Header/SortByDropdown";
+
 type TabKey = "reviews" | "questions";
 
 const tabs: Tab<TabKey>[] = [
@@ -34,16 +36,20 @@ export default function Feedback() {
 
   return (
     <div className="space-y-6">
-      <SubNavigation tabs={tabs} activeKey={activeTab} onChange={setActiveTab} />
+      <ReviewsProvider initialReviews={item?.reviews || []}>
+        <SubNavigation
+          tabs={tabs}
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          
+        />
 
-      <SubContent activeKey={activeTab} tabKey="reviews">
-        <p> sklfsdkjfh</p>
-        {/*
-        <ReviewsProvider initialReviews={item?.reviews || []}>
+       
+
+        <SubContent activeKey={activeTab} tabKey="reviews">
           <Reviews />
-        </ReviewsProvider>
-        */}
-      </SubContent>
+        </SubContent>
+      </ReviewsProvider>
 
       <SubContent activeKey={activeTab} tabKey="questions">
         <Questions />

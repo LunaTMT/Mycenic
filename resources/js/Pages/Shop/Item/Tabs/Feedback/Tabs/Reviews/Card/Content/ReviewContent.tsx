@@ -1,10 +1,10 @@
 import React from "react";
 import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
-import ReviewHeader from "./ReviewHeader";
+import ReviewHeader from "../../../Components/UserContentHeader";
 import ReviewBody from "./ReviewBody";
 import ReplyForm from "../../../Components/ReplyForm";
-import FooterButtons from "./FooterButton";
-import RightActions from "./RightActions";
+import FooterButtons from "../../../Components/FooterButton";
+import RightActions from "../../../Components/RightActions";
 
 interface ReviewContentProps {
   review: Review;

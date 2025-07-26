@@ -28,10 +28,11 @@ interface ReviewContextType {
   sortBy: string;
   handleSortChange: (value: string) => void;
 
-  // Additional (optional) methods if needed
   addReply?: (reviewId: string, text: string) => void;
   expandedIds?: Set<string>;
   toggleExpandedId?: (id: string) => void;
+
+  openReplyFormId?: string | null;
   setOpenReplyFormId?: (id: string | null) => void;
   showReplyForm?: (id: string) => boolean;
 }
@@ -179,10 +180,10 @@ export const ReviewsProvider = ({ initialReviews, children }: ReviewsProviderPro
       sortBy,
       handleSortChange,
 
-      // additional
       addReply,
       expandedIds,
       toggleExpandedId,
+      openReplyFormId,
       setOpenReplyFormId,
       showReplyForm,
     }),

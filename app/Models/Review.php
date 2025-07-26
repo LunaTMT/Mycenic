@@ -44,6 +44,7 @@ class Review extends Model
      */
     public function replies()
     {
-        return $this->morphMany(Reply::class, 'replyable')->latest();
+        return $this->morphMany(Reply::class, 'replyable')->with('replies');
     }
+
 }

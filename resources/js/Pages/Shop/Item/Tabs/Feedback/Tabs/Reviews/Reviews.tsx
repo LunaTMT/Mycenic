@@ -13,20 +13,24 @@ export default function Reviews() {
     showForm,
     setShowForm,
   } = useReviews();
-  console.log(currentReviews);
-  return (
-    <section className="space-y-6">
-      <header className="flex justify-between items-center mb-4">
-        <button
-          onClick={() => setShowForm((prev) => !prev)}
-          className="px-3 py-1 bg-yellow-500 dark:bg-[#7289da] text-white rounded-md text-sm font-semibold hover:brightness-110 transition"
-          aria-expanded={showForm}
-          aria-controls="review-form"
-        >
-          {showForm ? "Close" : "Add Review"}
-        </button>
 
-        <SortByDropdown />
+  return (
+    <section className="space-y-2">
+      <header className="flex items-center justify-between ">
+        <div className="flex-1">
+          <button
+            onClick={() => setShowForm((prev) => !prev)}
+            className="px-3 py-1 bg-yellow-500 dark:bg-[#7289da] text-white rounded-md text-sm font-semibold hover:brightness-110 transition"
+            aria-expanded={showForm}
+            aria-controls="review-form"
+          >
+            {showForm ? "Close" : "Add Review"}
+          </button>
+        </div>
+
+        <div className="ml-auto">
+          <SortByDropdown />
+        </div>
       </header>
 
       {showForm && (
@@ -46,7 +50,10 @@ export default function Reviews() {
       )}
 
       {totalPages > 1 && (
-        <nav aria-label="Reviews Pagination" className="flex justify-center gap-2 mt-6">
+        <nav
+          aria-label="Reviews Pagination"
+          className="flex justify-center gap-2 mt-6"
+        >
           {Array.from({ length: totalPages }, (_, i) => {
             const page = i + 1;
             const isActive = currentPage === page;

@@ -1,5 +1,5 @@
 import React from "react";
-import LikeDislikeButtons from "../../../Components/LikeDislikeButtons";
+import LikeDislikeButtons from "./LikeDislikeButtons";
 import ActionsDropdown from "./ActionDropdown";
 import { usePage } from "@inertiajs/react";
 import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";

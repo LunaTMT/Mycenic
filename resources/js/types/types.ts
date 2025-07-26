@@ -1,17 +1,14 @@
-// src/types.ts
-
 export interface User {
   id: number;
-  name?: string | null;
+  name?: string | null;   // name is optional and can be null
   email: string;
   avatar?: string | null;
   role: string;
-  isAdmin: boolean;  // <-- add this
+  isAdmin: boolean;       // admin flag
   phone?: string | null;
   provider?: string | null;
   provider_id?: string | null;
 }
-
 
 export interface Item {
   id: number;
@@ -19,24 +16,19 @@ export interface Item {
   price: number;
   stock: number;
   category: string;
-  images: string[];  // always an array
+  images: string[];           // always an array
   image_sources?: string[] | null;
   description?: string | null;
   isPsyilocybinSpores: boolean;
   options?: Record<string, any> | null;
   reviews?: Review[];
-  average_rating?: number;  // add this line for average rating
-  created_at: string;       // <-- add this line for created date
+  average_rating?: number;    // average rating of item
+  created_at: string;         // created date string
 }
-
 
 export interface Review {
   id?: number;
-  user: {
-    id: number;
-    name: string;
-    avatar: string;
-  };
+  user: User;                 // use the User interface with nullable name
   content: string;
   rating: number;
   likes?: number;

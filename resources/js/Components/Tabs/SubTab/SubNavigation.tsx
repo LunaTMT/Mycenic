@@ -24,7 +24,7 @@ export default function SubNavigation<T extends string>({
      hover:scale-[1.03]`;
 
   return (
-    <div className="flex items-center justify-between border-b border-black/20 dark:border-white/20 px-2">
+    <div className="flex  justify-between border-b border-black/20 dark:border-white/20 ">
       <div className="flex space-x-4 ">
         {/* Only render tabs if all necessary props are present */}
         {tabs && onChange && activeKey && tabs.map((tab) => (
