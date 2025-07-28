@@ -66,37 +66,60 @@ export const ReviewsProvider = ({
     }
   };
 
-
-  const toggleLike = (id: number) => {
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              liked: !r.liked,
-              disliked: false,
-              likes: r.liked ? r.likes - 1 : r.likes + 1,
-              dislikes: r.disliked ? r.dislikes - 1 : r.dislikes,
-            }
-          : r
-      )
-    );
+  const toggleLike = async (id: number) => {
+    try {
+      await router.post(`/reviews/${id}/like`, {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+          setReviews((prev) =>
+            prev.map((r) =>
+              r.id === id
+                ? {
+                    ...r,
+                    liked: !r.liked,
+                    disliked: false,
+                    likes: r.liked ? r.likes - 1 : r.likes + 1,
+                    dislikes: r.disliked ? r.dislikes - 1 : r.dislikes,
+                  }
+                : r
+            )
+          );
+        },
+        onError: () => {
+          toast.error("Failed to like the review.");
+        },
+      });
+    } catch {
+      toast.error("Failed to like the review.");
+    }
   };
 
-  const toggleDislike = (id: number) => {
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              disliked: !r.disliked,
-              liked: false,
-              dislikes: r.disliked ? r.dislikes - 1 : r.dislikes + 1,
-              likes: r.liked ? r.likes - 1 : r.likes,
-            }
-          : r
-      )
-    );
+  const toggleDislike = async (id: number) => {
+    try {
+      await router.post(`/reviews/${id}/dislike`, {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+          setReviews((prev) =>
+            prev.map((r) =>
+              r.id === id
+                ? {
+                    ...r,
+                    disliked: !r.disliked,
+                    liked: false,
+                    dislikes: r.disliked ? r.dislikes - 1 : r.dislikes + 1,
+                    likes: r.liked ? r.likes - 1 : r.likes,
+                  }
+                : r
+            )
+          );
+        },
+        onError: () => {
+          toast.error("Failed to dislike the review.");
+        },
+      });
+    } catch {
+      toast.error("Failed to dislike the review.");
+    }
   };
 
   const [currentPage, setCurrentPage] = useState(1);

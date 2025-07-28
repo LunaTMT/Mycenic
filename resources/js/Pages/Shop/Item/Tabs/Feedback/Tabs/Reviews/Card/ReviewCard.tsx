@@ -18,6 +18,13 @@ import ArrowButton from "@/Components/Icon/ArrowIcon";
 import RightActions from "../../Components/RightActions";
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 
+
+import Dropdown from "@/Components/Dropdown/Dropdown";
+import { BsThreeDots } from "react-icons/bs";
+import DeleteConfirmationModal from "../../Components/ImageGallery/DeleteConfirmationModal";
+import LikeDislikeButtons from "../../Components/LikeDislikeButtons";
+
+
 interface ReviewCardProps {
   review: Review;
   depth?: number;
@@ -34,13 +41,12 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     addReply,
   } = useReviews();
 
-  const reviewId = review.id; //
+  const reviewId = review.id;
 
   const isExpanded = expandedIds.includes(review.id);
 
   const { auth } = usePage().props as { auth: { user: any | null } };
   const authUser = auth?.user ?? null;
-
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(review.content || "");
@@ -52,6 +58,16 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
   const localRepliesCount = replies.length;
 
   const showAuthNotice = !authUser && openReplyFormId === reviewId;
+
+  const [dropdownOpen, setShowDropdown] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwner = authUser?.id === review.user?.id;
+  const isAdmin = authUser?.isAdmin || false;
+  const canEdit = isOwner;
+  const canDelete = isOwner || isAdmin;
+
 
   function startEditing() {
     setEditedContent(review.content || "");
@@ -86,15 +102,11 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       return;
     }
 
-    // Call addReply with review.id (parent review) and replyText (content)
     addReply(review.id, replyText.trim());
 
-    // Optionally clear the reply input and close form immediately,
-    // or move these to onSuccess callback inside addReply if you want to wait for server response.
     setReplyText("");
     setOpenReplyFormId(null);
   }
-
 
   function handleCancelReply() {
     setOpenReplyFormId(null);
@@ -111,6 +123,27 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     } else {
       setOpenReplyFormId(reviewId);
     }
+  }
+
+
+  function handleEdit() {
+    startEditing();
+  }
+
+  function handleDelete() {
+    setDeleteConfirmId(reviewId);
+  }
+
+  function closeDeleteConfirm() {
+    setDeleteConfirmId(null);
+  }
+
+  function confirmDelete(id: number) {
+    setDeleting(true);
+    // perform delete API call or context call here, then on success:
+    setDeleting(false);
+    setDeleteConfirmId(null);
+    // update your reviews context or refresh UI accordingly
   }
 
   function renderHeader() {
@@ -147,7 +180,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
           ) : (
             "Unknown date"
           )}
-          {/* Only show star rating if this is a top-level review */}
           {review.parent_id === null && (
             <div className="ml-2">
               <StaticStarRating rating={Number(review.rating)} size={14} />
@@ -157,7 +189,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       </div>
     );
   }
-
 
   function renderReviewContent() {
     if (isEditing) {
@@ -257,8 +288,29 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       );
     }
 
+    // Show Reply and Cancel buttons if auth notice is showing (user NOT logged in)
+    if (showAuthNotice) {
+      return (
+        <>
+          <PrimaryButton
+            onClick={handleReplyButtonClick}
+            className="text-[13px] font-semibold px-3 py-1"
+          >
+            Reply
+          </PrimaryButton>
+          <SecondaryButton
+            onClick={handleCancelReply}
+            className="text-[13px] font-semibold px-3 py-1"
+          >
+            Cancel
+          </SecondaryButton>
+        </>
+      );
+    }
+
+    // Otherwise, when reply form is open and user is logged in, hide buttons (reply form has its own buttons)
     if (openReplyFormId === reviewId) {
-      return null; // Reply form already shows submit/cancel
+      return null;
     }
 
     return (
@@ -277,14 +329,88 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
             {isExpanded ? "Hide Replies" : `Show Replies (${localRepliesCount})`}
           </SecondaryButton>
         )}
-
       </>
     );
   }
 
+  function renderRightActions() {
+    return (
+      <div className="flex items-center gap-3 ml-auto">
+        <LikeDislikeButtons
+          reviewId={reviewId}
+          initialLikes={review.likes || 0}
+          initialDislikes={review.dislikes || 0}
+        />
+
+        {auth.user && (
+          <Dropdown
+            onOpenChange={(open) => {
+              console.log(
+                `[Dropdown] ${open ? "Opened" : "Closed"} for Review ID: ${reviewId}`
+              );
+              setShowDropdown(open ? reviewId : null);
+            }}
+            open={dropdownOpen}
+          >
+            <Dropdown.Trigger>
+              <div className="flex justify-center items-center cursor-pointer p-1 rounded text-gray-700 dark:text-white/70 hover:text-black dark:hover:text-white">
+                <BsThreeDots size={20} />
+              </div>
+            </Dropdown.Trigger>
+
+            <Dropdown.Content
+              width="fit"
+              contentClasses="bg-white dark:bg-[#424549] shadow-lg z-50"
+            >
+              <ul className="text-sm font-Poppins text-right w-full">
+                {(isOwner && canEdit) || isAdmin ? (
+                  <li
+                    onClick={handleEdit}
+                    className="cursor-pointer px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70"
+                  >
+                    Edit
+                  </li>
+                ) : null}
+
+                {canDelete && (
+                  <li
+                    onClick={handleDelete}
+                    className="cursor-pointer px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70"
+                  >
+                    Delete
+                  </li>
+                )}
+              </ul>
+            </Dropdown.Content>
+          </Dropdown>
+        )}
+
+        <DeleteConfirmationModal
+          show={deleteConfirmId === reviewId}
+          onClose={() => {
+            console.log(`[DeleteModal] Closed for Review ID: ${reviewId}`);
+            closeDeleteConfirm();
+          }}
+          onConfirm={() => {
+            console.log(`[DeleteModal] Confirmed deletion for Review ID: ${reviewId}`);
+            confirmDelete(reviewId);
+          }}
+          deleting={deleting}
+          item="review"
+          message="Once deleted, this review and all its replies will be permanently removed."
+        />
+      </div>
+    );
+  }
+
+
   return (
     <div
-      className="relative p-4 space-y-4 shadow-xl rounded-lg bg-white dark:bg-[#1e2124]/60"
+      className={`relative p-4 space-y-4 shadow-xl rounded-lg bg-white dark:bg-[#1e2124]/60 ${
+        depth > 0
+          ? "ml-3 pl-4 border-l-4 border-yellow-500 dark:border-[#7289da]"
+          : "border border-black/20 dark:border-white/20"
+      }`}
       style={{ marginLeft: depth * 12 }}
     >
       <div className="flex space-x-4">
@@ -313,8 +439,11 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
                   {renderActionButtons()}
                 </div>
 
-                <div>
-                  <RightActions review={review} />
+                <div> 
+                  <div className="flex items-center gap-3 ml-auto ">
+                    {renderRightActions()}
+   
+                  </div>
                 </div>
               </div>
 
