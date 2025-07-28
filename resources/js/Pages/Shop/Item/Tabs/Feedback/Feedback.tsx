@@ -11,7 +11,7 @@ import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import { Tab } from "@/types/tabs";
 
-import SortByDropdown from "./Tabs/Reviews/Header/SortByDropdown";
+
 
 type TabKey = "reviews" | "questions";
 
@@ -35,7 +35,7 @@ export default function Feedback() {
   }, [activeTab]);
 
   console.log(item.reviews);
-  
+
   return (
     <div className="space-y-6">
       <ReviewsProvider initialReviews={item?.reviews || []}>

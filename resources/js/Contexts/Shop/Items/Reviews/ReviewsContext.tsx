@@ -48,25 +48,24 @@ export const ReviewsProvider = ({
   initialReviews: Review[];
 }) => {
   const { props } = usePage();
-  const product = props.product;
   const auth = props.auth;
 
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
 
-  const fetchReviews = () => {
-    if (!product?.id) return;
-    router.visit(`/products/${product.id}/reviews`, {
-      only: ["reviews"],
-      preserveScroll: true,
-      onSuccess: (page) => {
-        const fetchedReviews: Review[] = (page.props as any).reviews || [];
-        setReviews(fetchedReviews);
-      },
-      onError: () => {
-        toast.error("Failed to fetch reviews");
-      },
-    });
+  const fetchReviews = async () => {
+    try {
+      const response = await fetch('/reviews');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch reviews: ${response.statusText}`);
+      }
+      const data: Review[] = await response.json();
+      setReviews(data);
+    } catch (error) {
+      toast.error("Failed to fetch reviews");
+      console.error(error);
+    }
   };
+
 
   const toggleLike = (id: number) => {
     setReviews((prev) =>
@@ -123,35 +122,7 @@ export const ReviewsProvider = ({
       { content },
       {
         onSuccess: () => {
-          const newReply: Review = {
-            id: Date.now(), // temp ID
-            user: auth.user,
-            content,
-            rating: 0,
-            likes: 0,
-            dislikes: 0,
-            liked: false,
-            disliked: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            images: [],
-            parent_id: parentId,
-            replies: [],
-          };
-
-          setReviews((prevReviews) =>
-            prevReviews.map((review) => {
-              if (review.id === parentId) {
-                const updatedReplies = [...(review.replies ?? []), newReply];
-                return {
-                  ...review,
-                  replies: updatedReplies,
-                };
-              }
-              return review;
-            })
-          );
-
+          fetchReviews(); // Refresh review list from server
           setOpenReplyFormId(null);
           toast.success("Reply added");
         },

@@ -94,11 +94,8 @@ class ReviewController extends Controller
             'content' => 'required|string|max:5000',
         ]);
 
-        Log::info('Reply content validated', ['content' => $validated['content']]);
-
         try {
             $parent = Review::findOrFail($reviewId);
-            Log::info('Parent review found', ['parent_id' => $parent->id]);
 
             $reply = Review::create([
                 'user_id' => auth()->id(),
@@ -108,27 +105,21 @@ class ReviewController extends Controller
                 'rating' => 0,
             ]);
 
-            Log::info('Reply created successfully', [
-                'reply_id' => $reply->id,
-                'parent_id' => $reviewId,
-                'user_id' => auth()->id(),
-                'content' => $reply->content,
-            ]);
-
-            return redirect()->back()->with([
-                'success' => 'Reply added successfully',
-                'reply' => $reply->load('user'), // Load user relationship if needed
-            ]);
+            return redirect()->back()->with('success', 'Reply added successfully');
 
         } catch (\Exception $e) {
             Log::error('Failed to reply to review', [
                 'review_id' => $reviewId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
-            return redirect()->back()->withErrors(['error' => 'Failed to reply to review']);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reply to review',
+            ], 500);
         }
     }
+
 
 
     public function destroy(int $reviewId)
