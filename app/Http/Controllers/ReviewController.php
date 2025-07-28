@@ -82,6 +82,100 @@ class ReviewController extends Controller
         ]);
     }
 
+    public function vote(Request $request, Review $review)
+    {
+        $vote = $request->input('vote'); // 'like' or 'dislike'
+        $user = $request->user();
+        $guestToken = $user ? null : ($request->cookie('guest_token') ?? $request->input('guest_token'));
+
+        Log::info('Vote request', [
+            'user_id' => $user?->id,
+            'guest_token' => $guestToken,
+            'vote' => $vote,
+            'review_id' => $review->id,
+        ]);
+
+        if (!in_array($vote, ['like', 'dislike'])) {
+            Log::warning('Invalid vote value', ['vote' => $vote]);
+            return response()->json(['error' => 'Invalid vote value'], 400);
+        }
+
+        if (!$user && !$guestToken) {
+            Log::warning('Missing guest token for anonymous vote');
+            return response()->json(['error' => 'Missing guest token'], 400);
+        }
+
+        $existingVote = $review->votes()
+            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when(!$user, fn($q) => $q->where('guest_token', $guestToken))
+            ->first();
+
+        if ($existingVote) {
+            Log::info('Existing vote found', ['vote' => $existingVote->vote]);
+
+            if ($existingVote->vote === $vote) {
+                // Toggle off
+                if ($vote === 'like') {
+                    $review->likes = max(0, $review->likes - 1);
+                } else {
+                    $review->dislikes = max(0, $review->dislikes - 1);
+                }
+                $review->save();
+                $existingVote->delete();
+
+                return response()->json([
+                    'message' => 'Vote removed',
+                    'likes' => $review->likes,
+                    'dislikes' => $review->dislikes,
+                ]);
+            } else {
+                // Update vote
+                if ($existingVote->vote === 'like') {
+                    $review->likes = max(0, $review->likes - 1);
+                } else {
+                    $review->dislikes = max(0, $review->dislikes - 1);
+                }
+
+                if ($vote === 'like') {
+                    $review->likes += 1;
+                } else {
+                    $review->dislikes += 1;
+                }
+                $review->save();
+
+                $existingVote->vote = $vote;
+                $existingVote->save();
+
+                return response()->json([
+                    'message' => 'Vote updated',
+                    'likes' => $review->likes,
+                    'dislikes' => $review->dislikes,
+                ]);
+            }
+        } else {
+            Log::info('No existing vote found, creating new vote');
+
+            if ($vote === 'like') {
+                $review->likes += 1;
+            } else {
+                $review->dislikes += 1;
+            }
+            $review->save();
+
+            $review->votes()->create([
+                'user_id' => $user?->id,
+                'guest_token' => $guestToken,
+                'vote' => $vote,
+            ]);
+
+            return response()->json([
+                'message' => 'Vote added',
+                'likes' => $review->likes,
+                'dislikes' => $review->dislikes,
+            ]);
+        }
+    }
+
     public function reply(Request $request, $reviewId)
     {
         Log::info('Attempting to reply to review', [

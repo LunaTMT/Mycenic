@@ -46,4 +46,9 @@ class Review extends Model
     {
         return $this->hasMany(ReviewImage::class);
     }
+
+    public function votes()
+    {
+        return $this->hasMany(ReviewVote::class);
+    }
 }
