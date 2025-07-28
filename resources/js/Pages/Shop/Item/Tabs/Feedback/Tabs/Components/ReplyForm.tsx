@@ -1,25 +1,27 @@
-import React, { useState, FormEvent, useEffect, useRef } from "react";
+import React, { FormEvent } from "react";
 import InputLabel from "@/Components/Login/InputLabel";
 import InputError from "@/Components/Login/InputError";
 import { usePage } from "@inertiajs/react";
 import { toast } from "react-toastify";
-import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import { Review } from "@/types/types";
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 
 const MAX_LENGTH = 300;
 
 interface Props {
   review: Review;
+  replyText: string;
+  setReplyText: React.Dispatch<React.SetStateAction<string>>;
   onSubmit: (text: string) => Promise<void>;
+  onCancel?: () => void;
 }
 
-export default function ReplyForm({ review, onSubmit }: Props) {
+export default function ReplyForm({ review, replyText, setReplyText, onSubmit, onCancel }: Props) {
   const { auth } = usePage().props;
   const authUser = auth?.user;
 
-  const [replyText, setReplyText] = useState("");
-  const [replyErrors, setReplyErrors] = useState<{ reply?: string }>({});
-  const [replyProcessing, setReplyProcessing] = useState(false);
+  const [replyErrors, setReplyErrors] = React.useState<{ reply?: string }>({});
+  const [replyProcessing, setReplyProcessing] = React.useState(false);
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -48,6 +50,7 @@ export default function ReplyForm({ review, onSubmit }: Props) {
     try {
       await onSubmit(replyText.trim());
       setReplyText("");
+      if (onCancel) onCancel();
     } catch {
       toast.error("Failed to submit reply.");
     } finally {
@@ -58,21 +61,20 @@ export default function ReplyForm({ review, onSubmit }: Props) {
   const handleReplyCancel = () => {
     setReplyText("");
     setReplyErrors({});
+    if (onCancel) onCancel();
   };
 
-  if (!authUser) {
-    return <AuthNotice />;
-  }
+
 
   return (
-    <form onSubmit={handleReplySubmit} className="space-y-1">
+    <form onSubmit={handleReplySubmit} className="space-y-3">
       <div className="relative">
         <InputLabel htmlFor="reply-text" />
         <textarea
           id="reply-text"
           name="reply-text"
           rows={5}
-          value={replyText}
+          value={replyText ?? ""}
           onChange={handleReplyChange}
           placeholder="Write your reply here..."
           className="mt-1 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm resize-none"
@@ -82,10 +84,9 @@ export default function ReplyForm({ review, onSubmit }: Props) {
           <InputError message={replyErrors.reply} />
         </div>
         <span className="absolute top-4 right-4 text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
-          {replyText.length} / {MAX_LENGTH}
+          {(replyText ?? "").length} / {MAX_LENGTH}
         </span>
       </div>
-
 
     </form>
   );

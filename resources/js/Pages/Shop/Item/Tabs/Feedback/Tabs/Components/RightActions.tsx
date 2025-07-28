@@ -7,6 +7,7 @@ import LikeDislikeButtons from "./LikeDislikeButtons";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import { Review } from "@/types/types";
 
+
 interface RightActionsProps {
   review: Review;
 }
@@ -21,10 +22,14 @@ export default function RightActions({ review }: RightActionsProps) {
     editingReviewId,
     setShowDropdown,
     showDropdownId,
-    deleteConfirmId,     // add this from context
+    deleteConfirmId,
   } = useReviews();
 
-  const { auth } = usePage<{ auth: { user: { id: number; is_admin: boolean } | null } }>().props;
+  const page = usePage();
+
+
+  const { auth } = page.props as PageProps;
+
 
   const reviewId = review.id?.toString() ?? "";
 
@@ -48,7 +53,7 @@ export default function RightActions({ review }: RightActionsProps) {
   };
 
   return (
-    <div className="flex items-center gap-3 ml-auto">
+    <div className="flex items-center gap-3 ml-auto ">
       <LikeDislikeButtons
         reviewId={reviewId}
         initialLikes={review.likes || 0}
@@ -97,7 +102,7 @@ export default function RightActions({ review }: RightActionsProps) {
       )}
 
       <DeleteConfirmationModal
-        show={deleteConfirmId === reviewId}  
+        show={deleteConfirmId === reviewId}
         onClose={() => {
           console.log(`[DeleteModal] Closed for Review ID: ${reviewId}`);
           closeDeleteConfirm();

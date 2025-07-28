@@ -185,7 +185,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
 });
-
 /*
 |--------------------------------------------------------------------------
 | Checkout & Payment Routes

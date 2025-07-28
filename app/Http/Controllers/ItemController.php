@@ -86,7 +86,7 @@ class ItemController extends Controller
                 'reviews.replies.user',
             ])->findOrFail($id);
 
-            \Log::info("Item retrieved: ", ['item' => $item]);
+      
 
             return Inertia::render('Shop/Item/ItemPage', [
                 'item' => $item

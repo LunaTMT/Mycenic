@@ -10,7 +10,7 @@ export default function AuthNotice({ comment = "leave a comment" }: AuthNoticePr
   const currentUrl = page.url; // This gives you current full URL
 
   return (
-    <div className="rounded-lg text-gray-600 dark:text-gray-300">
+    <div className="rounded-lg py-4  text-gray-600 dark:text-gray-300">
       You must{" "}
       <a
         href={`/login?redirect=${encodeURIComponent(currentUrl)}`}

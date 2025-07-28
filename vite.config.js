@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';  
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path'; // ✅ Import path
 
 export default defineConfig({
     plugins: [
-        tailwindcss(),  
+        tailwindcss(),
         laravel({
             input: [
                 'resources/js/app.tsx',
@@ -15,6 +16,12 @@ export default defineConfig({
         }),
         react(),
     ],
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, 'resources/js'),
+            '@utils': path.resolve(__dirname, 'resources/js/utils'), // ✅ Add this line
+        },
+    },
     server: {
         host: 'localhost',
         port: 5174,

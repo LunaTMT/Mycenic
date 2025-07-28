@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { FaTrashAlt, FaPlus } from "react-icons/fa";
 import ZoomModal from "./ZoomModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { resolveSrc } from "@/utils/resolveSrc";
 
 interface Image {
   id: number;
@@ -10,91 +11,86 @@ interface Image {
 }
 
 interface ImageGalleryProps {
-  initialImages?: Image[]; // make optional, default to []
   isEditing: boolean;
   maxImages?: number;
+  initialImages?: string[];
+
 }
 
 export default function ImageGallery({
-  initialImages = [],
   isEditing,
   maxImages = 5,
+  initialImages = [],
 }: ImageGalleryProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-
-
-  // Manage images locally, default to empty array if undefined
-  const [images, setImages] = useState<Image[]>(initialImages);
-
+  const [images, setImages] = useState<Image[]>(() =>
+    initialImages.map((img, i) => ({ id: i + 1, image_path: img }))
+  );
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  const [confirmingImageDelete, setConfirmingImageDelete] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<number | null>(null);
 
-  // Cleanup object URLs when images change or component unmounts
+  // Update images if initialImages prop changes
   useEffect(() => {
-    const objectUrls = images
-      .filter(img => img.file)
-      .map(img => URL.createObjectURL(img.file!));
+    setImages(initialImages.map((img, i) => ({ id: i + 1, image_path: img })));
+  }, [initialImages]);
 
-    return () => {
-      objectUrls.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [images]);
 
-  const getImageUrl = (img: Image) =>
-    img.file
-      ? URL.createObjectURL(img.file)
-      : img.image_path?.startsWith("http")
-      ? img.image_path
-      : `/storage/${img.image_path}`;
-
-  const handleAddImage = (file: File) => {
-    setImages(prev => [
-      ...prev,
-      {
-        id: Date.now() + Math.random(), // unique id for demo
-        file,
-      },
-    ]);
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const remaining = maxImages - images.length;
+    if (files.length > remaining) alert(`You can only add ${remaining} more image(s).`);
+    const newImages = files.slice(0, remaining).map(file => ({ id: Date.now() + Math.random(), file }));
+    setImages((prev) => [...prev, ...newImages]);
+    e.target.value = "";
   };
 
-  const handleRemoveImage = (id: number) => {
-    setImages(prev => prev.filter(img => img.id !== id));
+  const confirmDelete = () => {
+    if (imageToDelete === null) return;
+    setDeleting(true);
+    setImages((prev) => prev.filter((img) => img.id !== imageToDelete));
+    setDeleting(false);
+    setImageToDelete(null);
+    setConfirmingDelete(false);
   };
 
   return (
     <div className="flex flex-wrap gap-2 relative">
-      {images.map((img) => (
-        <div
-          key={img.id}
-          className="relative w-30 h-30 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 transform transition-transform duration-300 hover:scale-105"
-        >
-          <img
-            src={getImageUrl(img)}
-            alt="Gallery image"
-            className="w-full h-full object-cover cursor-pointer z-0"
-            onClick={() => setZoomedImage(getImageUrl(img))}
-          />
-          {isEditing && (
-            <>
-              <div className="absolute inset-0 bg-black/30 opacity-20 hover:opacity-100 transition-opacity z-5" />
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setImageToDelete(img.id);
-                  setConfirmingImageDelete(true);
-                }}
-                className="absolute top-1 right-1 z-10 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs shadow-md hover:scale-110 transition-transform"
-                title="Remove image"
-              >
-                <FaTrashAlt className="text-sm" />
-              </button>
-            </>
-          )}
-        </div>
-      ))}
+      {images.map((img) => {
+        const src = resolveSrc(img.image_path);
+        return (
+          <div
+            key={img.id}
+            className="relative w-30 h-30 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 transform transition-transform duration-300 hover:scale-105"
+          >
+            <img
+              src={src}
+              alt="Gallery image"
+              className="w-full h-full object-cover cursor-pointer"
+              onClick={() => setZoomedImage(src)}
+            />
+            {isEditing && (
+              <>
+                <div className="absolute inset-0 bg-black/30 opacity-20 hover:opacity-100 transition-opacity" />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImageToDelete(img.id);
+                    setConfirmingDelete(true);
+                  }}
+                  className="absolute top-1 right-1 z-10 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs shadow-md hover:scale-110 transition-transform"
+                  title="Remove image"
+                >
+                  <FaTrashAlt className="text-sm" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      })}
 
       {isEditing && images.length < maxImages && (
         <button
@@ -107,46 +103,23 @@ export default function ImageGallery({
             type="file"
             accept="image/*"
             ref={inputRef}
-            onChange={(e) => {
-              if (!e.target.files) return;
-              const files = Array.from(e.target.files);
-              const remainingSlots = maxImages - images.length;
-              if (files.length > remainingSlots) {
-                alert(`You can only add ${remainingSlots} more image(s).`);
-              }
-              files.slice(0, remainingSlots).forEach(handleAddImage);
-              e.target.value = "";
-            }}
+            onChange={handleFileInputChange}
             className="hidden"
             multiple
           />
         </button>
       )}
 
-      {zoomedImage && (
-        <ZoomModal imageUrl={zoomedImage} onClose={() => setZoomedImage(null)} />
-      )}
+      {zoomedImage && <ZoomModal imageUrl={zoomedImage} onClose={() => setZoomedImage(null)} />}
 
       <DeleteConfirmationModal
-        show={confirmingImageDelete}
+        show={confirmingDelete}
         onClose={() => {
-          setConfirmingImageDelete(false);
+          setConfirmingDelete(false);
           setImageToDelete(null);
         }}
         item={"image"}
-        onConfirm={async () => {
-          if (imageToDelete === null) return;
-          setDeleting(true);
-          try {
-            handleRemoveImage(imageToDelete);
-          } catch (err) {
-            console.error("Failed to delete image", err);
-          } finally {
-            setDeleting(false);
-            setImageToDelete(null);
-            setConfirmingImageDelete(false);
-          }
-        }}
+        onConfirm={confirmDelete}
         deleting={deleting}
       />
     </div>

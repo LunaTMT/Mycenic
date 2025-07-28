@@ -1,48 +1,44 @@
 import React from "react";
+import { usePage } from "@inertiajs/react";
 import ImageGallery from "../../../Components/ImageGallery/ImageGallery";
 import StarRating from "../../Form/StarRating";
 import InputLabel from "@/Components/Login/InputLabel";
+import ReplyForm from "../../../Components/ReplyForm";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import { Review } from "@/types/types";
 
-export interface Review {
-  id: number;
-  parent_id: number | null;
-  content: string;
-  rating?: number;
-  images?: string[];
+export interface ReviewImage {
+  image_path: string;
 }
 
 interface Props {
-  review: Review;
+  review: Review; // required
 }
 
 export default function ReviewBody({ review }: Props) {
   const {
     editingReviewId,
     editedReviewData,
-    startEditing,
-    cancelEditing,
     updateEditedReview,
-    saveEditedReview,
+    openReplyFormId,
   } = useReviews();
 
-  const id = review.id.toString();
+  const reviewId = review.id.toString(); // ✅ No longer an error if `review` is required
   const isTopLevel = review.parent_id === null;
+  const isEditing = editingReviewId === reviewId;
 
-  const isEditing = editingReviewId === id;
-
-  // Fix here: safely get editedData with fallback for images
-  const editedDataRaw = editedReviewData[id];
+  const editedDataRaw = editedReviewData[reviewId];
   const editedData = {
     content: editedDataRaw?.content ?? review.content,
     rating: editedDataRaw?.rating ?? review.rating ?? 0,
-    images: review.images ?? [], // always fallback to review.images here
+    images: editedDataRaw?.images ?? review.images ?? [],
   };
 
-  // Handlers
-  const onTextChange = (text: string) => updateEditedReview(id, { content: text });
-  const onRatingChange = (rating: number) => updateEditedReview(id, { rating });
-  const onImagesChange = (images: string[]) => updateEditedReview(id, { images });
+  const imagePaths = editedData.images.map((img: any) => img.image_path);
+
+  const onTextChange = (text: string) => updateEditedReview(reviewId, { content: text });
+  const onRatingChange = (rating: number) => updateEditedReview(reviewId, { rating });
+  const onImagesChange = (images: string[]) => updateEditedReview(reviewId, { images });
 
   return (
     <div className="space-y-2">
@@ -72,14 +68,12 @@ export default function ReviewBody({ review }: Props) {
             </div>
           </div>
 
-          {(editedData.images.length > 0 || isEditing) && (
-            <ImageGallery
-              initialImages={editedData.images}
-              isEditing={true}
-              maxImages={5}
-              onImagesChange={onImagesChange}
-            />
-          )}
+          <ImageGallery
+            initialImages={imagePaths}
+            isEditing={true}
+            maxImages={5}
+            onChange={onImagesChange}
+          />
         </>
       ) : (
         <>
@@ -88,7 +82,7 @@ export default function ReviewBody({ review }: Props) {
           </div>
           {review.images && review.images.length > 0 && (
             <ImageGallery
-              initialImages={review.images}
+              initialImages={review.images.map((img) => img.image_path)}
               isEditing={false}
               maxImages={5}
             />

@@ -32,7 +32,7 @@ const tabs: Tab<TabKey>[] = [
 const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
-
+  console.log(item);
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     const savedTab = localStorage.getItem("activeItemTab");
     return (savedTab as TabKey) || "Item";
@@ -48,7 +48,7 @@ const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
 
       <ItemProvider item={item}>
         <div className="relative w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
-          <div className="w-full h-full dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl overflow-hidden">
+          <div className="w-full h-full dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl">
             <TabNavigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
             <AnimatePresence mode="wait" initial={false}>

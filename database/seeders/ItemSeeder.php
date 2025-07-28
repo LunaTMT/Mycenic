@@ -24,7 +24,7 @@ class ItemSeeder extends Seeder
         }
 
         // Create 20 items using the factory
-        Item::factory()->count(3)->create()->each(function (Item $item) {
+        Item::factory()->count(20)->create()->each(function (Item $item) {
             try {
                 $product = Product::create([
                     'name' => $item->name,

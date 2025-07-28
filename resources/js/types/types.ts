@@ -1,8 +1,8 @@
 export interface User {
   id: number;
-  name?: string | null;   // name is optional and can be null
+  name: string;   // required name (you can change to `string | null` if nullable)
   email: string;
-  avatar?: string | null;
+  avatar: string;
   role: string;
   isAdmin: boolean;       // admin flag
   phone?: string | null;
@@ -27,17 +27,28 @@ export interface Item {
 }
 
 export interface Review {
-  id?: number;
-  user: User;                 // use the User interface with nullable name
+  id: number;
+  user: User;
   content: string;
   rating: number;
-  likes?: number;
-  dislikes?: number;
-  liked?: boolean;
-  disliked?: boolean;
+  likes: number;
+  dislikes: number;
+  liked: boolean;
+  disliked: boolean;
   created_at: string;
   updated_at: string;
   images: { id: number; url: string }[];
   parent_id?: number | null;
-  children?: Review[];
+  replies?: Reply[];          // polymorphic replies to review
+}
+
+export interface Reply {
+  id: number;
+  user: User;
+  content: string | null;
+  likes: number;
+  dislikes: number;
+  created_at: string;
+  updated_at: string;
+  replies?: Reply[];          // nested replies
 }
