@@ -26,8 +26,10 @@ class Review extends Model
      */
     public function replies()
     {
-        return $this->hasMany(Review::class, 'parent_id')->with('replies'); // eager load recursively
+        return $this->hasMany(Review::class, 'parent_id')
+            ->with(['user', 'images', 'replies']); // recursively eager load replies with user & images
     }
+
 
     // Add other relations: user, item, images etc.
     public function user()

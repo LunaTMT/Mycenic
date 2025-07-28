@@ -26,13 +26,13 @@ class ReviewController extends Controller
     public function index()
     {
         Log::info('Fetching all top-level reviews');
-        $reviews = Review::with(['user', 'images', 'replies.user', 'replies.replies'])
-            ->whereNull('parent_id')
-            ->orderBy('created_at', 'desc')
-            ->get();
+
+        $reviews = Review::with(['user', 'images', 'replies'])->whereNull('parent_id')
+            ->orderBy('created_at', 'desc')->get();
 
         return response()->json($reviews);
     }
+
 
     public function store(Request $request)
     {
