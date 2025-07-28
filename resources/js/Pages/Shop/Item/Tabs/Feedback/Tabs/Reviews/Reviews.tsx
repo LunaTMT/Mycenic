@@ -7,7 +7,7 @@ import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 export default function Reviews() {
   const { showForm, setShowForm, reviews } = useReviews();
 
-  console.log(reviews); // This should have only the reviews for the current page
+
 
   if (!reviews) {
     return <p>No reviews</p>;

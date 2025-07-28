@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { usePage } from "@inertiajs/react";
+import React, { useState, useEffect, useRef } from "react";
+import { usePage, router } from "@inertiajs/react";
 import { toast } from "react-toastify";
 
 import Avatar from "./Content/Avatar";
@@ -11,19 +11,16 @@ import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import InputLabel from "@/Components/Login/InputLabel";
 import StarRating from "../Form/StarRating";
-import ImageGallery from "../../Components/ImageGallery/ImageGallery";
 
-import { FaUserShield } from "react-icons/fa";
+import { FaUserShield, FaTrashAlt, FaPlus } from "react-icons/fa";
 import ArrowButton from "@/Components/Icon/ArrowIcon";
-import RightActions from "../../Components/RightActions";
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
-
-
 import Dropdown from "@/Components/Dropdown/Dropdown";
 import { BsThreeDots } from "react-icons/bs";
 import DeleteConfirmationModal from "../../Components/ImageGallery/DeleteConfirmationModal";
 import LikeDislikeButtons from "../../Components/LikeDislikeButtons";
 
+import { resolveSrc } from "@/utils/resolveSrc";
 
 interface ReviewCardProps {
   review: Review;
@@ -39,50 +36,130 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     openReplyFormId,
     setOpenReplyFormId,
     addReply,
+    fetchReviews,
   } = useReviews();
 
   const reviewId = review.id;
-
-  const isExpanded = expandedIds.includes(review.id);
+  const isExpanded = expandedIds.includes(reviewId);
 
   const { auth } = usePage().props as { auth: { user: any | null } };
   const authUser = auth?.user ?? null;
 
+  // Edit states
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(review.content || "");
   const [editedRating, setEditedRating] = useState(Number(review.rating) || 0);
 
+  // Reply states
   const [replyText, setReplyText] = useState("");
-
   const replies = review.replies ?? [];
   const localRepliesCount = replies.length;
 
   const showAuthNotice = !authUser && openReplyFormId === reviewId;
 
-  const [dropdownOpen, setShowDropdown] = useState<number | null>(null);
+  // Delete states for review deletion
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Permissions
   const isOwner = authUser?.id === review.user?.id;
-  const isAdmin = authUser?.isAdmin || false;
-  const canEdit = isOwner;
+  const isAdmin = authUser?.is_admin || false;
+  const canEdit = isOwner || isAdmin;
   const canDelete = isOwner || isAdmin;
 
+  // --- Image gallery states ---
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Track images - existing images have id and image_path; new images have file only
+  const [images, setImages] = useState<
+    { id: number; image_path?: string; file?: File }[]
+  >(() =>
+    (review.images ?? []).map((img, i) => ({
+      id: img.id ?? i + 1, // Use DB image id if exists, fallback to index + 1
+      image_path: img.image_path,
+    }))
+  );
+  // Track IDs of images deleted by user, to send to backend
+  const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
 
+  // Zoom and delete confirm for images
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deletingImage, setDeletingImage] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState<number | null>(null);
+
+  const maxImages = 5;
+
+  useEffect(() => {
+    setImages(
+      (review.images ?? []).map((img, i) => ({
+        id: img.id ?? i + 1,
+        image_path: img.image_path,
+      }))
+    );
+    setDeletedImageIds([]); // reset on review change
+  }, [review.images]);
+
+  // --- Handlers ---
+
+  // Start editing review
   function startEditing() {
     setEditedContent(review.content || "");
     setEditedRating(Number(review.rating) || 0);
     setIsEditing(true);
   }
 
+  // Cancel editing
   function cancelEditing() {
     setIsEditing(false);
+    setDeletedImageIds([]);
   }
 
+  // Save edited review, including new and deleted images
   function saveEditedReview() {
-    setIsEditing(false);
+    if (!editedContent.trim()) {
+      toast.error("Review content cannot be empty.");
+      return;
+    }
+    if (editedRating <= 0) {
+      toast.error("Please provide a rating.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("content", editedContent);
+    formData.append("rating", editedRating.toString());
+
+    // Append deleted image IDs
+    deletedImageIds.forEach((id) => {
+      formData.append("deleted_image_ids[]", id.toString());
+    });
+
+    // Append new images
+    images.forEach((img) => {
+      if (img.file) {
+        formData.append("images[]", img.file);
+      }
+    });
+
+    // Add _method = PUT for Laravel to recognize the request as PUT
+    formData.append("_method", "PUT");
+
+    router.post(`/reviews/${reviewId}`, formData, {
+      preserveScroll: true,
+      onSuccess: () => {
+        fetchReviews();
+        toast.success("Review updated successfully.");
+        setIsEditing(false);
+        setDeletedImageIds([]);
+      },
+      onError: () => {
+        toast.error("Failed to update review.");
+      },
+    });
+
   }
 
+  // Reply form handlers
   function handleReplyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     if (e.target.value.length <= MAX_LENGTH) {
       setReplyText(e.target.value);
@@ -102,8 +179,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       return;
     }
 
-    addReply(review.id, replyText.trim());
-
+    addReply(reviewId, replyText.trim());
     setReplyText("");
     setOpenReplyFormId(null);
   }
@@ -125,7 +201,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     }
   }
 
-
   function handleEdit() {
     startEditing();
   }
@@ -140,11 +215,63 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
 
   function confirmDelete(id: number) {
     setDeleting(true);
-    // perform delete API call or context call here, then on success:
+    // TODO: perform delete API call or context update here
     setDeleting(false);
     setDeleteConfirmId(null);
-    // update your reviews context or refresh UI accordingly
   }
+
+  // Image Gallery handlers
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const remaining = maxImages - images.length;
+    if (files.length > remaining)
+      alert(`You can only add ${remaining} more image(s).`);
+
+    const newImages = files.slice(0, remaining).map((file) => ({
+      id: Date.now() + Math.random(),
+      file,
+    }));
+    setImages((prev) => [...prev, ...newImages]);
+    e.target.value = "";
+  };
+
+  // Mark image for deletion and remove from display
+  const deleteImage = (id: number) => {
+    const imgToDelete = images.find((img) => img.id === id);
+    if (imgToDelete && imgToDelete.image_path) {
+      setDeletedImageIds((prev) => [...prev, id]);
+    }
+    setImages((prev) => prev.filter((img) => img.id !== id));
+  };
+
+  const confirmDeleteImage = () => {
+    if (imageToDelete === null) return;
+    setDeletingImage(true);
+    deleteImage(imageToDelete);
+    setDeletingImage(false);
+    setImageToDelete(null);
+    setConfirmingDelete(false);
+  };
+
+  function getImageSrc(img: { image_path?: string; file?: File }) {
+    if (img.file) {
+      // For newly uploaded images (File objects), create an object URL
+      return URL.createObjectURL(img.file);
+    }
+
+    if (!img.image_path) return "";
+
+    // Check if image_path starts with http(s), assume external URL
+    if (img.image_path.startsWith("http://") || img.image_path.startsWith("https://")) {
+      return img.image_path; // full Unsplash URL
+    }
+
+    // Otherwise, assume local storage path, prefix with /storage/
+    return `/storage/${img.image_path}`;
+  }
+
+  // --- Render helpers ---
 
   function renderHeader() {
     return (
@@ -205,8 +332,8 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
               onChange={(e) => setEditedContent(e.target.value)}
               placeholder="Write your review here..."
               rows={5}
-              className="resize-none w-full bg-white dark:bg-[#1e2124] text-gray-900 dark:text-gray-100 px-4 pt-3 pb-12 rounded-md border-none focus:outline-none focus:ring-0 min-h-[120px]"
               maxLength={MAX_LENGTH}
+              className="resize-none w-full bg-white dark:bg-[#1e2124] text-gray-900 dark:text-gray-100 px-4 pt-3 pb-12 rounded-md border-none focus:outline-none focus:ring-0 min-h-[120px]"
             />
             <div className="absolute bottom-2 left-4 right-4 flex justify-between items-center">
               <div className="text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
@@ -225,6 +352,76 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       <div className="text-sm leading-relaxed text-gray-800 dark:text-gray-100 break-words">
         {review.content}
       </div>
+    );
+  }
+
+  // --- Inline ImageGallery component ---
+  function ImageGallery() {
+    return (
+      <>
+        <div className="flex flex-wrap gap-2 relative">
+          {images.map((img) => {
+            const src = getImageSrc(img);
+            return (
+              <div
+                key={img.id}
+                className="relative w-30 h-30 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 transform transition-transform duration-300 hover:scale-105"
+              >
+                <img
+                  src={src}
+                  alt="Gallery image"
+                  className="w-full h-full object-cover cursor-pointer"
+                  onClick={() => setZoomedImage(src)}
+                />
+                {isEditing && (
+                  <>
+                    <div className="absolute inset-0 bg-black/30 opacity-20 hover:opacity-100 transition-opacity" />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setImageToDelete(img.id);
+                        setConfirmingDelete(true);
+                      }}
+                      className="absolute top-1 right-1 z-10 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs shadow-md hover:scale-110 transition-transform"
+                      title="Remove image"
+                    >
+                      <FaTrashAlt className="text-sm" />
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+
+          {isEditing && images.length < maxImages && (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="w-30 h-30 flex items-center justify-center border border-dashed border-gray-400 dark:border-gray-600 rounded-md text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            >
+              <FaPlus />
+              <input
+                type="file"
+                accept="image/*"
+                ref={inputRef}
+                onChange={handleFileInputChange}
+                className="hidden"
+                multiple
+              />
+            </button>
+          )}
+        </div>
+
+        <DeleteConfirmationModal
+          show={confirmingDelete}
+          onClose={() => setConfirmingDelete(false)}
+          onConfirm={confirmDeleteImage}
+          deleting={deletingImage}
+          item="image"
+          message="Once deleted, this image will be permanently removed."
+        />
+      </>
     );
   }
 
@@ -247,22 +444,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
           <span className="absolute top-8 right-4 text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
             {replyText.length} / {MAX_LENGTH}
           </span>
-        </div>
-
-        <div className="flex gap-2">
-          <PrimaryButton
-            type="submit"
-            className="text-[13px] font-semibold px-3 py-1"
-          >
-            Submit
-          </PrimaryButton>
-          <SecondaryButton
-            type="button"
-            onClick={handleCancelReply}
-            className="text-[13px] font-semibold px-3 py-1"
-          >
-            Cancel
-          </SecondaryButton>
         </div>
       </form>
     );
@@ -288,7 +469,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       );
     }
 
-    // Show Reply and Cancel buttons if auth notice is showing (user NOT logged in)
     if (showAuthNotice) {
       return (
         <>
@@ -308,9 +488,23 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       );
     }
 
-    // Otherwise, when reply form is open and user is logged in, hide buttons (reply form has its own buttons)
-    if (openReplyFormId === reviewId) {
-      return null;
+    if (openReplyFormId === reviewId && authUser) {
+      return (
+        <div className="flex gap-2">
+          <PrimaryButton
+            onClick={handleReplySubmit}
+            className="text-[13px] font-semibold px-3 py-1"
+          >
+            Submit
+          </PrimaryButton>
+          <SecondaryButton
+            onClick={handleCancelReply}
+            className="text-[13px] font-semibold px-3 py-1"
+          >
+            Cancel
+          </SecondaryButton>
+        </div>
+      );
     }
 
     return (
@@ -343,15 +537,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
         />
 
         {auth.user && (
-          <Dropdown
-            onOpenChange={(open) => {
-              console.log(
-                `[Dropdown] ${open ? "Opened" : "Closed"} for Review ID: ${reviewId}`
-              );
-              setShowDropdown(open ? reviewId : null);
-            }}
-            open={dropdownOpen}
-          >
+          <Dropdown>
             <Dropdown.Trigger>
               <div className="flex justify-center items-center cursor-pointer p-1 rounded text-gray-700 dark:text-white/70 hover:text-black dark:hover:text-white">
                 <BsThreeDots size={20} />
@@ -363,14 +549,14 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
               contentClasses="bg-white dark:bg-[#424549] shadow-lg z-50"
             >
               <ul className="text-sm font-Poppins text-right w-full">
-                {(isOwner && canEdit) || isAdmin ? (
+                {canEdit && (
                   <li
                     onClick={handleEdit}
                     className="cursor-pointer px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-400/50 dark:hover:bg-[#7289da]/70"
                   >
                     Edit
                   </li>
-                ) : null}
+                )}
 
                 {canDelete && (
                   <li
@@ -387,14 +573,8 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
 
         <DeleteConfirmationModal
           show={deleteConfirmId === reviewId}
-          onClose={() => {
-            console.log(`[DeleteModal] Closed for Review ID: ${reviewId}`);
-            closeDeleteConfirm();
-          }}
-          onConfirm={() => {
-            console.log(`[DeleteModal] Confirmed deletion for Review ID: ${reviewId}`);
-            confirmDelete(reviewId);
-          }}
+          onClose={() => closeDeleteConfirm()}
+          onConfirm={() => confirmDelete(reviewId)}
           deleting={deleting}
           item="review"
           message="Once deleted, this review and all its replies will be permanently removed."
@@ -403,7 +583,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     );
   }
 
-
+  // --- Main render ---
   return (
     <div
       className={`relative p-4 space-y-4 shadow-xl rounded-lg bg-white dark:bg-[#1e2124]/60 ${
@@ -415,20 +595,14 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     >
       <div className="flex space-x-4">
         <Avatar review={review} />
+
         <div className="flex-1 break-words">
           <div className="min-h-[100px] flex flex-col justify-between space-y-3">
             {renderHeader()}
 
             <div className="space-y-2">
               {renderReviewContent()}
-
-              {review.images?.length > 0 && (
-                <ImageGallery
-                  initialImages={review.images.map((img) => img.image_path)}
-                  isEditing={false}
-                  maxImages={5}
-                />
-              )}
+              {review.images?.length > 0 && <ImageGallery />}
             </div>
 
             <div className="flex flex-col gap-2 w-full">
@@ -439,11 +613,8 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
                   {renderActionButtons()}
                 </div>
 
-                <div> 
-                  <div className="flex items-center gap-3 ml-auto ">
-                    {renderRightActions()}
-   
-                  </div>
+                <div className="flex items-center gap-3 ml-auto">
+                  {renderRightActions()}
                 </div>
               </div>
 

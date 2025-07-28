@@ -5,6 +5,8 @@ namespace Database\Factories;
 use App\Models\Item;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Services\UnsplashService;
 
 class ItemFactory extends Factory
@@ -44,15 +46,31 @@ class ItemFactory extends Factory
             $images = [];
         }
 
-        $imageCount = count($images);
+        $storedImagePaths = [];
+        foreach ($images as $imageUrl) {
+            try {
+                $imageContents = file_get_contents($imageUrl);
+
+                $filename = 'items/' . Str::random(40) . '.jpg';
+
+                Storage::disk('public')->put($filename, $imageContents);
+
+                // This path will be stored in DB and used for displaying images (accessible via /storage/)
+                $storedImagePaths[] = 'storage/' . $filename;
+            } catch (\Exception $e) {
+                Log::error("Failed to save image from Unsplash: " . $e->getMessage());
+            }
+        }
+
+        $imageCount = count($storedImagePaths);
 
         return [
             'name' => strtoupper($this->faker->unique()->words(rand(2, 4), true)),
             'description' => $this->faker->paragraphs(rand(2, 4), true),
             'price' => $this->faker->randomFloat(2, 5, 100),
             'stock' => $this->faker->numberBetween(0, 200),
-            'images' => $images,
-            'image_sources' => array_fill(0, $imageCount, 'unsplash'),
+            'images' => $storedImagePaths,
+            'image_sources' => array_fill(0, $imageCount, 'local'),
             'category' => $category,
             'weight' => $this->faker->randomFloat(2, 0.1, 5.0),
             'isPsyilocybinSpores' => $this->faker->boolean(15),
