@@ -1,24 +1,15 @@
 import React from "react";
 import StaticStarRating from "@/Components/Stars/StaticStarRating";
 import { FaUserShield } from "react-icons/fa";
-import { usePage } from "@inertiajs/react";
 import ArrowButton from "@/Components/Icon/ArrowIcon";
-import { User, Review } from "@/types";
+import { Review } from "@/types/types";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
-
-interface PageProps {
-  auth: {
-    user: User | null;
-  };
-}
 
 interface Props {
   review: Review;
 }
 
 export default function ReviewHeader({ review }: Props) {
-
-  // Get expandedIds and toggleExpandedId from context
   const { expandedIds, toggleExpandedId } = useReviews();
 
   const reviewId = review.id?.toString() ?? "";
@@ -30,8 +21,8 @@ export default function ReviewHeader({ review }: Props) {
     <div className="relative flex flex-col gap-0.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 font-semibold text-sm text-gray-900 dark:text-white">
-          {review.user.name}
-          {review.isAdmin && (
+          {review.user?.name ?? "Unknown User"}
+          {review.user?.isAdmin && (
             <FaUserShield
               className="text-yellow-500 dark:text-[#7289da]"
               title="Admin"
@@ -39,7 +30,6 @@ export default function ReviewHeader({ review }: Props) {
           )}
         </div>
 
-        {/* Use context toggleExpandedId directly here */}
         <ArrowButton
           isOpen={isExpanded}
           onClick={() => toggleExpandedId(reviewId)}
@@ -65,7 +55,6 @@ export default function ReviewHeader({ review }: Props) {
         <div className="ml-2">
           <StaticStarRating rating={Number(review.rating)} size={14} />
         </div>
-
       </div>
     </div>
   );

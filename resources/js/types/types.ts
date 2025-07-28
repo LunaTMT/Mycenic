@@ -1,14 +1,3 @@
-export interface User {
-  id: number;
-  name: string;   // required name (you can change to `string | null` if nullable)
-  email: string;
-  avatar: string;
-  role: string;
-  isAdmin: boolean;       // admin flag
-  phone?: string | null;
-  provider?: string | null;
-  provider_id?: string | null;
-}
 
 export interface Item {
   id: number;
@@ -26,6 +15,18 @@ export interface Item {
   created_at: string;         // created date string
 }
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  avatar: string;
+  role: string;
+  isAdmin: boolean;
+  phone?: string | null;
+  provider?: string | null;
+  provider_id?: string | null;
+}
+
 export interface Review {
   id: number;
   user: User;
@@ -39,16 +40,5 @@ export interface Review {
   updated_at: string;
   images: { id: number; url: string }[];
   parent_id?: number | null;
-  replies?: Reply[];          // polymorphic replies to review
-}
-
-export interface Reply {
-  id: number;
-  user: User;
-  content: string | null;
-  likes: number;
-  dislikes: number;
-  created_at: string;
-  updated_at: string;
-  replies?: Reply[];          // nested replies
+  replies: Review[];  
 }

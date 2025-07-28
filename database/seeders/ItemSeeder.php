@@ -18,13 +18,13 @@ class ItemSeeder extends Seeder
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
 
-        // Ensure there are users to assign reviews to
+        // Ensure users exist
         if (User::count() === 0) {
-            \App\Models\User::factory()->count(10)->create();
+            User::factory()->count(10)->create();
         }
 
-        // Create 20 items using the factory
-        Item::factory()->count(20)->create()->each(function (Item $item) {
+        // Create items
+        Item::factory()->count(1)->create()->each(function (Item $item) {
             try {
                 $product = Product::create([
                     'name' => $item->name,
@@ -47,18 +47,15 @@ class ItemSeeder extends Seeder
                 Log::error("Failed to create Stripe product/price for item {$item->name}: " . $e->getMessage());
             }
 
-            // Create reviews for this item
+            // Create exactly 2 top-level reviews with replies depth 2
             Review::factory()
-                ->count(rand(1, 5))
-                ->withReplies()
-                ->create([
-                    'item_id' => $item->id,
-                ])
+                ->count(2)
+                ->withReplies(2, 2) // 2 replies per review, 2 levels deep
+                ->create(['item_id' => $item->id])
                 ->each(function (Review $review) {
                     // Attach 1-5 images to each review
-                    $imageCount = rand(1, 5);
                     ReviewImage::factory()
-                        ->count($imageCount)
+                        ->count(rand(1, 5))
                         ->create(['review_id' => $review->id]);
                 });
         });

@@ -21,7 +21,7 @@ const tabs: Tab<TabKey>[] = [
 ];
 
 export default function Feedback() {
-  const { auth } = usePage().props as { auth: { user: any } };
+  
   const { item } = useItemContext();
 
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
@@ -34,6 +34,8 @@ export default function Feedback() {
     localStorage.setItem("feedbackActiveTab", activeTab);
   }, [activeTab]);
 
+  console.log(item.reviews);
+  
   return (
     <div className="space-y-6">
       <ReviewsProvider initialReviews={item?.reviews || []}>
@@ -43,9 +45,7 @@ export default function Feedback() {
           onChange={setActiveTab}
           
         />
-
-       
-
+      
         <SubContent activeKey={activeTab} tabKey="reviews">
           <Reviews />
         </SubContent>

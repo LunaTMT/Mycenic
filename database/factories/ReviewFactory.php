@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\Review;
 use App\Models\User;
 use App\Models\Item;
-use App\Models\Reply;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ReviewFactory extends Factory
@@ -21,25 +20,27 @@ class ReviewFactory extends Factory
             'dislikes' => $this->faker->numberBetween(0, 100),
             'rating' => $this->faker->randomFloat(1, 1, 5),
             'item_id' => Item::inRandomOrder()->first()?->id,
+            'parent_id' => null,
         ];
     }
 
-    public function withReplies(int $count = 3)
+    /**
+     * Adds one reply and one nested reply to the review.
+     */
+    public function withReplies()
     {
-        return $this->afterCreating(function (Review $review) use ($count) {
-            // Top-level replies
-            $topLevelReplies = Reply::factory()
-                ->count($count)
-                ->forReplyable($review)
-                ->create();
+        return $this->afterCreating(function (Review $review) {
+            // First-level reply
+            $firstReply = Review::factory()->create([
+                'parent_id' => $review->id,
+                'item_id' => $review->item_id,
+            ]);
 
-            // Nested replies to the top-level replies
-            foreach ($topLevelReplies as $reply) {
-                Reply::factory()
-                    ->count(2)
-                    ->forReplyable($reply)
-                    ->create();
-            }
+            // Second-level reply (nested reply to the first reply)
+            Review::factory()->create([
+                'parent_id' => $firstReply->id,
+                'item_id' => $review->item_id,
+            ]);
         });
     }
 }

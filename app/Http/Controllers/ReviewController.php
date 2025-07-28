@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Review;
-use App\Models\Reply;
 use App\Models\ReviewImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +10,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\OpenAIModerationService;
-
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
@@ -25,23 +23,17 @@ class ReviewController extends Controller
         $this->moderationService = $moderationService;
     }
 
-    /**
-     * Fetch all top-level reviews with user, images and nested replies recursively.
-     */
     public function index()
     {
         Log::info('Fetching all top-level reviews');
         $reviews = Review::with(['user', 'images', 'replies.user', 'replies.replies'])
+            ->whereNull('parent_id')
             ->orderBy('created_at', 'desc')
             ->get();
-        
 
         return response()->json($reviews);
     }
 
-    /**
-     * Store a new top-level review.
-     */
     public function store(Request $request)
     {
         Log::info('Received review submission', [
@@ -51,8 +43,9 @@ class ReviewController extends Controller
 
         $validated = $request->validate([
             'content' => 'required|string|max:5000',
-            'rating' => 'required|numeric|min:1|max:5',
+            'rating' => 'nullable|numeric|min:0|max:5',
             'item_id' => 'required|integer|exists:items,id',
+            'parent_id' => 'nullable|integer|exists:reviews,id',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,jpg,png,bmp,gif,svg,webp|max:2048',
         ]);
@@ -61,8 +54,9 @@ class ReviewController extends Controller
             $review = Review::create([
                 'user_id' => auth()->id(),
                 'content' => $validated['content'],
-                'rating' => $validated['rating'],
+                'rating' => $validated['rating'] ?? 0,
                 'item_id' => $validated['item_id'],
+                'parent_id' => $validated['parent_id'] ?? null,
             ]);
             Log::info('Review created', ['review_id' => $review->id]);
         } catch (\Exception $e) {
@@ -82,75 +76,68 @@ class ReviewController extends Controller
             }
         }
 
-        Log::info('Returning review with images, user, replies loaded', ['review_id' => $review->id]);
-
         return response()->json([
             'message' => 'Review submitted successfully.',
             'review' => $review->load('images', 'user', 'replies'),
         ]);
     }
 
-    /**
-     * Submit a reply to a review or a reply (nested).
-     * 
-     * @param Request $request
-     * @param int $parentId
-     * @param string $parentType 'review' or 'reply'
-     */
-    public function reply(Request $request, int $parentId, string $parentType = 'review')
+    public function reply(Request $request, $reviewId)
     {
-        $user = Auth::user();
-        Log::info('Submitting reply', [
-            'user_id' => $user?->id,
-            'parent_id' => $parentId,
-            'parent_type' => $parentType,
-            'input' => $request->all(),
+        Log::info('Attempting to reply to review', [
+            'review_id' => $reviewId,
+            'user_id' => auth()->id(),
+            'payload' => $request->all(),
         ]);
 
-        $validator = Validator::make($request->all(), [
-            'content' => 'required|string|max:300',
+        $validated = $request->validate([
+            'content' => 'required|string|max:5000',
         ]);
 
-        if ($validator->fails()) {
-            Log::warning('Reply validation failed', ['errors' => $validator->errors()]);
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        if ($parentType === 'review') {
-            $parent = Review::findOrFail($parentId);
-            Log::info("Parent review found", ['review_id' => $parentId]);
-        } else if ($parentType === 'reply') {
-            $parent = Reply::findOrFail($parentId);
-            Log::info("Parent reply found", ['reply_id' => $parentId]);
-        } else {
-            Log::error('Invalid parent type provided for reply', ['parent_type' => $parentType]);
-            return response()->json(['error' => 'Invalid parent type'], 400);
-        }
+        Log::info('Reply content validated', ['content' => $validated['content']]);
 
         try {
-            $reply = new Reply([
-                'user_id' => $user->id,
-                'content' => $request->input('content'),
-                'likes' => 0,
-                'dislikes' => 0,
-            ]);
-            $parent->replies()->save($reply);
+            $parent = Review::findOrFail($reviewId);
+            Log::info('Parent review found', ['parent_id' => $parent->id]);
 
-            Log::info('Reply submitted successfully', ['reply_id' => $reply->id]);
-            return response()->json(['message' => 'Reply submitted successfully', 'reply' => $reply], 201);
+            $reply = Review::create([
+                'user_id' => auth()->id(),
+                'content' => $validated['content'],
+                'parent_id' => $reviewId,
+                'item_id' => $parent->item_id,
+                'rating' => 0,
+            ]);
+
+            Log::info('Reply created successfully', [
+                'reply_id' => $reply->id,
+                'parent_id' => $reviewId,
+                'user_id' => auth()->id(),
+                'content' => $reply->content,
+            ]);
+
+            return redirect()->back()->with([
+                'success' => 'Reply added successfully',
+                'reply' => $reply->load('user'), // Load user relationship if needed
+            ]);
+
         } catch (\Exception $e) {
-            Log::error('Failed to submit reply', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Failed to submit reply'], 500);
+            Log::error('Failed to reply to review', [
+                'review_id' => $reviewId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->withErrors(['error' => 'Failed to reply to review']);
         }
     }
 
-    /**
-     * Delete a review and its nested replies recursively.
-     */
+
     public function destroy(int $reviewId)
     {
         $user = Auth::user();
-        Log::info('Delete review request', ['user_id' => $user?->id, 'review_id' => $reviewId]);
+        Log::info('Delete review request', [
+            'user_id' => $user?->id,
+            'review_id' => $reviewId
+        ]);
 
         try {
             $review = Review::with(['images', 'replies'])->findOrFail($reviewId);
@@ -171,61 +158,53 @@ class ReviewController extends Controller
             Log::info('Review deleted successfully', ['review_id' => $reviewId]);
             return response()->json(['message' => 'Review deleted successfully.']);
         } catch (\Exception $e) {
-            Log::error('Failed to delete review', ['error' => $e->getMessage(), 'review_id' => $reviewId]);
+            Log::error('Failed to delete review', [
+                'review_id' => $reviewId,
+                'error' => $e->getMessage()
+            ]);
             return response()->json(['error' => 'Failed to delete review'], 500);
         }
     }
 
-    /**
-     * Recursively delete review with images and replies.
-     */
     protected function deleteReviewWithReplies(Review $review)
     {
-        Log::info('Deleting review images', ['review_id' => $review->id]);
+        Log::info('Starting recursive delete for review', ['review_id' => $review->id]);
+
         foreach ($review->images as $image) {
-            Storage::disk('public')->delete($image->image_path);
-            $image->delete();
-            Log::info('Deleted image from review', ['image_id' => $image->id]);
+            try {
+                Storage::disk('public')->delete($image->image_path);
+                $image->delete();
+                Log::info('Deleted image from review', ['image_id' => $image->id]);
+            } catch (\Exception $e) {
+                Log::error('Failed to delete review image', [
+                    'image_id' => $image->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
-        Log::info('Deleting replies for review', ['review_id' => $review->id]);
         foreach ($review->replies as $reply) {
-            $this->deleteReplyWithReplies($reply);
+            $this->deleteReviewWithReplies($reply);
         }
 
         $review->delete();
         Log::info('Deleted review', ['review_id' => $review->id]);
     }
 
-    /**
-     * Recursively delete reply and nested replies.
-     */
-    protected function deleteReplyWithReplies(Reply $reply)
-    {
-        Log::info('Deleting nested replies for reply', ['reply_id' => $reply->id]);
-        foreach ($reply->replies as $nestedReply) {
-            $this->deleteReplyWithReplies($nestedReply);
-        }
-
-        $reply->delete();
-        Log::info('Deleted reply', ['reply_id' => $reply->id]);
-    }
-
-    /**
-     * Show a single review with nested replies.
-     */
     public function show(int $id)
     {
         Log::info('Fetching single review', ['review_id' => $id]);
-        $review = Review::with(['user', 'images', 'replies.user', 'replies.replies'])->findOrFail($id);
-        Log::info('Fetched single review', ['review_id' => $id]);
 
-        return response()->json($review);
+        try {
+            $review = Review::with(['user', 'images', 'replies.user', 'replies.replies'])->findOrFail($id);
+            Log::info('Fetched single review successfully', ['review_id' => $id]);
+            return response()->json($review);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch review', ['review_id' => $id, 'error' => $e->getMessage()]);
+            return response()->json(['error' => 'Review not found'], 404);
+        }
     }
 
-    /**
-     * Update an existing review.
-     */
     public function update(Request $request, Review $review)
     {
         Log::info('Updating review', ['review_id' => $review->id, 'input' => $request->all()]);
@@ -239,8 +218,8 @@ class ReviewController extends Controller
         ]);
 
         if ($validated->fails()) {
-            Log::warning('Review update validation failed', ['errors' => $validated->errors()]);
-            return redirect()->back()->withErrors($validated)->withInput();
+            Log::warning('Validation failed on review update', ['errors' => $validated->errors()]);
+            return Redirect::back()->withErrors($validated)->withInput();
         }
 
         $updateData = [];
@@ -253,43 +232,39 @@ class ReviewController extends Controller
 
         if (!empty($updateData)) {
             $review->update($updateData);
-            Log::info('Review updated content and/or rating', ['review_id' => $review->id, 'updated_fields' => array_keys($updateData)]);
-        } else {
-            Log::info('No content or rating to update for review', ['review_id' => $review->id]);
+            Log::info('Review content or rating updated', [
+                'review_id' => $review->id,
+                'fields' => array_keys($updateData),
+            ]);
         }
 
-        // Delete requested images
         if ($request->has('deleted_image_ids')) {
-            Log::info('Deleting images from review update', ['review_id' => $review->id, 'deleted_image_ids' => $request->input('deleted_image_ids')]);
+            Log::info('Deleting images from review', ['review_id' => $review->id]);
             foreach ($request->input('deleted_image_ids') as $imageId) {
                 $image = ReviewImage::find($imageId);
                 if ($image && $image->review_id === $review->id) {
-                    Storage::disk('public')->delete($image->path);
+                    Storage::disk('public')->delete($image->image_path);
                     $image->delete();
                     Log::info('Deleted review image', ['image_id' => $imageId]);
                 }
             }
         }
 
-        // Add new uploaded images
         if ($request->hasFile('images')) {
             Log::info('Adding new images to review', ['review_id' => $review->id]);
             foreach ($request->file('images') as $file) {
-                $path = $file->store('reviews', 'public');
+                $path = $file->store('review_images', 'public');
                 ReviewImage::create([
                     'review_id' => $review->id,
-                    'path' => $path,
+                    'image_path' => $path,
                 ]);
                 Log::info('Stored new review image', ['path' => $path]);
             }
         }
 
-        // Reload images
         $review->load('images');
-        Log::info('Reloaded images after update', ['review_id' => $review->id]);
+        Log::info('Final review state after update', ['review_id' => $review->id]);
 
-        Log::info('Redirecting back after review update', ['review_id' => $review->id]);
-        return redirect()->back()->with('review', $review);
+        return Redirect::back()->with('review', $review);
     }
-
 }

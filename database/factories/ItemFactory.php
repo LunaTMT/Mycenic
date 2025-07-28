@@ -20,7 +20,6 @@ class ItemFactory extends Factory
 
         $category = $this->faker->randomElement($categories);
 
-        // Map category to appropriate Unsplash keyword
         $unsplashKeyword = match ($category) {
             'Agar' => 'agar plate lab',
             'Apparel' => 'mushroom clothing',

@@ -2,23 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Review extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'content',
-        'likes',
-        'dislikes',
-        'rating',
-        'item_id',
+        'user_id', 'content', 'likes', 'dislikes', 'rating', 'item_id', 'parent_id',
     ];
 
-    // Relationships
+    /**
+     * Parent review (nullable for top-level).
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Review::class, 'parent_id');
+    }
+
+    /**
+     * Replies to this review.
+     */
+    public function replies()
+    {
+        return $this->hasMany(Review::class, 'parent_id')->with('replies'); // eager load recursively
+    }
+
+    // Add other relations: user, item, images etc.
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -33,18 +44,4 @@ class Review extends Model
     {
         return $this->hasMany(ReviewImage::class);
     }
-
-    public function votes()
-    {
-        return $this->hasMany(ReviewVote::class);
-    }
-
-    /**
-     * Polymorphic relation: all replies to this review
-     */
-    public function replies()
-    {
-        return $this->morphMany(Reply::class, 'replyable')->with('replies');
-    }
-
 }
