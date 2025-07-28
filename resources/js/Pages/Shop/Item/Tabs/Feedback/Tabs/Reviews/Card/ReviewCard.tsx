@@ -213,7 +213,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
             placeholder="Write your reply here..."
             className="mt-1 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm resize-none"
           />
-          <span className="absolute top-4 right-4 text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
+          <span className="absolute top-8 right-4 text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
             {replyText.length} / {MAX_LENGTH}
           </span>
         </div>
