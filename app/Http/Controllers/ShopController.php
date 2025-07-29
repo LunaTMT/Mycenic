@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use App\Models\Item;
-use Illuminate\Http\Request; // ✅ Required import
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class ShopController extends Controller
 {
     public function index(Request $request)
     {
-        \Log::info('ItemController@index called');
+        \Log::info('shopController@index called');
 
         try {
             \Log::info('Fetching all items with top-level reviews and users');
@@ -24,10 +24,7 @@ class ShopController extends Controller
 
             \Log::info('Items fetched successfully', ['count' => $items->count()]);
 
-            // Log each item with its top-level reviews
-            foreach ($items as $item) {
-                \Log::debug('Item fetched', $item->toArray());
-            }
+
 
             return Inertia::render('Shop/ShopFront/ShopFront', [
                 'items' => $items,

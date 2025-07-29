@@ -121,12 +121,10 @@ Route::post('/user/addresses', [AddressController::class, 'store'])->name('user.
 */
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
 
-Route::prefix('item')->group(function () {
 
-    Route::get('/{id}', [ItemController::class, 'show'])->name('item');
-    Route::post('/{id}/update', [ItemController::class, 'update'])->name('item.update');
-    Route::get('/{id}/stock', [ItemController::class, 'getStock'])->name('item.stock');
-});
+Route::get('/item/{id?}', [ItemController::class, 'index'])->name('item');
+Route::post('/item/{id}/update', [ItemController::class, 'update'])->name('item.update');
+Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.stock');
 
 
 /*

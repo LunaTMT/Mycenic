@@ -18,6 +18,7 @@ const ItemsSection: React.FC = () => {
   const { items, category } = useShop();
   const [currentPage, setCurrentPage] = useState(1);
   console.log(items);
+  
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when category changes
   }, [category]);

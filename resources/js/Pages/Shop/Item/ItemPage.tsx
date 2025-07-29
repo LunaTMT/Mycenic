@@ -30,7 +30,7 @@ const tabs: Tab<TabKey>[] = [
 ];
 
 const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
-  
+    
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
   console.log(item);

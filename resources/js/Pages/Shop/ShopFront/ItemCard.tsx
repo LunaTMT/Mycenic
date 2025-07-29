@@ -14,7 +14,7 @@ interface ItemCardProps {
 const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const isAdmin = auth?.user?.is_admin ?? false;
-
+  console.log(item);
   const confirmDelete = (itemId: number) => {
     Swal.fire({
       title: "Are you sure?",
@@ -52,11 +52,11 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
         </button>
       )}
 
-      <Link
-        href={route("item", { id: item.id })}
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="block flex-grow"
-      >
+        <Link
+          href={route("item", { id: item.id })}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="block flex-grow"
+        >
         <div className="w-full aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800 rounded-lg">
           <img
             src={imageSrc}

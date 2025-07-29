@@ -16,38 +16,35 @@ use App\Models\Review;
 class ItemController extends Controller
 {
 
-    public function index(Request $request)
+    public function index(Request $request, $id)
     {
-        \Log::info('ItemController@index called');
+        \Log::info("ItemController@index called with ID: {$id}");
 
         try {
-            \Log::info('Fetching all items with top-level reviews and users');
-
-            $items = Item::with([
+            $item = Item::with([
                 'reviews' => function ($query) {
                     $query->whereNull('parent_id')->with('user');
-                }
-            ])->get();
+                },
+                'reviews.images',
+                'reviews.replies.user',
+            ])->find($id);
 
-            \Log::info('Items fetched successfully', ['count' => $items->count()]);
-
-            // Log each item with its top-level reviews
-            foreach ($items as $item) {
-                \Log::debug('Item fetched', $item->toArray());
+            if (!$item) {
+                \Log::warning("Item with ID {$id} not found.");
+                return response()->json(['error' => 'Item not found'], 404);
             }
 
-            return Inertia::render('Shop/ShopFront/ShopFront', [
-                'items' => $items,
+            return Inertia::render('Shop/Item/ItemPage', [
+                'item' => $item,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error fetching items in ItemController@index', [
+            \Log::error('Error fetching item in ItemController@index', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            return response()->json(['error' => 'Unable to fetch items'], 500);
+            return response()->json(['error' => 'Unable to fetch item'], 500);
         }
     }
-
 
 
     

@@ -6,11 +6,10 @@ import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import StaticStarRating from "@/Components/Stars/StaticStarRating";
 
 const Item: React.FC = () => {
-  const { item, filteredReviews } = useItemContext();
+  const { item } = useItemContext();
 
-  
   const descriptionParagraphs = (item.description ?? "").split("\n\n");
-  const reviewCount = filteredReviews?.length ?? 0;
+  const reviewCount = item.reviews?.length ?? 0;
 
   return (
     <div className="h-[75vh] flex gap-6 text-gray-700 dark:text-gray-300">

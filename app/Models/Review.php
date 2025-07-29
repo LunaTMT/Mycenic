@@ -46,4 +46,10 @@ class Review extends Model
     {
         return $this->hasMany(ReviewImage::class);
     }
+
+    public function votes()
+    {
+        return $this->morphMany(Vote::class, 'votable');
+    }
+
 }
