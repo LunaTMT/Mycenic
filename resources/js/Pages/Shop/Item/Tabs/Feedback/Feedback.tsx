@@ -24,6 +24,7 @@ export default function Feedback() {
   
   const { item } = useItemContext();
 
+  
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     if (typeof window === "undefined") return "reviews";
     const saved = localStorage.getItem("feedbackActiveTab");
@@ -35,10 +36,10 @@ export default function Feedback() {
   }, [activeTab]);
 
   
-
+  console.log(item.reviews);
   return (
     <div className="space-y-6">
-      <ReviewsProvider initialReviews={item?.reviews || []}>
+      <ReviewsProvider initialReviews={item.reviews}>
         <SubNavigation
           tabs={tabs}
           activeKey={activeTab}

@@ -365,7 +365,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
             return (
               <div
                 key={img.id}
-                className="relative w-30 h-30 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 transform transition-transform duration-300 hover:scale-105"
+                className="relative w-20 h-20 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 transform transition-transform duration-300 hover:scale-105"
               >
                 <img
                   src={src}
@@ -398,7 +398,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="w-30 h-30 flex items-center justify-center border border-dashed border-gray-400 dark:border-gray-600 rounded-md text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              className="w-20 h-20 flex items-center justify-center border border-dashed border-gray-400 dark:border-gray-600 rounded-md text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
               <FaPlus />
               <input
@@ -605,7 +605,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
               {review.images?.length > 0 && <ImageGallery />}
             </div>
 
-            <div className="flex flex-col gap-2 w-full">
+            <div className="flex flex-col gap-4 w-full">
               {renderReplyForm()}
 
               <div className="flex justify-between items-center gap-4 flex-wrap">

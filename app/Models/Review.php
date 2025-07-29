@@ -27,7 +27,7 @@ class Review extends Model
     public function replies()
     {
         return $this->hasMany(Review::class, 'parent_id')
-            ->with(['user', 'images', 'replies']); // recursively eager load replies with user & images
+            ->with(['user', 'images', 'replies']);
     }
 
 
@@ -45,10 +45,5 @@ class Review extends Model
     public function images()
     {
         return $this->hasMany(ReviewImage::class);
-    }
-
-    public function votes()
-    {
-        return $this->hasMany(ReviewVote::class);
     }
 }

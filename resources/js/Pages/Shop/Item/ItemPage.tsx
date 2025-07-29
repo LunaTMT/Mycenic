@@ -30,9 +30,10 @@ const tabs: Tab<TabKey>[] = [
 ];
 
 const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
+  
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
-  
+  console.log(item);
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     const savedTab = localStorage.getItem("activeItemTab");
     return (savedTab as TabKey) || "Item";

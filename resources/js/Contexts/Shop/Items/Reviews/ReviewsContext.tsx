@@ -51,7 +51,7 @@ export const ReviewsProvider = ({
   const auth = props.auth;
 
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
-
+  
   const fetchReviews = async () => {
     try {
       const response = await fetch('/reviews');
@@ -59,12 +59,17 @@ export const ReviewsProvider = ({
         throw new Error(`Failed to fetch reviews: ${response.statusText}`);
       }
       const data: Review[] = await response.json();
-      setReviews(data);
+
+      // Filter top-level reviews (no parent)
+      const filtered = data.filter((r) => r.parent_id === null);
+
+      setReviews(filtered);
     } catch (error) {
       toast.error("Failed to fetch reviews");
       console.error(error);
     }
   };
+
 
   const toggleLike = async (id: number) => {
     try {

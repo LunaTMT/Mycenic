@@ -21,11 +21,20 @@ class ItemController extends Controller
         \Log::info('ItemController@index called');
 
         try {
-            \Log::info('Fetching all items with reviews and users');
+            \Log::info('Fetching all items with top-level reviews and users');
 
-            $items = Item::with(['reviews.user'])->get();
+            $items = Item::with([
+                'reviews' => function ($query) {
+                    $query->whereNull('parent_id')->with('user');
+                }
+            ])->get();
 
             \Log::info('Items fetched successfully', ['count' => $items->count()]);
+
+            // Log each item with its top-level reviews
+            foreach ($items as $item) {
+                \Log::debug('Item fetched', $item->toArray());
+            }
 
             return Inertia::render('Shop/ShopFront/ShopFront', [
                 'items' => $items,

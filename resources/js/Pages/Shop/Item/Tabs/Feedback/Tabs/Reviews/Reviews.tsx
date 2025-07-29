@@ -7,8 +7,7 @@ import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 export default function Reviews() {
   const { showForm, setShowForm, reviews } = useReviews();
 
-
-
+  console.log(reviews);
   if (!reviews) {
     return <p>No reviews</p>;
   }
@@ -43,7 +42,7 @@ export default function Reviews() {
       ) : (
         <div className="space-y-4">
           {reviews
-            .filter((review) => review && review.id !== undefined) // filter out bad reviews
+            .filter((review) => review && review.id !== undefined && review.parent_id === null)
             .map((review) => (
               <ReviewCard key={review.id} review={review} />
             ))}
