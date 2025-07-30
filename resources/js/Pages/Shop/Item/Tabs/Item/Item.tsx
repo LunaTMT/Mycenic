@@ -7,20 +7,19 @@ import StaticStarRating from "@/Components/Stars/StaticStarRating";
 
 const Item: React.FC = () => {
   const { item } = useItemContext();
-
   const descriptionParagraphs = (item.description ?? "").split("\n\n");
   const reviewCount = item.reviews?.length ?? 0;
 
   return (
-    <div className="h-[75vh] flex gap-6 text-gray-700 dark:text-gray-300">
+    <div className="h-[80vh] flex gap-6 text-gray-700 dark:text-gray-300 bg-transparent">
       {/* Left: Image Gallery */}
-      <div className="w-1/2 h-full flex flex-col overflow-hidden">
+      <div className="w-1/2 h-full flex flex-col rounded-lg shadow-2xl overflow-hidden dark:bg-[#424549]">
         <ImageGallery />
       </div>
 
       {/* Right: Details & Cart */}
-      <div className="w-1/2 h-full flex flex-col justify-between p-5 border rounded-lg bg-white dark:bg-[#1e2124]/30 border-black/20 dark:border-white/20 overflow-hidden">
-        {/* Top: Description */}
+      <div className="w-1/2 h-full flex flex-col justify-between p-5 border rounded-lg shadow-2xl overflow-hidden bg-white dark:bg-[#424549] border-black/20 dark:border-white/20">
+        {/* Description */}
         <div className="overflow-y-auto pr-2">
           <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
             {item.name}
@@ -36,14 +35,14 @@ const Item: React.FC = () => {
             {item.category}
           </p>
 
-          {descriptionParagraphs.map((p, i) => (
-            <p key={i} className="whitespace-pre-line mb-2">
-              {p}
+          {descriptionParagraphs.map((paragraph, index) => (
+            <p key={index} className="whitespace-pre-line mb-2">
+              {paragraph}
             </p>
           ))}
         </div>
 
-        {/* Bottom: Cart Controls */}
+        {/* Cart Section */}
         <div className="mt-6">
           <OptionsSelector />
           <AddToCartSection />

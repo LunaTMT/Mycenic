@@ -63,7 +63,7 @@ export default function UsePolicy() {
 
   return (
     <>
-      <div className="w-full dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
+      <div className="w-full dark:bg-[#424549] p-4">
       {usePolicyData.content.map((section, idx) => (
         <section key={idx} className="mb-6">
           <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
@@ -87,7 +87,7 @@ export default function UsePolicy() {
           )}
         </section>
       ))}
-    </div>
+      </div>
     </>
   )
 }

@@ -1,19 +1,19 @@
-
 export interface Item {
   id: number;
   name: string;
-  price: number;
+  price: number;       // <-- number type here is perfect
   stock: number;
   category: string;
-  images: string[];           // always an array
+  images: string[];
   image_sources?: string[] | null;
   description?: string | null;
   isPsyilocybinSpores: boolean;
   options?: Record<string, any> | null;
   reviews?: Review[];
-  average_rating?: number;    // average rating of item
-  created_at: string;         // created date string
+  average_rating?: number;
+  created_at: string;
 }
+
 
 export interface User {
   id: number;

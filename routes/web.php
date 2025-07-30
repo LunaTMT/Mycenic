@@ -132,7 +132,7 @@ Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.
 | Cart Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('shop/cart')->group(function () {
+Route::prefix('cart')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('cart');
     Route::get('/fetch-shipping-details', [CartController::class, 'getShippingDetails'])->name('cart.get.shipping.details');
     Route::post('/store-shipping-details', [CartController::class, 'storeShippingDetails'])->name('cart.store.shipping.details');

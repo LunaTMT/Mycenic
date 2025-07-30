@@ -1,6 +1,7 @@
   import React, { useEffect, useState } from "react";
-  import { Head } from "@inertiajs/react";
+  import { Head, usePage} from "@inertiajs/react";
   import { load } from "recaptcha-v3";
+  
 
   import GuestLayout from "@/Layouts/GuestLayout";
   import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -11,14 +12,11 @@
 
   import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
-  interface CartProps {
-    auth: any;
-  }
-
-  const Cart: React.FC<CartProps> = ({ auth }) => {
-    const Layout = auth ? AuthenticatedLayout : GuestLayout;
+  const Cart: React.FC<CartProps> = ( ) => {
+    const { auth } = usePage().props as { auth?: { user?: User } };
+    const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
     const { cart, hasPsyilocybinSporeSyringe } = useCart();
-
+    
     const [recaptchaToken, setRecaptchaToken] = useState<string>("");
 
     useEffect(() => {
@@ -31,11 +29,6 @@
 
     return (
       <Layout
-        header={
-          <div className="h-[5vh] z-20 w-full overflow-visible flex justify-between items-center gap-4">
-            <Breadcrumb items={[{ label: "SHOP", link: route("shop") }, { label: "CART" }]} />
-          </div>
-        }
       >
         <Head title="Cart" />
 

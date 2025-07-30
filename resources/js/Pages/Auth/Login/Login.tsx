@@ -9,10 +9,16 @@ import TextInput from '@/Components/Login/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useRef } from 'react';
-import Breadcrumb from '@/Components/Nav/Breadcrumb';
 import { Inertia } from '@inertiajs/inertia';
 import { load } from 'recaptcha-v3';
 import SocialLoginComponent from '../SocialLoginComponent';
+
+// Swiper
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, EffectFade, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/effect-fade';
+import 'swiper/css/pagination';
 
 export default function Login({
   status,
@@ -23,7 +29,6 @@ export default function Login({
 }) {
   const { flash } = usePage().props as { flash?: { error?: string } };
 
-  // Read redirect param from query string or default to '/'
   const redirectParam = new URLSearchParams(window.location.search).get('redirect') || '/';
 
   const { data, setData, post, processing, errors } = useForm({
@@ -31,7 +36,7 @@ export default function Login({
     password: '',
     remember: false,
     'g-recaptcha-response': '',
-    redirect: redirectParam,  // Include redirect in form data
+    redirect: redirectParam,
   });
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -57,26 +62,15 @@ export default function Login({
   };
 
   return (
-    <GuestLayout
-      header={
-        <div className="h-[5vh] w-full flex items-center justify-between">
-          <Breadcrumb
-            items={[
-              { label: 'HOME', link: route('home') },
-              { label: 'LOGIN' },
-            ]}
-          />
-        </div>
-      }
-    >
+    <GuestLayout>
       <Head title="Log in" />
 
       {status && <div className="mb-4 text-sm font-medium text-green-600">{status}</div>}
 
-      <div className="relative flex justify-center items-center h-[89vh] w-full px-4 sm:px-6 lg:px-8">
+      <div className="absolute inset-0 w-full h-full">
         <video
           ref={videoRef}
-          className="absolute inset-0 w-full h-full object-cover z-0"
+          className="absolute inset-0 w-full h-full object-cover"
           autoPlay
           muted
           loop
@@ -84,78 +78,116 @@ export default function Login({
           <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+      </div>
 
-        <div className="relative w-full max-w-md bg-white dark:bg-[#424549] border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
-          <form onSubmit={submit} className="w-full flex flex-col p-8 gap-4">
-            <h2 className="text-2xl font-bold font-Poppins text-left dark:text-white">
-              LOGIN
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <InputLabel htmlFor="email" value="Email" />
-                <TextInput
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={data.email}
-                  onChange={(e) => setData('email', e.target.value)}
-                  autoComplete="username"
-                  className="mt-1 w-full"
-                />
-                <InputError message={errors.email} className="mt-2" />
-              </div>
-
-              <div>
-                <InputLabel htmlFor="password" value="Password" />
-                <TextInput
-                  id="password"
-                  type="password"
-                  name="password"
-                  value={data.password}
-                  onChange={(e) => setData('password', e.target.value)}
-                  autoComplete="current-password"
-                  className="mt-1 w-full"
-                  isPasswordField
-                />
-                <InputError message={errors.password} className="mt-2" />
-              </div>
-
-              <div className="flex items-center">
-                <Checkbox
-                  name="remember"
-                  checked={data.remember}
-                  onChange={(e) => setData('remember', e.target.checked)}
-                />
-                <span className="ml-2 text-sm text-black dark:text-white">Remember me</span>
-              </div>
-
-              {/* Hidden input to submit redirect param */}
-              <input type="hidden" name="redirect" value={data.redirect} />
-
-              <PrimaryButton className="w-full p-2" disabled={processing}>
-                Sign in
-              </PrimaryButton>
-
-              <SocialLoginComponent action="login" />
-            </div>
-          </form>
-
-          <div className="w-full px-8 pb-8 space-y-2">
-            {canResetPassword && (
-              <SecondaryButton
-                className="w-full p-2"
-                onClick={() => Inertia.visit(route('password.request'))}
-              >
-                Forgot your password?
-              </SecondaryButton>
-            )}
-            <SecondaryButton
-              className="w-full p-2"
-              onClick={() => Inertia.visit(route('register'))}
+      <div className="relative w-full min-h-[95vh] max-w-7xl flex justify-center items-center mx-auto sm:px-6 lg:px-8 p-5 font-Poppins">
+        <div className="relative z-10 flex w-full bg-white/80 dark:bg-[#424549]/80 border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
+          {/* Swiper Image Gallery on Left */}
+          <div className="w-[55%] hidden md:block relative">
+            <Swiper
+              modules={[Autoplay, EffectFade, Pagination]}
+              autoplay={{ delay: 3000, disableOnInteraction: false }}
+              effect="fade"
+              loop
+              pagination={{ clickable: true }}
+              className="w-full h-full swiper-container"
             >
-              Create Account
-            </SecondaryButton>
+              <SwiperSlide>
+                <img
+                  src="/assets/images/cultivation.png"
+                  alt="Slide 1"
+                  className="object-cover w-full h-full"
+                />
+              </SwiperSlide>
+              <SwiperSlide>
+                <img
+                  src="/assets/images/infused_mushroom_products.png"
+                  alt="Slide 2"
+                  className="object-cover w-full h-full"
+                />
+              </SwiperSlide>
+              <SwiperSlide>
+                <img
+                  src="/assets/images/education.png"
+                  alt="Slide 3"
+                  className="object-cover w-full h-full"
+                />
+              </SwiperSlide>
+            </Swiper>
+          </div>
+
+          {/* Login Form on Right */}
+          <div className="w-[45%] p-8 flex flex-col justify-center">
+            <form onSubmit={submit} className="flex flex-col gap-4 items-center justify-center">
+              <h2 className="text-3xl font-bold font-Poppins text-left dark:text-white w-full">
+                LOGIN
+              </h2>
+
+              <div className="space-y-4 w-full">
+                <div>
+                  <InputLabel htmlFor="email" value="Email" />
+                  <TextInput
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={data.email}
+                    onChange={(e) => setData("email", e.target.value)}
+                    autoComplete="username"
+                    className="mt-1 w-full"
+                  />
+                  <InputError message={errors.email} className="mt-2" />
+                </div>
+
+                <div>
+                  <InputLabel htmlFor="password" value="Password" />
+                  <TextInput
+                    id="password"
+                    type="password"
+                    name="password"
+                    value={data.password}
+                    onChange={(e) => setData("password", e.target.value)}
+                    autoComplete="current-password"
+                    className="mt-1 w-full"
+                    isPasswordField
+                  />
+                  <InputError message={errors.password} className="mt-2" />
+                </div>
+
+                <div className="flex items-center">
+                  <Checkbox
+                    name="remember"
+                    checked={data.remember}
+                    onChange={(e) => setData("remember", e.target.checked)}
+                  />
+                  <span className="ml-2 text-sm text-black dark:text-white">Remember me</span>
+                </div>
+
+                <input type="hidden" name="redirect" value={data.redirect} />
+
+                <PrimaryButton className="w-full py-3" disabled={processing}>
+                  Sign in
+                </PrimaryButton>
+
+                <SocialLoginComponent action="login" />
+              </div>
+            </form>
+
+            <div className="mt-6 space-y-2">
+              {canResetPassword && (
+                <SecondaryButton
+                  className="w-full p-3"
+                  onClick={() => Inertia.visit(route("password.request"))}
+                >
+                  Forgot your password?
+                </SecondaryButton>
+              )}
+              <SecondaryButton
+                className="w-full p-3"
+                onClick={() => Inertia.visit(route("register"))}
+              >
+                Create Account
+              </SecondaryButton>
+            </div>
           </div>
         </div>
       </div>

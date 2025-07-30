@@ -33,7 +33,6 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
-
     public function store(Request $request)
     {
         Log::info('Received review submission', [
@@ -45,7 +44,6 @@ class ReviewController extends Controller
             'content' => 'required|string|max:5000',
             'rating' => 'nullable|numeric|min:0|max:5',
             'item_id' => 'required|integer|exists:items,id',
-            'parent_id' => 'nullable|integer|exists:reviews,id',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,jpg,png,bmp,gif,svg,webp|max:2048',
         ]);
@@ -61,7 +59,7 @@ class ReviewController extends Controller
             Log::info('Review created', ['review_id' => $review->id]);
         } catch (\Exception $e) {
             Log::error('Error creating review', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Failed to create review'], 500);
+            return redirect()->back()->withErrors(['review' => 'Failed to create review.']);
         }
 
         if ($request->hasFile('images')) {
@@ -72,15 +70,14 @@ class ReviewController extends Controller
                     Log::info('Stored review image', ['path' => $path]);
                 } catch (\Exception $e) {
                     Log::error('Failed to store image', ['error' => $e->getMessage()]);
+                    // Optionally add an error flash here
                 }
             }
         }
 
-        return response()->json([
-            'message' => 'Review submitted successfully.',
-            'review' => $review->load('images', 'user', 'replies'),
-        ]);
+        return redirect()->back()->with('success', 'Review submitted successfully.');
     }
+
 
     public function vote(Request $request, Review $review)
     {
@@ -226,30 +223,31 @@ class ReviewController extends Controller
 
         try {
             $review = Review::with(['images', 'replies'])->findOrFail($reviewId);
-            Log::info('Review found for deletion', ['review_id' => $reviewId]);
 
             if (!$user) {
                 Log::warning('Unauthenticated user tried to delete review');
-                return response()->json(['error' => 'Unauthenticated'], 401);
+                return redirect()->back()->withErrors(['error' => 'Unauthenticated']);
             }
 
             if (!$user->isAdmin() && $review->user_id !== $user->id) {
-                Log::warning('Unauthorized user tried to delete review', ['user_id' => $user->id]);
-                return response()->json(['error' => 'Unauthorized'], 403);
+                Log::warning('Unauthorized user tried to delete review');
+                return redirect()->back()->withErrors(['error' => 'Unauthorized']);
             }
 
             $this->deleteReviewWithReplies($review);
 
-            Log::info('Review deleted successfully', ['review_id' => $reviewId]);
-            return response()->json(['message' => 'Review deleted successfully.']);
+            Log::info('Review deleted successfully');
+            return redirect()->back()->with('success', 'Review deleted successfully.');
+
         } catch (\Exception $e) {
             Log::error('Failed to delete review', [
                 'review_id' => $reviewId,
                 'error' => $e->getMessage()
             ]);
-            return response()->json(['error' => 'Failed to delete review'], 500);
+            return redirect()->back()->withErrors(['error' => 'Failed to delete review']);
         }
     }
+
 
     protected function deleteReviewWithReplies(Review $review)
     {

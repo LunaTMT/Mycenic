@@ -95,7 +95,7 @@ export default function RefundsReturns() {
   return (
     <>
     <Head title="Refunds & Returns" />
-      <div className="w-full dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
+      <div className="w-full dark:bg-[#424549] p-4">
         {refundsReturnsData.content.map((subSection, idx) => (
           <div key={idx} className="mb-8">
             <h2

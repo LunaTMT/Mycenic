@@ -11,14 +11,15 @@ class ItemSeeder extends Seeder
 {
     public function run(): void
     {
-        // Adjust count as needed
         Item::factory()
-            ->count(1)
+            ->count(20)
             ->create()
             ->each(function (Item $item) {
-                // Create 2 top-level reviews per item, each with nested replies
+                // Random number of reviews per item, e.g. 5 to 15
+                $randomReviewCount = rand(1, 7);
+
                 $reviews = Review::factory()
-                    ->count(2)
+                    ->count($randomReviewCount)
                     ->withReplies(2, 2) // 2 replies per review, with 2 nested replies each
                     ->create(['item_id' => $item->id]);
 

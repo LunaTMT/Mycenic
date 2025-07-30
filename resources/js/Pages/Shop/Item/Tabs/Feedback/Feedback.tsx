@@ -35,8 +35,7 @@ export default function Feedback() {
     localStorage.setItem("feedbackActiveTab", activeTab);
   }, [activeTab]);
 
-  
-  console.log(item.reviews);
+
   return (
     <div className="space-y-6">
       <ReviewsProvider initialReviews={item.reviews}>

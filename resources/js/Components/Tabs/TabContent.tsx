@@ -25,7 +25,7 @@ export default function TabContent<T extends string>({ activeKey, tabKey, childr
 
   return (
     <div
-      className={`transition-opacity duration-300 ease-in-out ${visible ? "opacity-100" : "opacity-0"}`}
+      className={`transition-opacity w-full h-full  duration-300 ease-in-out ${visible ? "opacity-100" : "opacity-0"}`}
       role="tabpanel"
       aria-hidden={activeKey !== tabKey}
     >

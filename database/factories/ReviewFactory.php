@@ -21,8 +21,11 @@ class ReviewFactory extends Factory
             'rating' => $this->faker->randomFloat(1, 1, 5),
             'item_id' => Item::inRandomOrder()->first()?->id,
             'parent_id' => null,
+            'created_at' => $this->faker->dateTimeBetween('-1 years', 'now'),
+            'updated_at' => $this->faker->dateTimeBetween('-1 years', 'now'),
         ];
     }
+
 
     /**
      * Adds one reply and one nested reply to the review.

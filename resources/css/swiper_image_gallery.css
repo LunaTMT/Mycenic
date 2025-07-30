@@ -25,7 +25,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 0.5rem; /* match rounded-lg */
+  border-radius: 0.5rem; /* match rounded-lg */ 
   background-color: transparent;
   pointer-events: none;
   user-select: none;

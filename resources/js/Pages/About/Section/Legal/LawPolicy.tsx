@@ -113,43 +113,38 @@ const lawPolicyData: Section = {
 export default function LawPolicy() {
   const { auth } = usePage().props as { auth: { user?: any } }
 
-  const breadcrumbItems = [
-    { label: 'Home', link: route('home') },
-    { label: 'About', link: route('about.index') },
-    { label: 'Legal', link: route('about.legal.index') },
-    { label: 'Law Policy', link: route('about.legal.law-policy') },
-  ]
 
   return (
     <>
-    <div className="w-full dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
-      {lawPolicyData.content.map((subSection, idx) => (
-        <section key={idx} className="mb-8">
-          <h2
-            id={subSection.title.toLowerCase().replace(/\s+/g, '-')}
-            className="text-xl font-semibold mb-3 scroll-mt-24"
-          >
-            {subSection.title}
-          </h2>
-          {subSection.content.map((entry, entryIdx) =>
-            typeof entry === 'string' ? (
-              <p key={entryIdx} className="mb-2 text-gray-800 dark:text-gray-200">
-                {entry}
-              </p>
-            ) : (
-              <ul
-                key={entryIdx}
-                className="list-disc list-inside pl-4 text-gray-800 dark:text-gray-200 mb-2"
-              >
-                {entry.map((item, itemIdx) => (
-                  <li key={itemIdx}>{item}</li>
-                ))}
-              </ul>
-            )
-          )}
-        </section>
-      ))}
-    </div>
+
+      <div className="w-full dark:bg-[#424549] p-4">
+        {lawPolicyData.content.map((section, idx) => (
+          <section key={idx} className="mb-6">
+            <h2
+              className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100"
+              id={section.title.toLowerCase().replace(/\s+/g, '-')}
+            >
+              {section.title}
+            </h2>
+            {section.content.map((entry, entryIdx) =>
+              typeof entry === 'string' ? (
+                <p key={entryIdx} className="text-gray-800 dark:text-gray-200 mb-2">
+                  {entry}
+                </p>
+              ) : (
+                <ul
+                  key={entryIdx}
+                  className="list-disc list-inside pl-4 text-gray-800 dark:text-gray-200 mb-2"
+                >
+                  {entry.map((item, itemIdx) => (
+                    <li key={itemIdx}>{item}</li>
+                  ))}
+                </ul>
+              )
+            )}
+          </section>
+        ))}
+      </div>
     </>
   )
 }

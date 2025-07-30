@@ -14,7 +14,7 @@ export default function ZoomModal({ imageUrl, onClose }: Props) {
       <img
         src={imageUrl}
         alt="Zoomed review image"
-        className="max-w-[50vw] max-h-[50vh] rounded-md shadow-lg"
+        className="max-w-[60vw] max-h-[60vh] rounded-md shadow-lg"
       />
       <p className="text-left text-sm text-white dark:text-gray-500 select-none">
         Click to return.

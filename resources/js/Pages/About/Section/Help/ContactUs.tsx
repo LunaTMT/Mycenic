@@ -40,7 +40,7 @@ const contactUs = [
 
 export default function ContactUs() {
   return (
-    <div className="w-full dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
+    <div className="w-full dark:bg-[#424549] p-4">
 
       {contactUs[0].content.map((section, idx) => (
         <div key={idx} className="mb-6">

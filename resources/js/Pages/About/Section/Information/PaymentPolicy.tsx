@@ -1,117 +1,140 @@
-import React from 'react'
-import { Head } from '@inertiajs/react'
-import Breadcrumb from '@/Components/Nav/Breadcrumb'
+import React, { useRef } from "react";
+import { Head } from "@inertiajs/react";
+import { motion, useInView } from "framer-motion";
 
 interface SubSection {
-  title: string
-  content: (string | string[])[]
+  title: string;
+  content: (string | string[])[];
 }
 
 interface Section {
-  heading: string
-  content: SubSection[]
+  heading: string;
+  content: SubSection[];
 }
 
 const paymentPolicyData: Section = {
-  heading: 'Payment Policy',
+  heading: "Payment Policy",
   content: [
     {
-      title: 'Accepted Payment Methods',
+      title: "Accepted Payment Methods",
       content: [
-        'We accept the following payment methods:',
+        "We accept the following payment methods:",
         [
-          'Visa, Mastercard, American Express',
-          'Apple Pay, Google Pay',
-          'Stripe-secured credit/debit transactions',
+          "Visa, Mastercard, American Express",
+          "Apple Pay, Google Pay",
+          "Stripe-secured credit/debit transactions",
         ],
       ],
     },
     {
-      title: 'Billing Information',
+      title: "Billing Information",
       content: [
-        'You agree to provide current, complete, and accurate billing information.',
-        'Failure to provide accurate information may result in order delays or cancellation.',
+        "You agree to provide current, complete, and accurate billing information.",
+        "Failure to provide accurate information may result in order delays or cancellation.",
       ],
     },
     {
-      title: 'Payment Authorization',
+      title: "Payment Authorization",
       content: [
-        'By submitting payment information, you authorize us to charge the full order amount.',
-        'All transactions are subject to validation and authorization by your payment provider.',
+        "By submitting payment information, you authorize us to charge the full order amount.",
+        "All transactions are subject to validation and authorization by your payment provider.",
       ],
     },
     {
-      title: 'Failed Transactions',
+      title: "Failed Transactions",
       content: [
-        'If your transaction is declined or fails:',
+        "If your transaction is declined or fails:",
         [
-          'Your order will not be processed',
-          'You may be notified to update payment details',
+          "Your order will not be processed",
+          "You may be notified to update payment details",
         ],
       ],
     },
     {
-      title: 'Refund Policy',
+      title: "Refund Policy",
       content: [
-        'All sales are final unless otherwise stated.',
-        'Refunds may be granted only under exceptional circumstances at our discretion.',
-        'We reserve the right to deny refund requests in cases involving misuse or violation of our Terms.',
+        "All sales are final unless otherwise stated.",
+        "Refunds may be granted only under exceptional circumstances at our discretion.",
+        "We reserve the right to deny refund requests in cases involving misuse or violation of our Terms.",
       ],
     },
     {
-      title: 'Chargebacks and Disputes',
+      title: "Chargebacks and Disputes",
       content: [
-        'Initiating a chargeback without contacting us first may result in:',
+        "Initiating a chargeback without contacting us first may result in:",
         [
-          'Immediate account suspension',
-          'Ban from future purchases',
-          'Reporting to payment processors or authorities if fraud is suspected',
+          "Immediate account suspension",
+          "Ban from future purchases",
+          "Reporting to payment processors or authorities if fraud is suspected",
         ],
       ],
     },
     {
-      title: 'Currency and Taxes',
+      title: "Currency and Taxes",
       content: [
-        'All transactions are processed in GBP (£) unless otherwise specified.',
-        'You are responsible for any applicable local taxes, duties, or conversion fees.',
+        "All transactions are processed in GBP (£) unless otherwise specified.",
+        "You are responsible for any applicable local taxes, duties, or conversion fees.",
       ],
     },
     {
-      title: 'Updates to Payment Terms',
+      title: "Updates to Payment Terms",
       content: [
-        'We reserve the right to change our payment terms at any time.',
-        'Continued use of the site after changes indicates acceptance of the new terms.',
+        "We reserve the right to change our payment terms at any time.",
+        "Continued use of the site after changes indicates acceptance of the new terms.",
       ],
     },
   ],
+};
+
+function AnimatedSubSection({
+  children,
+  idx,
+}: {
+  children: React.ReactNode;
+  idx: number;
+}) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      className="mb-8 will-change-transform will-change-opacity"
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{
+        opacity: { duration: 0.6, ease: "easeOut", delay: idx * 0.15 },
+        y: { type: "spring", stiffness: 100, damping: 20, delay: idx * 0.15 },
+      }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 export default function PaymentPolicy() {
   const breadcrumbItems = [
-    { label: 'Home', link: route('home') },
-    { label: 'About', link: route('about.index') },
-    { label: 'Information', link: route('about.information.index') },
-    { label: 'Payment Policy', link: route('about.information.payment-policy') },
-  ]
+    { label: "Home", link: route("home") },
+    { label: "About", link: route("about.index") },
+    { label: "Information", link: route("about.information.index") },
+    { label: "Payment Policy", link: route("about.information.payment-policy") },
+  ];
 
   return (
     <>
       <Head title="Payment" />
 
-
-
-
-      <div className="w-full dark:bg-[#424549] border border-black/20 dark:border-white/20 p-6 rounded-xl shadow-2xl">
+      <div className="w-full dark:bg-[#424549] p-4">
         {paymentPolicyData.content.map((subSection, idx) => (
-          <div key={idx} className="mb-8">
+          <AnimatedSubSection key={idx} idx={idx}>
             <h2
-              id={subSection.title.toLowerCase().replace(/\s+/g, '-')}
+              id={subSection.title.toLowerCase().replace(/\s+/g, "-")}
               className="text-xl font-semibold mb-3 scroll-mt-24 text-gray-900 dark:text-gray-100"
             >
               {subSection.title}
             </h2>
             {subSection.content.map((entry, entryIdx) =>
-              typeof entry === 'string' ? (
+              typeof entry === "string" ? (
                 <p key={entryIdx} className="mb-2 text-gray-800 dark:text-gray-200">
                   {entry}
                 </p>
@@ -126,10 +149,9 @@ export default function PaymentPolicy() {
                 </ul>
               )
             )}
-          </div>
+          </AnimatedSubSection>
         ))}
       </div>
-
     </>
-  )
+  );
 }

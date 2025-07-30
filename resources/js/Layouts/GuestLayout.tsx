@@ -5,14 +5,7 @@ import { useNav } from "@/Contexts/Layout/NavContext";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
-import NavLinks from "@/Components/Nav/NavLinks";
-import AboutSidebar from "@/Layouts/AboutSidebar";
-
-import CartButton_Dropdown from '@/Layouts/CartButton_Dropdown';
-import LoginButton from "@/Components/Buttons/LoginButton";
-import { DarkModeSwitch } from "react-toggle-dark-mode";
-
-import Footer from "./Footer";
+import Menu from "./Menu";
 import { ToastContainer, toast } from "react-toastify";
 
 interface PageProps {
@@ -64,46 +57,25 @@ export default function Guest({
 
 
   return (
-    <div className="relative w-full min-h-screen dark:bg-[#424549] ">
+    <div className="relative w-full min-h-screen dark:bg-[#1e2124] ">
       {/* HEADER */}
       <motion.header
-        className="sticky top-0 z-10 w-full max-h-[11vh]  bg-white shadow-xl dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
+        className="sticky top-0 z-20 w-full h-[5vh] shadow-xl dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
         transition={{ duration: 0.5, ease: "easeOut" }}
-        animate={{ y: scrollDirection === "down" ? "-6vh" : "0" }}
+        whileInView={{
+          y: scrollDirection === "down" ? "-6vh" : "0",
+        }}
+        viewport={{ once: true }}
       >
-        {/* Top Nav */}
-        <nav className="relative w-full   h-[6vh] gap-0 max-w-7xl mx-auto sm:px-6 lg:px-8  flex items-center justify-center">
-          <NavLinks currentUrl={url} />
-          
-          
-          <div className="h-full  flex items-center  gap-3">
-            <div className="transform hover:scale-110 transition-transform duration-500">
-              <DarkModeSwitch
-                checked={darkMode}
-                onChange={toggleDarkMode}
-                size={28}
-                moonColor={darkMode ? "white" : "rgb(253, 230, 138)"}
-                sunColor={darkMode ? "black" : "rgb(252, 211, 77)"}
-                className="mt-1 "
-              />
-            </div>
-            <CartButton_Dropdown cart={cart} totalItems={totalItems} scaled={scaled} />
-            <LoginButton />
-          </div>
+        <Menu url={url} header={header} />
+ 
 
-        </nav>
-
-        {/* Bottom Nav – Header Slot */}
-        <div className="relative sm:px-6 lg:px-8 w-full    max-w-7xl mx-auto  flex items-center justify-center">
-          {header}
-        </div>
       </motion.header>
-
 
 
       {/* MAIN CONTENT */}
       <main
-        className={`relative w-full min-h-screen h-full   dark:bg-[#1e2124] ${
+        className={`relative w-full min-h-[95vh] h-full  dark:bg-[#1e2124] ${
           url.includes("about") ? "" : ""
         }`}
       >

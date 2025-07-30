@@ -1,10 +1,5 @@
-import React from "react";
-
-export interface Tab<T = string> {
-  key: T;
-  label: string;
-  icon?: React.ReactNode;
-}
+import React, { useEffect, useState } from "react";
+import { Tab } from "@/types/tabs";
 
 interface TabNavigationProps<T = string> {
   tabs: Tab<T>[];
@@ -17,40 +12,50 @@ export default function TabNavigation<T extends string>({
   activeTab,
   setActiveTab,
 }: TabNavigationProps<T>) {
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   return (
     <div className="flex border-b gap-0 bg-transparent border-gray-300 dark:border-gray-600">
-      {tabs.map(({ key, label, icon }, index, arr) => {
+      {tabs.map(({ key, label, icon }) => {
         const isActive = activeTab === key;
-
-        let borderRadiusClass = "";
-        if (index === 0) borderRadiusClass = "rounded-tl-lg rounded-tr-0";
-        else if (index === arr.length - 1) borderRadiusClass = "rounded-tr-lg rounded-tl-0";
-        else borderRadiusClass = "rounded-none";
 
         return (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
             className={`
-              group flex-1 px-8 py-3 text-center font-medium text-lg font-Poppins flex justify-center items-center
-              ${borderRadiusClass}
+              group relative flex-1 px-8 py-3 text-center font-medium text-lg font-Poppins flex justify-center items-center
+              transition-colors duration-300
               ${
                 isActive
-                  ? `bg-yellow-500 text-white dark:bg-[#7289da] 
-                    hover:shadow-[0_0_1px_#FFD700,0_0_4px_#FFD700,0_0_8px_#FFD700] 
-                    dark:hover:shadow-[0_0_2px_#93c5fd,0_0_6px_#60a5fa,0_0_10px_#2563eb]`
-                  : `text-gray-600 dark:text-gray-300 
-                    hover:bg-gray-100 dark:hover:bg-[#53575a] 
-                    hover:shadow-[0_0_1px_#FFD700,0_0_4px_#FFD700,0_0_8px_#FFD700] 
-                    dark:hover:shadow-[0_0_2px_#93c5fd,0_0_6px_#60a5fa,0_0_10px_#2563eb]`
+                  ? "bg-yellow-500 text-white dark:bg-[#7289da] dark:text-white"
+                  : "text-gray-600 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-[#7289da]"
               }
-              transition-transform duration-300
             `}
           >
             <span className="inline-block transition-transform duration-300 group-hover:scale-110">
               {icon}
             </span>
             <span>{label}</span>
+
+            {/* Active underline */}
+            {isActive && hasMounted && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-yellow-500 dark:bg-[#7289da]" />
+            )}
+
+            {/* Static underline on first render to avoid jump */}
+            {isActive && !hasMounted && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-yellow-500 dark:bg-[#7289da]" />
+            )}
+
+            {/* Hover underline for inactive tabs */}
+            {!isActive && (
+              <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-transparent group-hover:bg-yellow-400 dark:group-hover:bg-[#5a75d1] transition-colors duration-300" />
+            )}
           </button>
         );
       })}

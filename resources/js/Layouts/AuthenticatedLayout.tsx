@@ -5,15 +5,12 @@ import { useNav } from "@/Contexts/Layout/NavContext";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
-import NavLinks from "@/Components/Nav/NavLinks";
-import CartButton_Dropdown from '@/Layouts/CartButton_Dropdown';
-import { DarkModeSwitch } from "react-toggle-dark-mode";
+import Menu from "./Menu"; // adjust path as needed
+
 import ScrollTop from "@/Components/Buttons/ScrollToTopButton";
 import { ToastContainer, toast } from "react-toastify";
 import Modal from "@/Components/Login/Modal";
-
-import { FiLogOut } from "react-icons/fi";
-import { FaUserCircle } from "react-icons/fa";
+import { DarkModeSwitch } from "react-toggle-dark-mode";
 
 interface PageProps {
   auth: {
@@ -37,7 +34,6 @@ type AuthenticatedProps = PropsWithChildren<{
 
 export default function Authenticated({ header, children }: AuthenticatedProps) {
   const { auth, flash, url } = usePage<PageProps>().props;
-  const safeUrl = url ?? "";
   const user = auth.user;
 
   const { scrollDirection } = useNav();
@@ -80,63 +76,24 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
   };
 
   return (
-    <div className="relative w-full min-h-screen dark:bg-[#424549]">
+    <div className="relative w-full min-h-screen dark:bg-[#1e2124]">
+              {/* Dark Mode Switch in Top Right */}
+
+
       <motion.header
-        className="sticky top-0 z-20 w-full max-h-[11vh] bg-white shadow-xl dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
+        className="sticky top-0 z-20 w-full max-h-[11vh] shadow-xl bg-white dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
         transition={{ duration: 0.5, ease: "easeOut" }}
         whileInView={{
           y: scrollDirection === "down" ? "-6vh" : "0",
         }}
         viewport={{ once: true }}
       >
-        {/* Top Nav */}
-        <nav className="relative w-full h-[6vh] gap-0 max-w-7xl mx-auto sm:px-6 lg:px-8 flex items-center justify-center">
-          {/* Left */}
-          <NavLinks currentUrl={url} />
+        <Menu url={url} header={header} />
+ 
 
-          {/* Right */}
-          <div className="h-full flex items-center gap-3">
-            <div className="transform hover:scale-110 transition-transform duration-500">
-              <DarkModeSwitch
-                checked={darkMode}
-                onChange={toggleDarkMode}
-                size={28}
-                moonColor={darkMode ? "white" : "rgb(253, 230, 138)"}
-                sunColor={darkMode ? "black" : "rgb(252, 211, 77)"}
-                className="mt-1"
-              />
-            </div>
-
-            <CartButton_Dropdown cart={cart} totalItems={totalItems} scaled={scaled} />
-
-            {user && (
-              <>
-                <a
-                  href="/profile"
-                  title="Profile"
-                  className="w-8 h-8 mt-1 text-black hover:text-black hover:scale-110 dark:text-slate-300 dark:hover:text-white transition-transform duration-500"
-                >
-                  <FaUserCircle className="w-full h-full" />
-                </a>
-                <button
-                  onClick={() => setShowLogoutModal(true)}
-                  title="Log out"
-                  className="w-8 h-8 mt-1 text-black hover:text-black hover:scale-110 dark:text-slate-300 dark:hover:text-white transition-transform duration-500"
-                >
-                  <FiLogOut className="w-full h-full" />
-                </button>
-              </>
-            )}
-          </div>
-        </nav>
-
-        {/* Bottom Nav */}
-        <div className="relative sm:px-6 lg:px-8 w-full max-w-7xl mx-auto flex items-center justify-center">
-          {header}
-        </div>
       </motion.header>
 
-      <main className={`relative w-full min-h-screen h-full dark:bg-[#1e2124]`}>
+      <main className="relative w-full h-full dark:bg-[#1e2124]">
         {children}
       </main>
 

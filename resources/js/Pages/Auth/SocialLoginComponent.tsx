@@ -21,7 +21,7 @@ const SocialLoginComponent: React.FC<SocialLoginComponentProps> = ({ action }) =
             <div className="w-full border-t border-gray-400" />
           </div>
           <div className="relative flex justify-center">
-            <span className="z-10 px-2 bg-white text-sm text-gray-500 dark:bg-[#424549] dark:text-gray-400">
+            <span className="z-10 px-2 rounded-lg bg-white text-sm text-gray-500 dark:bg-[#424549] dark:text-gray-400">
               {`Or ${action === 'register' ? 'register' : 'login'} with`}
             </span>
           </div>
@@ -33,7 +33,7 @@ const SocialLoginComponent: React.FC<SocialLoginComponentProps> = ({ action }) =
             <button
               type="button"
               onClick={() => redirect('google')}
-              className="flex h-10 items-center justify-center rounded-lg bg-yellow-500 shadow-md hover:scale-105 hover:bg-yellow-600 dark:bg-[#7289da] dark:hover:bg-[#5b6eae] text-white transition duration-300 ease-in-out"
+              className="flex h-12 items-center justify-center rounded-lg bg-yellow-500 shadow-md hover:scale-105 hover:bg-yellow-600 dark:bg-[#7289da] dark:hover:bg-[#5b6eae] text-white transition duration-300 ease-in-out"
             >
               <SiGoogle size="1.25rem" />
             </button>
@@ -41,7 +41,7 @@ const SocialLoginComponent: React.FC<SocialLoginComponentProps> = ({ action }) =
             <button
               type="button"
               onClick={() => redirect('facebook')}
-              className="flex h-10 items-center justify-center rounded-lg bg-yellow-500 shadow-md hover:scale-105 hover:bg-yellow-600 dark:bg-[#7289da] dark:hover:bg-[#5b6eae] text-white transition duration-300 ease-in-out"
+              className="flex h-12 items-center justify-center rounded-lg bg-yellow-500 shadow-md hover:scale-105 hover:bg-yellow-600 dark:bg-[#7289da] dark:hover:bg-[#5b6eae] text-white transition duration-300 ease-in-out"
             >
               <FaFacebookF size="1.25rem" />
             </button>
@@ -49,7 +49,7 @@ const SocialLoginComponent: React.FC<SocialLoginComponentProps> = ({ action }) =
             <button
               type="button"
               onClick={() => redirect('x')}
-              className="flex h-10 items-center justify-center rounded-lg bg-yellow-500 shadow-md hover:scale-105 hover:bg-yellow-600 dark:bg-[#7289da] dark:hover:bg-[#5b6eae] text-white transition duration-300 ease-in-out"
+              className="flex h-12 items-center justify-center rounded-lg bg-yellow-500 shadow-md hover:scale-105 hover:bg-yellow-600 dark:bg-[#7289da] dark:hover:bg-[#5b6eae] text-white transition duration-300 ease-in-out"
             >
               <FaXTwitter size="1.25rem" />
             </button>

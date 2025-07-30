@@ -22,10 +22,10 @@ export const NavProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const currentScrollY = window.scrollY;
             
             // Check scroll direction and update visibility of navigation
-            if (currentScrollY < lastScrollY - 5) {
+            if (currentScrollY < lastScrollY - 1) {
                 setScrollDirection('up');
                 setShowNav(true);  // Show the nav when scrolling up
-            } else if (currentScrollY > lastScrollY + 5) {
+            } else if (currentScrollY > lastScrollY + 1) {
                 setScrollDirection('down');
                 setShowNav(false);  // Hide the nav when scrolling down
             }

@@ -19,6 +19,7 @@ import Dropdown from "@/Components/Dropdown/Dropdown";
 import { BsThreeDots } from "react-icons/bs";
 import DeleteConfirmationModal from "../../Components/ImageGallery/DeleteConfirmationModal";
 import LikeDislikeButtons from "../../Components/LikeDislikeButtons";
+import ZoomModal from "../../Components/ImageGallery/ZoomModal";
 
 import { resolveSrc } from "@/utils/resolveSrc";
 
@@ -215,10 +216,23 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
 
   function confirmDelete(id: number) {
     setDeleting(true);
-    // TODO: perform delete API call or context update here
-    setDeleting(false);
-    setDeleteConfirmId(null);
+
+    router.delete(`/reviews/${id}`, {
+      preserveScroll: true,
+      onSuccess: () => {
+        toast.success("Review deleted successfully.");
+        fetchReviews(); // Refresh the reviews context
+      },
+      onError: () => {
+        toast.error("Failed to delete review.");
+      },
+      onFinish: () => {
+        setDeleting(false);
+        setDeleteConfirmId(null);
+      },
+    });
   }
+
 
   // Image Gallery handlers
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -421,6 +435,10 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
           item="image"
           message="Once deleted, this image will be permanently removed."
         />
+
+        {zoomedImage && (
+          <ZoomModal imageUrl={zoomedImage} onClose={() => setZoomedImage(null)} />
+        )}
       </>
     );
   }
@@ -602,7 +620,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
 
             <div className="space-y-2">
               {renderReviewContent()}
-              {review.images?.length > 0 && <ImageGallery />}
+              {<ImageGallery />}
             </div>
 
             <div className="flex flex-col gap-4 w-full">

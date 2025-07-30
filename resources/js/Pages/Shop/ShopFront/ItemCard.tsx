@@ -14,7 +14,7 @@ interface ItemCardProps {
 const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const isAdmin = auth?.user?.is_admin ?? false;
-  console.log(item);
+
   const confirmDelete = (itemId: number) => {
     Swal.fire({
       title: "Are you sure?",
@@ -41,7 +41,9 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
   const imageSrc = resolveSrc(item.images[0] ?? "/assets/images/missing_image.png");
 
   return (
-    <div className="relative group bg-white dark:bg-[#2b2d31] border-2 border-black/30 dark:border-white/20 shadow-md hover:shadow-lg rounded-xl overflow-hidden transition-all duration-300 w-full h-full flex flex-col">
+    <div
+      className="relative group  border-1 border-black/30 dark:border-white/20 shadow-md hover:shadow-lg rounded-xl overflow-hidden transition-all duration-300 w-full h-full flex flex-col"
+    >
       {isAdmin && (
         <button
           className="absolute top-1 right-1 z-10 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full"
@@ -52,12 +54,12 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
         </button>
       )}
 
-        <Link
-          href={route("item", { id: item.id })}
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="block flex-grow"
-        >
-        <div className="w-full aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+      <Link
+        href={route("item", { id: item.id })}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="block flex-grow"
+      >
+        <div className="w-full aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800 ">
           <img
             src={imageSrc}
             alt={item.name}

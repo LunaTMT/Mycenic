@@ -5,10 +5,13 @@ import React, {
   useMemo,
   Dispatch,
   SetStateAction,
+  useEffect,
 } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { toast } from "react-toastify";
 import { Review } from "@/types/types";
+
+type SortOption = "newest" | "oldest" | "most_liked" | "least_liked";
 
 interface ReviewContextType {
   reviews: Review[];
@@ -16,26 +19,22 @@ interface ReviewContextType {
   fetchReviews: () => void;
   toggleLike: (id: number) => void;
   toggleDislike: (id: number) => void;
-
-  currentPage: number;
-  setCurrentPage: Dispatch<SetStateAction<number>>;
-  totalPages: number;
   currentReviews: Review[];
-
   showForm: boolean;
   setShowForm: Dispatch<SetStateAction<boolean>>;
-  sortBy: string;
-  handleSortChange: (sort: string) => void;
-
   addReply: (parentId: number, content: string) => void;
   expandedIds: number[];
   toggleExpandedId: (id: number) => void;
   openReplyFormId: number | null;
   setOpenReplyFormId: Dispatch<SetStateAction<number | null>>;
   showReplyForm: (id: number) => boolean;
-
   showDropdown: number | null;
   setShowDropdown: Dispatch<SetStateAction<number | null>>;
+  sortBy: SortOption;
+  handleSortChange: (value: SortOption) => void;
+  currentPage: number;
+  setCurrentPage: Dispatch<SetStateAction<number>>;
+  totalPages: number;
 }
 
 const ReviewContext = createContext<ReviewContextType | undefined>(undefined);
@@ -51,25 +50,43 @@ export const ReviewsProvider = ({
   const auth = props.auth;
 
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
-  
+  const [showForm, setShowForm] = useState(false);
+
+  const [expandedIds, setExpandedIds] = useState<number[]>(() => {
+    const stored = localStorage.getItem("expandedReviewIds");
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const [openReplyFormId, setOpenReplyFormId] = useState<number | null>(() => {
+    const stored = localStorage.getItem("openReplyFormId");
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  const [showDropdown, setShowDropdown] = useState<number | null>(null);
+
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    const stored = localStorage.getItem("reviewSortBy");
+    return (stored as SortOption) || "newest";
+  });
+
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const stored = localStorage.getItem("reviewCurrentPage");
+    return stored ? parseInt(stored) : 1;
+  });
+
+  const reviewsPerPage = 5;
+
   const fetchReviews = async () => {
     try {
-      const response = await fetch('/reviews');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch reviews: ${response.statusText}`);
-      }
+      const response = await fetch("/reviews");
+      if (!response.ok) throw new Error(`Failed to fetch reviews: ${response.statusText}`);
       const data: Review[] = await response.json();
-
-      // Filter top-level reviews (no parent)
-      const filtered = data.filter((r) => r.parent_id === null);
-
-      setReviews(filtered);
+      setReviews(data);
     } catch (error) {
       toast.error("Failed to fetch reviews");
       console.error(error);
     }
   };
-
 
   const toggleLike = async (id: number) => {
     try {
@@ -90,9 +107,7 @@ export const ReviewsProvider = ({
             )
           );
         },
-        onError: () => {
-          toast.error("Failed to like the review.");
-        },
+        onError: () => toast.error("Failed to like the review."),
       });
     } catch {
       toast.error("Failed to like the review.");
@@ -118,98 +133,120 @@ export const ReviewsProvider = ({
             )
           );
         },
-        onError: () => {
-          toast.error("Failed to dislike the review.");
-        },
+        onError: () => toast.error("Failed to dislike the review."),
       });
     } catch {
       toast.error("Failed to dislike the review.");
     }
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const reviewsPerPage = 5;
-  const totalPages = Math.ceil(reviews.length / reviewsPerPage);
+  const addReply = (parentId: number, content: string) => {
+    router.post(`/reviews/${parentId}/reply`, { content }, {
+      onSuccess: () => {
+        fetchReviews();
+        setOpenReplyFormId(null);
+        toast.success("Reply added");
+      },
+      onError: () => toast.error("Failed to add reply"),
+      preserveScroll: true,
+    });
+  };
+
+  const toggleExpandedId = (id: number) => {
+    setExpandedIds((prev) => {
+      const updated = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
+      localStorage.setItem("expandedReviewIds", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const showReplyForm = (id: number) => openReplyFormId === id;
+
+  useEffect(() => {
+    localStorage.setItem("reviewCurrentPage", currentPage.toString());
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (openReplyFormId === null) {
+      localStorage.removeItem("openReplyFormId");
+    } else {
+      localStorage.setItem("openReplyFormId", JSON.stringify(openReplyFormId));
+    }
+  }, [openReplyFormId]);
+
+  const handleSortChange = (value: SortOption) => {
+    setSortBy(value);
+    setCurrentPage(1);
+    localStorage.setItem("reviewSortBy", value);
+  };
+
+  const topLevelReviews = useMemo(() => {
+    return reviews.filter((r) => r.parent_id === null);
+  }, [reviews]);
+
+  const sortedReviews = useMemo(() => {
+    return [...topLevelReviews].sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "most_liked":
+          return b.likes - a.likes;
+        case "least_liked":
+          return a.likes - b.likes;
+        default:
+          return 0;
+      }
+    });
+  }, [topLevelReviews, sortBy]);
+
+  const totalPages = Math.ceil(sortedReviews.length / reviewsPerPage);
 
   const currentReviews = useMemo(() => {
     const start = (currentPage - 1) * reviewsPerPage;
-    return reviews.slice(start, start + reviewsPerPage);
-  }, [reviews, currentPage]);
+    return sortedReviews.slice(start, start + reviewsPerPage);
+  }, [sortedReviews, currentPage]);
 
-  const [showForm, setShowForm] = useState(false);
-  const [sortBy, setSortBy] = useState("latest");
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages || 1);
+    }
+  }, [totalPages]);
 
-  const handleSortChange = (sort: string) => {
-    setSortBy(sort);
-    setCurrentPage(1);
-  };
-
-  function addReply(parentId: number, content: string) {
-    router.post(
-      `/reviews/${parentId}/reply`,
-      { content },
-      {
-        onSuccess: () => {
-          fetchReviews(); // Refresh review list from server
-          setOpenReplyFormId(null);
-          toast.success("Reply added");
-        },
-        onError: () => {
-          toast.error("Failed to add reply");
-        },
-        preserveScroll: true,
-      }
-    );
-  }
-
-  const [expandedIds, setExpandedIds] = useState<number[]>([]);
-  const toggleExpandedId = (id: number) => {
-    setExpandedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const [openReplyFormId, setOpenReplyFormId] = useState<number | null>(null);
-  const showReplyForm = (id: number) => openReplyFormId === id;
-
-  const [showDropdown, setShowDropdown] = useState<number | null>(null);
-
-  const contextValue = useMemo(
-    () => ({
-      reviews,
-      setReviews,
-      fetchReviews,
-      toggleLike,
-      toggleDislike,
-      currentPage,
-      setCurrentPage,
-      totalPages,
-      currentReviews,
-      showForm,
-      setShowForm,
-      sortBy,
-      handleSortChange,
-      addReply,
-      expandedIds,
-      toggleExpandedId,
-      openReplyFormId,
-      setOpenReplyFormId,
-      showReplyForm,
-      showDropdown,
-      setShowDropdown,
-    }),
-    [
-      reviews,
-      currentPage,
-      totalPages,
-      currentReviews,
-      showForm,
-      sortBy,
-      expandedIds,
-      openReplyFormId,
-      showDropdown,
-    ]
-  );
+  const contextValue = useMemo(() => ({
+    reviews,
+    setReviews,
+    fetchReviews,
+    toggleLike,
+    toggleDislike,
+    currentReviews,
+    showForm,
+    setShowForm,
+    addReply,
+    expandedIds,
+    toggleExpandedId,
+    openReplyFormId,
+    setOpenReplyFormId,
+    showReplyForm,
+    showDropdown,
+    setShowDropdown,
+    sortBy,
+    handleSortChange,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+  }), [
+    reviews,
+    currentReviews,
+    showForm,
+    expandedIds,
+    openReplyFormId,
+    showDropdown,
+    sortBy,
+    currentPage,
+    totalPages,
+  ]);
 
   return (
     <ReviewContext.Provider value={contextValue}>
