@@ -48,8 +48,10 @@ class HandleInertiaRequests extends Middleware
             ],
 
             'reply' => fn () => $request->session()->get('reply'),
+
         ];
     }
+
 
 
 }

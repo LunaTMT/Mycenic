@@ -44,17 +44,17 @@ export default function TabNavigation<T extends string>({
 
             {/* Active underline */}
             {isActive && hasMounted && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-yellow-500 dark:bg-[#7289da]" />
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-yellow-500 dark:bg-[#7289da]" />
             )}
 
             {/* Static underline on first render to avoid jump */}
             {isActive && !hasMounted && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-yellow-500 dark:bg-[#7289da]" />
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-yellow-500 dark:bg-[#7289da]" />
             )}
 
             {/* Hover underline for inactive tabs */}
             {!isActive && (
-              <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-transparent group-hover:bg-yellow-400 dark:group-hover:bg-[#5a75d1] transition-colors duration-300" />
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-transparent group-hover:bg-yellow-400 dark:group-hover:bg-[#5a75d1] transition-colors duration-300" />
             )}
           </button>
         );

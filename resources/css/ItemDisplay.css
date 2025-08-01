@@ -1,0 +1,30 @@
+/* Light mode */
+.swiper-pagination-bullet {
+  background-color: #fbbf24; /* bg-yellow-500 */
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: #fbbf24; /* bg-yellow-500 */
+  opacity: 1;
+  box-shadow:
+    0 0 3px #FFD700,
+    0 0 8px #FFD700,
+    0 0 15px #FFD700;
+}
+
+/* Dark mode */
+.dark .swiper-pagination-bullet {
+  background-color: #7289da; /* dark:bg-[#7289da] */
+  opacity: 0.5;
+}
+
+.dark .swiper-pagination-bullet-active {
+  background-color: #7289da;
+  opacity: 1;
+  box-shadow:
+    0 0 5px #93c5fd,
+    0 0 12px #60a5fa,
+    0 0 20px #2563eb;
+}

@@ -2,7 +2,8 @@ import { usePage, useForm, router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { FaUpload } from 'react-icons/fa';
-import DeleteUserForm from './Partials/DeleteUserForm';
+
+import { resolveSrc } from '@/utils/resolveSrc';
 
 interface User {
   name: string;
@@ -24,8 +25,9 @@ export default function ProfileCard() {
 
   useEffect(() => {
     if (user.avatar) {
-      const isFullUrl = user.avatar.startsWith('http://') || user.avatar.startsWith('https://');
-      setAvatarUrl(isFullUrl ? user.avatar : `${user.avatar}`);
+      // Use resolveSrc utility here
+      const resolved = resolveSrc(user.avatar);
+      setAvatarUrl(resolved);
     } else {
       setAvatarUrl(null);
     }
@@ -46,7 +48,6 @@ export default function ProfileCard() {
       const formData = new FormData();
       formData.append('avatar', compressedFile);
 
-      // Use Inertia router.post to send FormData
       router.post('/profile/avatar', formData, {
         forceFormData: true,
         onSuccess: () => {
@@ -69,7 +70,6 @@ export default function ProfileCard() {
         dark:bg-[#7289da]
         text-white dark:text-white
         flex flex-row justify-between items-center gap-8
-
         transform transition-all duration-300
         hover:scale-[1.02]
         hover:shadow-[0_8px_20px_rgba(255,215,0,0.6)]
@@ -84,7 +84,7 @@ export default function ProfileCard() {
           <div className="relative">
             {(preview || avatarUrl) && (
               <img
-                src={preview || avatarUrl}
+                src={preview || avatarUrl || undefined}
                 alt={`${user.name}'s Avatar`}
                 className="w-30 aspect-square rounded-lg object-cover border-4 border-white dark:border-[#424549] shadow cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
@@ -106,7 +106,7 @@ export default function ProfileCard() {
               onClick={() => fileInputRef.current?.click()}
               disabled={processing}
               className={`
-                p-3 rounded-full
+                p-2 rounded-full
                 font-Poppins text-white text-center flex justify-center items-center
                 bg-yellow-500
                 dark:bg-[#7289da]
@@ -145,8 +145,6 @@ export default function ProfileCard() {
           )}
         </div>
       </div>
-
-
     </div>
   );
 }

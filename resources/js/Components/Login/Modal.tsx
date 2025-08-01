@@ -49,7 +49,7 @@ export default function Modal({
                         enterTo="opacity-100 scale-100"
                         leave="ease-in duration-200"
                         leaveFrom="opacity-100 scale-100"
-                        leaveTo="opacity-0 scale-90"
+                        leaveTo="opacity-0 scale-100"
                     >
 
                         <div className="absolute inset-0  bg-black/60 dark:bg-white/30 transition-opacity" />

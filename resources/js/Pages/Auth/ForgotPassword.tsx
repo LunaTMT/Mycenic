@@ -6,11 +6,13 @@ import InputLabel from '@/Components/Login/InputLabel';
 import TextInput from '@/Components/Login/TextInput';
 import InputError from '@/Components/Login/InputError';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
+
 import Breadcrumb from '@/Components/Nav/Breadcrumb';
-import Swal from 'sweetalert2';
+import ItemDisplay from '@/Components/Swiper/ItemDisplay';
 
 export default function ForgotPassword({ status }: { status?: string }) {
   const { flash } = usePage().props as { flash?: { error?: string } };
+
   const { data, setData, post, processing, errors } = useForm({
     email: '',
   });
@@ -19,12 +21,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
   useEffect(() => {
     if (flash?.error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: flash.error,
-        confirmButtonColor: '#d33',
-      });
+      console.error('Forgot Password Error:', flash.error);
     }
   }, [flash]);
 
@@ -34,71 +31,82 @@ export default function ForgotPassword({ status }: { status?: string }) {
   };
 
   return (
-    <GuestLayout
-      header={
-        <div className="h-[5vh] w-full flex items-center justify-between">
-          <Breadcrumb
-            items={[
-              { label: 'HOME', link: route('home') },
-              { label: 'LOGIN', link: route('login') },
-              { label: 'FORGOT PASSWORD' },
-            ]}
-          />
-        </div>
-      }
-    >
+    <GuestLayout>
       <Head title="Forgot Password" />
 
-      <div className="relative w-full h-[89vh] flex justify-center items-center">
-        {/* Video as background */}
-        <div className="absolute inset-0 w-full h-full">
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
-            autoPlay
-            muted
-            loop
-          >
-            <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-
-        {/* Forgot Password Form */}
-        <form
-          onSubmit={submit}
-          className="w-full max-w-md bg-white dark:bg-[#424549] text-black dark:text-white dark:border-white/20 rounded-xl flex flex-col items-center shadow-2xl relative p-8 space-y-4"
+      {/* Background Video */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          autoPlay
+          muted
+          loop
         >
-          <div className="w-full space-y-2">
-            <h2 className="text-2xl font-bold font-Poppins text-left">FORGOT PASSWORD</h2>
-            <p className="text-sm dark:text-white">Enter your email address to receive a password reset link.</p>
+          <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+      {/* Main container */}
+      <div className="relative w-full min-h-[95vh] max-w-7xl flex justify-center items-center mx-auto sm:px-6 lg:px-8 p-5 font-Poppins">
+        <div className="relative z-10 flex w-full bg-white/80 dark:bg-[#424549]/80 border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
+          {/* Image Gallery Left */}
+          <div className="w-[55%] hidden md:block relative">
+            <ItemDisplay />
           </div>
 
-          {status && (
-            <div className="text-sm font-medium text-green-600 dark:text-green-400 w-full">{status}</div>
-          )}
-
-          <div className="w-full space-y-4">
-            <div>
-              <InputLabel htmlFor="email" value="Email" />
-              <TextInput
-                id="email"
-                type="email"
-                name="email"
-                value={data.email}
-                className="mt-1 w-full"
-                isFocused
-                autoComplete="username"
-                onChange={(e) => setData('email', e.target.value)}
+          {/* Form Right */}
+          <div className="w-[45%] p-8 flex flex-col">
+            {/* Breadcrumb at the very top, no vertical centering */}
+            <div className="">
+              <Breadcrumb
+                items={[
+                  { label: 'LOGIN', link: route('login') },
+                  { label: 'FORGOT PASSWORD' },
+                ]}
               />
-              <InputError message={errors.email} className="mt-2" />
             </div>
 
-            <PrimaryButton className="w-full" disabled={processing}>
-              Email Password Reset
-            </PrimaryButton>
+            {/* The rest of the form vertically centered */}
+            <form onSubmit={submit} className="flex flex-col gap-4 flex-1 justify-center">
+              <h2 className="text-3xl font-bold font-Poppins text-left dark:text-white">
+                FORGOT PASSWORD
+              </h2>
+              <p className="text-sm text-left dark:text-white">
+                Enter your email address to receive a password reset link.
+              </p>
+
+              {status && (
+                <div className="text-sm font-medium text-green-600 dark:text-green-400">
+                  {status}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <InputLabel htmlFor="email" value="Email" />
+                  <TextInput
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={data.email}
+                    onChange={(e) => setData('email', e.target.value)}
+                    autoComplete="username"
+                    className="mt-1 w-full"
+                  />
+                  <InputError message={errors.email} className="mt-2" />
+                </div>
+
+                <PrimaryButton className="w-full p-3" disabled={processing}>
+                  Email Password Reset
+                </PrimaryButton>
+              </div>
+            </form>
+
+
           </div>
-        </form>
+        </div>
       </div>
     </GuestLayout>
   );

@@ -15,12 +15,8 @@
     {
         public function index()
         {
-            // 1) Fetch the authenticated user
-            $user = Auth::user();
-    
-        
+
             return Inertia::render('Shop/Cart/Cart', [
-                'auth'            => $user
             ]);
         }
         

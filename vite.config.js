@@ -5,26 +5,27 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path'; // ✅ Import path
 
 export default defineConfig({
-    plugins: [
-        tailwindcss(),
-        laravel({
-            input: [
-                'resources/js/app.tsx',
-                'resources/css/app.css',
-            ],
-            refresh: true,
-        }),
-        react(),
-    ],
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, 'resources/js'),
-            '@utils': path.resolve(__dirname, 'resources/js/utils'), // ✅ Add this line
-        },
+  plugins: [
+    tailwindcss(),
+    laravel({
+      input: [
+        'resources/js/app.tsx',
+        'resources/css/app.css',
+      ],
+      refresh: true,
+    }),
+    react(),
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'resources/js'),
+      '@utils': path.resolve(__dirname, 'resources/js/utils'), // ✅ Your existing alias
+      '@css': path.resolve(__dirname, 'resources/css'),          // ✅ New CSS alias
     },
-    server: {
-        host: 'localhost',
-        port: 5174,
-        cors: true,
-    },
+  },
+  server: {
+    host: 'localhost',
+    port: 5174,
+    cors: true,
+  },
 });

@@ -9,6 +9,7 @@ import InputLabel from '@/Components/Login/InputLabel';
 import InputError from '@/Components/Login/InputError';
 import SocialLoginComponent from './SocialLoginComponent';
 import { Inertia } from '@inertiajs/inertia';
+import ItemDisplay from '@/Components/Swiper/ItemDisplay';
 
 export default function Register() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -32,21 +33,11 @@ export default function Register() {
   };
 
   return (
-    <GuestLayout
-      header={
-        <div className="h-[5vh] w-full flex items-center justify-between">
-          <Breadcrumb
-            items={[
-              { label: 'HOME', link: route('home') },
-              { label: 'REGISTER' },
-            ]}
-          />
-        </div>
-      }
-    >
+    <GuestLayout>
       <Head title="Register" />
 
-      <div className="relative flex justify-center items-center h-[89vh] w-full px-4 sm:px-6 lg:px-8">
+      {/* Background Video */}
+      <div className="absolute inset-0 w-full h-full">
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover z-0"
@@ -57,16 +48,37 @@ export default function Register() {
           <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+      </div>
 
-        <div className="relative w-full max-w-md bg-white dark:bg-[#424549] border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
-          <form onSubmit={submit} className="w-full flex flex-col p-8 gap-4">
-            <h2 className="text-2xl font-bold font-Poppins text-left dark:text-white">
-              CREATE ACCOUNT
-            </h2>
+      {/* Main container */}
+      <div className="relative w-full min-h-[89vh] max-w-7xl flex justify-center items-center mx-auto sm:px-6 lg:px-8 p-5 font-Poppins">
+        <div className="relative z-10 flex w-full bg-white/80 dark:bg-[#424549]/80 border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
+          {/* Image Gallery Left */}
+          <div className="w-[55%] hidden md:block relative">
+            <ItemDisplay />
+          </div>
 
-            <div className="space-y-4">
-              <div className='space-y-1'>
-                {/* Email */}
+          {/* Register Form Right */}
+          <div className="w-[45%] p-8 flex flex-col">
+            {/* Breadcrumb pinned at top */}
+            <div className="mb-6">
+              <Breadcrumb
+                items={[
+                  { label: 'LOGIN', link: route('login') },
+                  { label: 'REGISTER' },
+                ]}
+              />
+            </div>
+
+            {/* Form content vertically centered */}
+            <form onSubmit={submit} className="flex flex-col flex-1 justify-center gap-4 w-full">
+              {/* Heading */}
+              <h2 className="text-2xl font-bold font-Poppins text-left dark:text-white">
+                CREATE ACCOUNT
+              </h2>
+
+              {/* Form fields */}
+              <div className="space-y-4">
                 <div>
                   <InputLabel htmlFor="email" value="Email" />
                   <TextInput
@@ -81,7 +93,6 @@ export default function Register() {
                   <InputError message={errors.email} className="mt-2" />
                 </div>
 
-                {/* Password */}
                 <div>
                   <InputLabel htmlFor="password" value="Password" />
                   <TextInput
@@ -96,7 +107,6 @@ export default function Register() {
                   <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                   <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
                   <TextInput
@@ -110,39 +120,37 @@ export default function Register() {
                   />
                   <InputError message={errors.password_confirmation} className="mt-2" />
                 </div>
+
+                <div className="flex items-center">
+                  <input
+                    id="showPassword"
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={togglePasswordVisibility}
+                    className="mr-2"
+                  />
+                  <label htmlFor="showPassword" className="text-sm text-black dark:text-white">
+                    Show Password
+                  </label>
+                </div>
+
+                <PrimaryButton className="w-full p-3" disabled={processing}>
+                  Register
+                </PrimaryButton>
+
+                <SocialLoginComponent action="register" />
               </div>
+            </form>
 
-              {/* Show Password */}
-              <div className="flex items-center">
-                <input
-                  id="showPassword"
-                  type="checkbox"
-                  checked={showPassword}
-                  onChange={togglePasswordVisibility}
-                  className="mr-2"
-                />
-                <label htmlFor="showPassword" className="text-sm text-black dark:text-white">
-                  Show Password
-                </label>
-              </div>
-
-              {/* Register Button */}
-              <PrimaryButton className="w-full" disabled={processing}>
-                Register
-              </PrimaryButton>
-
-              {/* Social Login */}
-              <SocialLoginComponent action="register" />
+            {/* Already have account */}
+            <div className="w-full pt-4 space-y-2">
+              <SecondaryButton
+                className="w-full p-3"
+                onClick={() => Inertia.visit(route('login'))}
+              >
+                Already have an account?
+              </SecondaryButton>
             </div>
-          </form>
-
-          <div className="w-full px-8 pb-8 space-y-2">
-            <SecondaryButton
-              className="w-full"
-              onClick={() => Inertia.visit(route('login'))}
-            >
-              Already have an account?
-            </SecondaryButton>
           </div>
         </div>
       </div>

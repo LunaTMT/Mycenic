@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Head } from "@inertiajs/react";
 import axios from "axios";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import TabNavigation, { TabKey } from "./Components/TabNavigation";
+import TabNavigation from "@/Components/Tabs/TabNavigation";
 import ProfileTabContent from "./Tabs/Profile/ProfileTabContent";
 import CustomerOrders from "./Tabs/Orders/CustomerOrders";
 
@@ -17,15 +17,21 @@ function ReturnsTabContent() {
   );
 }
 
+type TabKey = "profile" | "orders" | "returns";
+
 interface Props {
   mustVerifyEmail: boolean;
   status?: string;
-  initialTab?: TabKey; // optional initial tab prop
+  initialTab?: TabKey;
 }
 
+const tabs: { key: TabKey; label: string }[] = [
+  { key: "profile", label: "Profile" },
+  { key: "orders", label: "Orders" },
+  { key: "returns", label: "Returns" },
+];
+
 export default function Edit({ mustVerifyEmail, status, initialTab }: Props) {
-  // Default to 'profile' if initialTab is not provided
-  console.log(initialTab);
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab ?? "profile");
 
   const [orders, setOrders] = useState<any[] | null>(null);
@@ -52,10 +58,13 @@ export default function Edit({ mustVerifyEmail, status, initialTab }: Props) {
     <AuthenticatedLayout>
       <Head title="Profile" />
 
-
       <div className="relative z-10 w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex justify-center items-start font-Poppins">
-        <div className="w-full h-[88vh]  dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl">
-          <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        <div className="w-full h-full dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl  shadow-2xl overflow-hidden">
+          <TabNavigation
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            tabs={tabs}
+          />
 
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -64,7 +73,7 @@ export default function Edit({ mustVerifyEmail, status, initialTab }: Props) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-8 h-full "
+              className="p-8 h-full"
             >
               {activeTab === "profile" && (
                 <ProfileTabContent
@@ -81,7 +90,9 @@ export default function Edit({ mustVerifyEmail, status, initialTab }: Props) {
                     </p>
                   )}
                   {ordersError && (
-                    <p className="text-center text-red-500">{ordersError}</p>
+                    <p className="text-center text-red-500">
+                      {ordersError}
+                    </p>
                   )}
                   {!loadingOrders && !ordersError && (
                     <CustomerOrders orders={orders || []} />

@@ -1,50 +1,52 @@
-  import React, { useEffect, useState } from "react";
-  import { Head, usePage} from "@inertiajs/react";
-  import { load } from "recaptcha-v3";
+import React, { useEffect, useState } from "react";
+import { Head, usePage} from "@inertiajs/react";
+import { load } from "recaptcha-v3";
+
+
+import GuestLayout from "@/Layouts/GuestLayout";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+
+import Breadcrumb from "@/Components/Nav/Breadcrumb";
+import Item from "./Item/Item";
+import Summary from "./Summary/Summary";
+
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { User } from "@/types";
+
+const Cart: React.FC = ( ) => {
+  const { auth } = usePage().props as { auth?: { user?: User } };
+  console.log(auth);
+  const Layout = auth? AuthenticatedLayout : GuestLayout;
+
+  const { cart, hasPsyilocybinSporeSyringe } = useCart();
   
+  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
 
-  import GuestLayout from "@/Layouts/GuestLayout";
-  import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-
-  import Breadcrumb from "@/Components/Nav/Breadcrumb";
-  import Item from "./Item/Item";
-  import Summary from "./Summary/Summary";
-
-  import { useCart } from "@/Contexts/Shop/Cart/CartContext";
-
-  const Cart: React.FC<CartProps> = ( ) => {
-    const { auth } = usePage().props as { auth?: { user?: User } };
-    const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
-    const { cart, hasPsyilocybinSporeSyringe } = useCart();
-    
-    const [recaptchaToken, setRecaptchaToken] = useState<string>("");
-
-    useEffect(() => {
-      load(import.meta.env.VITE_NOCAPTCHA_SITEKEY).then((recaptcha) => {
-        recaptcha.execute("cart").then((token) => {
-          setRecaptchaToken(token);
-        });
+  useEffect(() => {
+    load(import.meta.env.VITE_NOCAPTCHA_SITEKEY).then((recaptcha) => {
+      recaptcha.execute("cart").then((token) => {
+        setRecaptchaToken(token);
       });
-    }, []);
+    });
+  }, []);
 
-    return (
-      <Layout
-      >
-        <Head title="Cart" />
+  return (
+    <Layout>
+      <Head title="Cart" />
 
-        <div className="relative min-h-[89vh] p-5 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto flex gap-10 justify-center items-start">
-          <div className="w-[65%] space-y-3 p-4 flex flex-col justify-start items-center min-h-[80vh] rounded-lg bg-white/50 border border-black/20 dark:bg-[#424549]/80 dark:border-white/20 text-gray-800 dark:text-gray-200 backdrop-blur-sm">
-            {cart.map((item, index) => (
-              <Item key={index} item={item} />
-            ))}
-          </div>
-
-          <div className="w-[35%] relative">
-            <Summary auth={auth} />
-          </div>
+      <div className="relative min-h-[89vh] p-5 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto flex gap-10 justify-center items-start">
+        <div className="w-[65%] space-y-3 p-4 flex flex-col justify-start items-center min-h-[80vh] rounded-lg bg-white/50 border border-black/20 dark:bg-[#424549]/80 dark:border-white/20 text-gray-800 dark:text-gray-200 backdrop-blur-sm">
+          {cart.map((item, index) => (
+            <Item key={index} item={item} />
+          ))}
         </div>
-      </Layout>
-    );
-  };
 
-  export default Cart;
+        <div className="w-[35%] relative">
+          <Summary auth={auth} />
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default Cart;

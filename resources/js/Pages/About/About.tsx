@@ -97,10 +97,12 @@ export default function About() {
           {tabs.map(({ key }) => (
             <TabContent key={key} activeKey={activeTab} tabKey={key}>
               <SubNavigation
-                tabs={currentSubTabs.map(({ key, title }) => ({ key, label: title }))}
+                leftTabs={currentSubTabs.map(({ key, title }) => ({ key, label: title }))}
+                rightTabs={[]} // or omit this line if optional
                 activeKey={selectedSubTabKey ?? undefined}
                 onChange={setSelectedSubTabKey}
               />
+
 
               {/* Subtab content */}
               {currentSubTabs.map(({ key: subKey, Component }) => (

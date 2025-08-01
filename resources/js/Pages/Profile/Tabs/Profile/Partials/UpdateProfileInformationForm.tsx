@@ -108,7 +108,7 @@ export default function UpdateProfileInformationForm({
                 )}
 
                 <div className="flex items-center gap-4 ">
-                    <PrimaryButton className="rounded-lg w-1/2" disabled={processing}>
+                    <PrimaryButton className="rounded-lg py-2 px-6" disabled={processing}>
                         UPDATE
                     </PrimaryButton>
 
