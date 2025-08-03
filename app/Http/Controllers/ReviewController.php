@@ -23,12 +23,33 @@ class ReviewController extends Controller
         $this->moderationService = $moderationService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        Log::info('Fetching all top-level reviews');
+        $authUser = $request->user();
+        Log::info('Review index called', ['authUser' => $authUser ? $authUser->id : null, 'query_params' => $request->query()]);
 
-        $reviews = Review::with(['user', 'images', 'replies'])->whereNull('parent_id')
-            ->orderBy('created_at', 'desc')->get();
+        $query = Review::with(['user', 'images', 'replies'])->whereNull('parent_id');
+
+        if ($authUser && $request->has('user_id')) {
+            Log::info('User_id param present', ['user_id' => $request->query('user_id')]);
+            if ($authUser->isAdmin()) {
+                Log::info('Admin user fetching reviews for user_id', ['authUserId' => $authUser->id, 'targetUserId' => $request->query('user_id')]);
+                $query->where('user_id', $request->query('user_id'));
+            } else {
+                Log::warning('Unauthorized user tried to fetch other user reviews', ['authUserId' => $authUser->id, 'attemptedUserId' => $request->query('user_id')]);
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+        } elseif ($authUser) {
+            Log::info('Fetching reviews for authenticated user only', ['authUserId' => $authUser->id]);
+            $query->where('user_id', $authUser->id);
+        } else {
+            Log::warning('Unauthenticated request to fetch reviews');
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $reviews = $query->orderBy('created_at', 'desc')->get();
+
+        Log::info('Returning reviews count', ['count' => $reviews->count()]);
 
         return response()->json($reviews);
     }

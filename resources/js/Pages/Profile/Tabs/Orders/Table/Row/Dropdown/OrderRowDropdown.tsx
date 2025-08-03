@@ -4,8 +4,10 @@ import OrderDetails from "./Tabs/OrderDetails";
 import OrderShipping from "./Tabs/OrderShipping";
 import CustomerInfo from "./Tabs/CustomerInfo";
 import OrderReturns from "./Tabs/OrderReturns";
+import SubNavigation from "@/Components/Tabs/SubTab/SubNavigation";
+import SubContent from "@/Components/Tabs/SubTab/SubContent";
 
-type TabKey = "details" | "shipping" | "payment" | "returns" | "customer";
+type TabKey = "details" | "shipping" | "returns" | "customer";
 
 interface Props {
   order: any;
@@ -16,32 +18,21 @@ interface Props {
 export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>("details");
 
-  useEffect(() => {
-    console.log("Auth prop received:", auth);
-  }, [auth]);
-
-  if (!isExpanded) return null;
-
   const isAdmin = Boolean(auth?.user?.isAdmin || auth?.isAdmin || auth?.admin);
   const isReturnable = order.returnable === true;
+
   const discountAmount =
     order.discount > 0 ? ((order.discount / 100) * order.subtotal).toFixed(2) : "0.00";
 
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: "details", label: "Details" },
-    { key: "shipping", label: "Shipping" },
-    ...(isReturnable ? [{ key: "returns", label: "Returns" }] : []),
-    ...(isAdmin ? [{ key: "customer", label: "Customer" }] : []),
+  const leftTabs = [
+    { key: "details" as TabKey, label: "Details" },
+    { key: "shipping" as TabKey, label: "Shipping" },
+    ...(isReturnable ? [{ key: "returns" as TabKey, label: "Returns" }] : []),
   ];
 
-  const tabClass = (key: TabKey) =>
-    `px-4 py-2 font-semibold transition-transform duration-300 border-b-2 border-transparent
-     ${
-       activeTab === key
-         ? "text-yellow-500 dark:text-[#7289da]"
-         : "text-gray-600 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-[#7289da]"
-     }
-     hover:scale-[1.03]`;
+  const rightTabs = isAdmin ? [{ key: "customer" as TabKey, label: "Customer" }] : [];
+
+  if (!isExpanded) return null;
 
   return (
     <AnimatePresence>
@@ -53,50 +44,31 @@ export default function OrderRowDropdown({ order, auth, isExpanded }: Props) {
         className="w-full bg-white dark:bg-[#424549] border border-t-0 border-black/20 dark:border-white/20 rounded-b-xl shadow-2xl overflow-hidden"
       >
         <div className="p-4">
-          {/* Tabs */}
-          <div className="flex justify-between border-b border-black/20 dark:border-white/20  mb-4">
-            {/* Left Group */}
-            <div className="flex gap-4">
-              {tabs
-                .filter(({ key }) =>
-                  ["details", "shipping", "payment", "returns"].includes(key)
-                )
-                .map(({ key, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveTab(key)}
-                    className={tabClass(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-            </div>
-            {/* Right Group */}
-            <div className="flex gap-4">
-              {tabs
-                .filter(({ key }) => key === "customer")
-                .map(({ key, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveTab(key)}
-                    className={tabClass(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-            </div>
-          </div>
+          {/* SubNavigation with left and right tabs */}
+          <SubNavigation<TabKey>
+            leftTabs={leftTabs}
+            rightTabs={rightTabs}
+            activeKey={activeTab}
+            onChange={(key) => setActiveTab(key)}
+          />
 
-          {/* Tab Content */}
-          <div className="mt-2">
-            {activeTab === "details" && (
+          {/* SubContent blocks */}
+          <div className="mt-4">
+            <SubContent activeKey={activeTab} tabKey="details">
               <OrderDetails order={order} discountAmount={discountAmount} />
-            )}
-            {activeTab === "shipping" && <OrderShipping order={order} />}
-            {activeTab === "returns" && (
+            </SubContent>
+
+            <SubContent activeKey={activeTab} tabKey="shipping">
+              <OrderShipping order={order} />
+            </SubContent>
+
+            <SubContent activeKey={activeTab} tabKey="returns">
               <OrderReturns order={order} isReturnable={isReturnable} />
-            )}
-            {activeTab === "customer" && <CustomerInfo order={order} />}
+            </SubContent>
+
+            <SubContent activeKey={activeTab} tabKey="customer">
+              <CustomerInfo order={order} />
+            </SubContent>
           </div>
         </div>
       </motion.div>

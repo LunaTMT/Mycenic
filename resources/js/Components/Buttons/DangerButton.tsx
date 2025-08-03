@@ -16,7 +16,7 @@ export default function DangerButton({
                 transform ${!disabled ? 'hover:scale-[103%] transition-all duration-300' : ''}
                 font-Poppins text-white 
                 text-center flex justify-center items-center
-
+                p-2
                 border border-red-600
                 bg-red-600
                 hover:bg-red-500

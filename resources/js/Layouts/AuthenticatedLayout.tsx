@@ -79,7 +79,13 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
         }}
         viewport={{ once: true }}
       >
-        <Menu url={url} header={header} />
+        <Menu url={url}/>
+
+        {/* Bottom Nav */}
+        <div className="relative sm:px-6 lg:px-8 w-full max-w-7xl mx-auto flex items-center justify-end ">
+          {header}
+        </div>
+
       </motion.header>
 
       <main className="relative w-full h-full dark:bg-[#1e2124]">

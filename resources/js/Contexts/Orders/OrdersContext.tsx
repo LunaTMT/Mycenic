@@ -7,36 +7,8 @@ import {
 } from "react";
 import { router, usePage } from "@inertiajs/react";
 import Swal from "sweetalert2";
-import type { PageProps } from "@/types";
+import { Order } from "@/types/types";
 
-export type Order = {
-  id: number;
-  user_id: number;
-  total: number;
-  subtotal: number;
-  shipping_cost: number;
-  weight: number;
-  discount: number;
-  payment_status: string;
-  shipping_status: string;
-  carrier: string;
-  tracking_number: string;
-  tracking_url: string;
-  customer_name: string;
-  address: string;
-  city: string;
-  zip: string;
-  country: string;
-  phone: string;
-  email: string;
-  is_completed: boolean;
-  returnable: boolean;
-  return_status: string;
-  created_at: string;
-  updated_at: string;
-  cart: any[];
-  tracking_history: any[];
-};
 
 interface OrderContextType {
   orders: Order[];

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('price', 8, 2); // Item price gbp
             $table->integer('stock')->default(0); // Default stock value
             $table->json('images')->nullable(); // Store images as a JSON type, allowing null values
-            $table->json('image_sources')->nullable(); // this is for seeded items with images from usplash
+           
             $table->string('category'); // Category of the item
             $table->float('weight')->default(0); // kg
 

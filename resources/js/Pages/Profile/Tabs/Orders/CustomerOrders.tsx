@@ -1,31 +1,41 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { usePage } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import GuestLayout from "@/Layouts/GuestLayout";
 import OrderRow from "./Table/Row/OrderRow";
 import { OrderProvider } from "@/Contexts/Orders/OrdersContext";
-import type { Order } from "@/Contexts/Orders/OrdersContext";
+import { Order } from "@/types/Order";
+import { useProfile } from "@/Contexts/Profile/ProfileContext";
 
-type CustomerOrdersProps = {
-  orders: Order[];
-};
-
-export default function CustomerOrders({ orders }: CustomerOrdersProps) {
+export default function CustomerOrders() {
   const { props } = usePage();
   const auth = props.auth;
-  const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
 
-  const [searchId, setSearchId] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { user } = useProfile();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // We assume orders are passed in and set loading false outside in Edit.tsx
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user?.id) return;
 
-  const filteredOrders = useMemo(() => {
-    if (!searchId.trim()) return orders;
-    return orders.filter((order) =>
-      order.id.toString().toLowerCase().includes(searchId.toLowerCase())
-    );
-  }, [orders, searchId]);
+      setLoading(true);
+      try {
+        const res = await axios.get("/orders/fetch", {
+          params: { user_id: user.id },
+          headers: {
+            Accept: "application/json",
+          },
+        });
+        setOrders(res.data.orders || []);
+      } catch (error) {
+        console.error("Failed to fetch orders", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [user]);
 
   if (loading) {
     return (
@@ -35,22 +45,13 @@ export default function CustomerOrders({ orders }: CustomerOrdersProps) {
     );
   }
 
-  if (filteredOrders.length === 0) {
-    return (
-      <p className="w-full h-full p-5 rounded-xl shadow-lg border border-black/20 bg-white dark:bg-[#424549]/80 dark:border-white/20 text-gray-800 dark:text-gray-200 text-lg">
-        No orders found.
-      </p>
-    );
-  }
-
   return (
     <OrderProvider initialOrders={orders}>
       <div className="w-full h-[85vh] rounded-lg flex flex-col gap-4 overflow-auto">
-        {filteredOrders.map((order) => (
+        {orders.map((order) => (
           <OrderRow key={order.id} orderId={order.id} />
         ))}
       </div>
     </OrderProvider>
   );
-
 }

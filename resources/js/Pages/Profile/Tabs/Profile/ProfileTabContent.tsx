@@ -1,18 +1,16 @@
-import React, { useState } from "react";
-import UpdateProfileInformationForm from "./Partials/UpdateProfileInformationForm";
-import UpdatePasswordForm from "./Partials/UpdatePasswordForm";
-import UpdateShippingDetailsForm from "./Partials/UpdateShippingDetailsForm";
+import React, { useState, useEffect } from "react";
+import ProfileInformationForm from "./Partials/ProfileInformationForm";
+import PasswordForm from "./Partials/PasswordForm";
+import ShippingDetails from "./ShippingDetails/ShippingDetails";
 import DeleteUserForm from "./Partials/DeleteUserForm";
 import ProfileCard from "./ProfileCard";
 import SubContent from "@/Components/Tabs/SubTab/SubContent";
 import SubNavigation from "@/Components/Tabs/SubTab/SubNavigation";
+import { ShippingProvider } from "@/Contexts/Profile/ShippingContext";
+import { useProfile } from "@/Contexts/Profile/ProfileContext";
+import UserReviews from "./UserReviews";
 
 type TabKey = "credentials" | "shipping" | "reviews" | "delete";
-
-interface ProfileTabContentProps {
-  mustVerifyEmail: boolean;
-  status?: string;
-}
 
 const leftTabs: { key: TabKey; label: string }[] = [
   { key: "credentials", label: "Credentials" },
@@ -24,27 +22,26 @@ const rightTabs: { key: TabKey; label: string }[] = [
   { key: "delete", label: "Delete Account" },
 ];
 
-// Placeholder Reviews component, replace with your actual one
-function Reviews() {
-  return (
-    <div>
-      <h2 className="text-xl font-semibold mb-2">Reviews</h2>
-      <p>No reviews yet.</p>
-    </div>
-  );
-}
 
-export default function ProfileTabContent({ mustVerifyEmail, status }: ProfileTabContentProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>("credentials");
+export default function ProfileTabContent() {
+  const { user } = useProfile();
+  const validTabs: TabKey[] = ["credentials", "shipping", "reviews", "delete"];
 
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    const stored = localStorage.getItem("profileSubTab") as TabKey | null;
+    return stored && validTabs.includes(stored) ? stored : "credentials";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("profileSubTab", activeTab);
+  }, [activeTab]);
+  
   return (
     <div className="flex flex-col gap-4 w-full min-h-full">
-      {/* Profile card always on top */}
       <div className="w-full h-full">
         <ProfileCard />
       </div>
 
-      {/* Tab navigation with left and right tabs */}
       <SubNavigation
         leftTabs={leftTabs}
         rightTabs={rightTabs}
@@ -52,26 +49,22 @@ export default function ProfileTabContent({ mustVerifyEmail, status }: ProfileTa
         onChange={(key) => setActiveTab(key as TabKey)}
       />
 
-      {/* Tab content with fade transition */}
       <div className="w-full h-full space-y-4">
         <SubContent activeKey={activeTab} tabKey="credentials">
-          
           <div className="flex flex-row gap-4">
-            <UpdateProfileInformationForm
-              mustVerifyEmail={mustVerifyEmail}
-              status={status}
-              className="w-1/2"
-            />
-            <UpdatePasswordForm className="w-1/2" />
+            <ProfileInformationForm className="w-1/2" />
+            <PasswordForm className="w-1/2" />
           </div>
         </SubContent>
 
         <SubContent activeKey={activeTab} tabKey="shipping">
-          <UpdateShippingDetailsForm />
+          <ShippingProvider user={user}>
+            <ShippingDetails />
+          </ShippingProvider>
         </SubContent>
 
         <SubContent activeKey={activeTab} tabKey="reviews">
-          <Reviews />
+          <UserReviews />
         </SubContent>
 
         <SubContent activeKey={activeTab} tabKey="delete">

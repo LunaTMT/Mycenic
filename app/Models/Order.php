@@ -9,76 +9,51 @@ class Order extends Model
 {
     use HasFactory;
 
-    // Enable automatic timestamps (created_at, updated_at)
-    public $timestamps = true;
-
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
-        'customer_id',
+        'user_id',
         'cart',
         'returnable_cart',
-
         'total',
         'subtotal',
         'weight',
         'discount',
         'shipping_cost',
-        'delivery_price', // if used
-
+        'delivery_price',
         'payment_status',
-
         'shipping_details',
-
         'shipping_status',
         'carrier',
-
         'tracking_number',
         'tracking_url',
         'tracking_history',
-
         'label_url',
         'shipment_id',
-
         'legal_agreement',
         'is_completed',
         'returnable',
         'return_status',
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     */
     protected $casts = [
         'cart' => 'array',
         'returnable_cart' => 'array',
         'tracking_history' => 'array',
-        'shipping_details' => 'array',  // cast JSON shipping details to array
-
+        'shipping_details' => 'array',
         'legal_agreement' => 'boolean',
         'is_completed' => 'boolean',
         'returnable' => 'boolean',
-
-        'return_finished_at' => 'datetime', // if used
+        'return_finished_at' => 'datetime',
     ];
 
-    /**
-     * The attributes that should be mutated to dates.
-     */
-    protected $dates = [
-        'created_at',
-        'updated_at',
-    ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
-    /**
-     * Determine if the order is returnable.
-     */
-    public function isReturnable()
+    public function isReturnable(): bool
     {
         return $this->returnable && strcasecmp($this->shipping_status, 'DELIVERED') === 0;
     }
-
 
     protected static function booted()
     {

@@ -20,12 +20,15 @@ export default function OrderRow({ orderId }: { orderId: number }) {
 
   const isExpanded = expandedOrderId === order.id;
 
-  // Format the order date
-  const orderDate = new Date(order.created_at).toLocaleDateString("en-GB", {
+  
+  const orderDate = new Date(order.created_at).toLocaleString("en-GB", {
     day: "numeric",
-    month: "short",
+    month: "numeric",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
+  ;
 
   return (
     <div className="pb-2">

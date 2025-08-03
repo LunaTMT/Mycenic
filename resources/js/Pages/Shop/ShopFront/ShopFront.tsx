@@ -4,15 +4,14 @@ import { Head, usePage } from "@inertiajs/react";
 import GuestLayout from "@/Layouts/GuestLayout";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
-import FilterButton from "@/Components/Buttons/FilterButton";
-import SortDropdown from "@/Components/Dropdown/SortDropdown";
-import AddItemButton from "@/Components/Buttons/AddItemButton";
+
 
 import { ShopProvider } from "@/Contexts/Shop/ShopContext";
 
 import ItemCard from "./ItemCard";
 
-import { User, Item } from "@/types/types";
+import { User } from "@/types/User";
+import { Item } from "@/types/Item";
 
 import { motion } from "framer-motion";
 
@@ -29,7 +28,7 @@ const itemVariants = {
 const Shop: React.FC<ShopProps> = ({ items }) => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
-
+  console.log(items)
   return (
     <ShopProvider items={items}>
       <Layout>

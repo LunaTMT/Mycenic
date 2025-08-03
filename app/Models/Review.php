@@ -13,25 +13,17 @@ class Review extends Model
         'user_id', 'content', 'likes', 'dislikes', 'rating', 'item_id', 'parent_id',
     ];
 
-    /**
-     * Parent review (nullable for top-level).
-     */
     public function parent()
     {
         return $this->belongsTo(Review::class, 'parent_id');
     }
 
-    /**
-     * Replies to this review.
-     */
     public function replies()
     {
         return $this->hasMany(Review::class, 'parent_id')
             ->with(['user', 'images', 'replies']);
     }
 
-
-    // Add other relations: user, item, images etc.
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -44,12 +36,11 @@ class Review extends Model
 
     public function images()
     {
-        return $this->hasMany(ReviewImage::class);
+        return $this->morphMany(Image::class, 'imageable');
     }
 
     public function votes()
     {
         return $this->morphMany(Vote::class, 'votable');
     }
-
 }

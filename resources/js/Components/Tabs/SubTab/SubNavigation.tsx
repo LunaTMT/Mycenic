@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Tab } from "@/types/tabs";
+import { Tab } from "@/types/Tabs";
 import { motion } from "framer-motion";
 
 interface SubNavigationProps<T extends string> {

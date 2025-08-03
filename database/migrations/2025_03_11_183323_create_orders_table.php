@@ -10,8 +10,7 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('customer_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
             $table->json('cart')->nullable();
             $table->json('returnable_cart')->nullable();
@@ -31,11 +30,12 @@ return new class extends Migration
             $table->string('tracking_number')->nullable();
             $table->string('tracking_url')->nullable();
             $table->json('tracking_history')->nullable();
+
             $table->text('label_url')->nullable();
             $table->string('shipment_id')->nullable();
 
-            $table->boolean('legal_agreement')->nullable()->default(false);
-            $table->boolean('is_completed')->nullable()->default(false);
+            $table->boolean('legal_agreement')->default(false);
+            $table->boolean('is_completed')->default(false);
             $table->boolean('returnable')->default(true);
 
             $table->string('return_status')->default('UNKNOWN');
@@ -43,7 +43,6 @@ return new class extends Migration
             $table->timestamps();
         });
     }
-
 
     public function down()
     {

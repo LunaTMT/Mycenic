@@ -5,13 +5,13 @@ import AddToCartSection from "./Right/AddToCartSection";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import StaticStarRating from "@/Components/Stars/StaticStarRating";
 
-const Item: React.FC = () => {
+const ItemTab: React.FC = () => {
   const { item } = useItemContext();
   const descriptionParagraphs = (item.description ?? "").split("\n\n");
   const reviewCount = item.reviews?.length ?? 0;
 
   return (
-    <div className="h-[80vh] flex gap-6 text-gray-700 dark:text-gray-300 bg-transparent">
+    <div className="h-[65vh] flex gap-6 text-gray-700 dark:text-gray-300 bg-transparent">
       {/* Left: Image Gallery */}
       <div className="w-1/2 h-full flex flex-col rounded-lg shadow-2xl overflow-hidden dark:bg-[#424549]">
         <ImageGallery />
@@ -52,4 +52,4 @@ const Item: React.FC = () => {
   );
 };
 
-export default Item;
+export default ItemTab;

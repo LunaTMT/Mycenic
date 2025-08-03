@@ -24,7 +24,7 @@ export default function Reviews() {
 
   console.log(currentReviews);
   return (
-    <section className="space-y-2">
+    <section className="space-y-2 ">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex-grow">
           <button

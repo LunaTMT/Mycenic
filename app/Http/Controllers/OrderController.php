@@ -40,68 +40,41 @@ class OrderController extends Controller
         $user = $request->user();
 
         if (!$user) {
+            Log::warning('Unauthorized access attempt to orders index.');
+
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Unauthorized'], 401);
             }
+
             return Inertia::render('Auth/Login/Login', [
                 'flash' => ['error' => 'You must be logged in to view this.'],
             ]);
         }
 
+        Log::info('Orders index accessed by user', ['user_id' => $user->id, 'role' => $user->role]);
+
         $query = Order::orderBy('created_at', 'desc');
 
-        if ($user->role !== 'admin') {
-            $query->where('customer_id', $user->id);
-        }
+        if ($user->role === 'admin') {
+            $requestedUserId = $request->input('user_id');
 
-        $orders = $query->get()->map(function (Order $order) {
-            if ($order->tracking_number) {
-                $trackingData = $this->shippoService->trackShipment($order->carrier, $order->tracking_number);
-
-                if (!empty($trackingData['tracking_status'])) {
-                    $status = strtoupper($trackingData['tracking_status']['status']);
-                    $order->update(['shipping_status' => $status]);
-                }
-
-                if (!empty($trackingData['tracking_history'])) {
-                    $history = array_map(fn($h) => [
-                        'status_date'    => $h['status_date'],
-                        'status_details' => $h['status_details'],
-                        'location'       => $h['location'] ?? null,
-                        'status'         => $h['status'],
-                        'substatus'      => $h['substatus'] ?? null,
-                        'object_id'      => $h['object_id'],
-                    ], $trackingData['tracking_history']);
-
-                    $order->update(['tracking_history' => $history]);
-                }
+            if ($requestedUserId) {
+                Log::info('Admin filtering orders by user_id', ['admin_id' => $user->id, 'target_user_id' => $requestedUserId]);
+                $query->where('user_id', $requestedUserId);
+            } else {
+                Log::info('Admin viewing all orders', ['admin_id' => $user->id]);
             }
-
-            return array_merge(
-                $order->only([
-                    'id', 'customer_id', 'total', 'subtotal', 'shipping_cost', 'weight',
-                    'discount', 'payment_status', 'shipping_status', 'carrier',
-                    'tracking_number', 'tracking_url', 'is_completed', 'returnable', 'return_status',
-                ]),
-                [
-                    'created_at'       => $order->created_at->toISOString(),
-                    'updated_at'       => $order->updated_at->toISOString(),
-                    'cart'             => $order->cart,
-                    'returnable_cart'  => $order->returnable_cart,
-                    'tracking_history' => $order->tracking_history ?? [],
-                    'shipping_details' => $order->shipping_details ?? null,
-                ]
-            );
-        });
-
-        if ($request->wantsJson()) {
-            return response()->json(['orders' => $orders]);
+        } else {
+            Log::info('Regular user viewing their own orders', ['user_id' => $user->id]);
+            $query->where('user_id', $user->id);
         }
 
-        return redirect()->route('profile.index')->with('initialTab', 'orders');
+        $orders = $query->get();
+
+        Log::info('Orders retrieved', ['order_count' => $orders->count()]);
+
+        return response()->json(['orders' => $orders]);
     }
-
-
 
     /**
      * Create a new order from session/cart data.
@@ -132,7 +105,7 @@ class OrderController extends Controller
             ]);
 
             $order = Order::create([
-                'customer_id'      => $user?->id,
+                'user_id'      => $user?->id,
                 'cart'             => session('cart', []),
                 'total'            => session('total', 0),
                 'subtotal'         => session('subtotal', 0),
@@ -230,7 +203,7 @@ class OrderController extends Controller
         Log::info('Order completion toggled', [
             'order_id'    => $order->id,
             'new_status'  => $order->is_completed,
-            'customer_id' => auth()->id() ?? 'guest',
+            'user_id' => auth()->id() ?? 'guest',
         ]);
 
         return back();
@@ -466,7 +439,7 @@ class OrderController extends Controller
         // Create Return record
         $return = ReturnModel::create([
             'order_id'         => $order->id,
-            'customer_id'      => $request->user()->id,
+            'user_id'      => $request->user()->id,
 
             'initiated_at'     => now(),
             'completed_at'     => $request->input('finishedAt', now()),

@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { FaTrashAlt, FaPlus } from "react-icons/fa";
 import ZoomModal from "./ZoomModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
-import { resolveSrc } from "@/utils/resolveSrc";
+import { resolveSrc } from "@/utils/resolveImageSrc";
 
 interface Image {
   id: number;

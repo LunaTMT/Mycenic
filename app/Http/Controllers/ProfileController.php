@@ -16,29 +16,41 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\File;
 
-
 use App\Models\Address;
+use App\Models\User; // Added User model for searchUsers method
 
 class ProfileController extends Controller
 {
     /**
      * Display the user's profile form.
-        */
+     */
     public function index(Request $request): Response
     {
-        $user = $request->user()->load('addresses');
+        $currentUser = $request->user();
 
-        $initialTab = $request->query('initialTab', 'profile'); // default tab
+        $user = $currentUser;
 
-        return Inertia::render('Profile/profile', [
+        // If admin and there's a user_id in query, load that user instead
+        if ($currentUser->isAdmin() && $request->has('user_id')) {
+            $userToView = User::with('addresses')->find($request->query('user_id'));
+            if ($userToView) {
+                $user = $userToView;
+            }
+        } else {
+            $user->load('addresses');
+        }
+
+        // Get initialTab from query — null if not present
+        $initialTab = $request->query('initialTab');
+
+        return Inertia::render('Profile/Profile', [
             'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
             'user' => $user,
             'initialTab' => $initialTab,
+            'isAdmin' => $currentUser->isAdmin(),
         ]);
     }
-
-
 
     /**
      * Update the user's profile information.
@@ -151,7 +163,9 @@ class ProfileController extends Controller
         return redirect()->route('profile.index')->with('status', 'Avatar updated.');
     }
 
-
+    /**
+     * Store a new address for the user.
+     */
     public function storeAddress(Request $request)
     {
         try {
@@ -163,7 +177,6 @@ class ProfileController extends Controller
                 'country' => 'nullable|string|max:100',
             ]);
         } catch (ValidationException $e) {
-            // Return JSON with validation errors and 422 status code
             return response()->json([
                 'message' => 'Validation failed.',
                 'errors'  => $e->errors(),
@@ -218,8 +231,40 @@ class ProfileController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         Log::info('Account deleted', ['user_id' => $user->id]);
 
-        return Redirect::to('/');
+        // Flash a success message before redirecting
+        return Redirect::to('/')->with('flash.success', 'Account successfully deleted.');
     }
+
+    /**
+     * Search users by name or email (for admin user selector).
+     */
+    public function searchUsers(Request $request)
+    {
+        $search = $request->query('q', '');
+        Log::info('User search initiated', ['query' => $search, 'admin_user_id' => $request->user()->id ?? null]);
+
+        $users = User::query()
+            ->where('name', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%")
+            ->limit(20)
+            ->get(['id', 'name', 'email']);
+
+        Log::info('User search completed', ['query' => $search, 'results_count' => $users->count()]);
+
+        return response()->json($users);
+    }
+
+    public function getAddresses(Request $request)
+    {
+        $user = $request->user();
+
+        // Load addresses
+        $addresses = $user->addresses()->latest()->get();
+
+        return response()->json($addresses);
+    }
+
 }

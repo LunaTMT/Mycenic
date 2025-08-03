@@ -21,7 +21,7 @@ export default function OrderDetails({
     const n = Number(value);
     return isNaN(n) ? 0 : n;
   };
-
+  console.log(order);
   return (
     <div className="w-full flex  gap-6">
       {/* Left: Cart and Summary */}

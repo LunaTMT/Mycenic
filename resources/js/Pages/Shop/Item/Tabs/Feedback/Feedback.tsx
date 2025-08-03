@@ -9,8 +9,7 @@ import Questions from "./Tabs/Questions/Questions";
 
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
-import { Tab } from "@/types/tabs";
-
+import { Tab } from "@/types/Tabs";
 
 
 type TabKey = "reviews" | "questions";
@@ -37,10 +36,10 @@ export default function Feedback() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <ReviewsProvider initialReviews={item.reviews}>
         <SubNavigation
-          tabs={tabs}
+          leftTabs={tabs}
           activeKey={activeTab}
           onChange={setActiveTab}
           

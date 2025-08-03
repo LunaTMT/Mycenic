@@ -26,6 +26,7 @@ export default function Guest({
   const { scrollDirection } = useNav();
   const { darkMode } = useDarkMode();
 
+  
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);
     if (flash?.error) toast.error(flash.error);

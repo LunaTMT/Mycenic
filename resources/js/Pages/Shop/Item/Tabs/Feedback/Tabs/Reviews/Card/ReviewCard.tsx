@@ -3,7 +3,7 @@ import { usePage, router } from "@inertiajs/react";
 import { toast } from "react-toastify";
 
 import Avatar from "./Content/Avatar";
-import { Review } from "@/types/types";
+import { Review } from "@/types/Review";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 
 import StaticStarRating from "@/Components/Stars/StaticStarRating";
@@ -21,7 +21,7 @@ import DeleteConfirmationModal from "../../Components/ImageGallery/DeleteConfirm
 import LikeDislikeButtons from "../../Components/LikeDislikeButtons";
 import ZoomModal from "../../Components/ImageGallery/ZoomModal";
 
-import { resolveSrc } from "@/utils/resolveSrc";
+import { resolveImageSrc } from "@/utils/resolveImageSrc";
 
 interface ReviewCardProps {
   review: Review;
@@ -268,23 +268,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     setConfirmingDelete(false);
   };
 
-  function getImageSrc(img: { image_path?: string; file?: File }) {
-    if (img.file) {
-      // For newly uploaded images (File objects), create an object URL
-      return URL.createObjectURL(img.file);
-    }
-
-    if (!img.image_path) return "";
-
-    // Check if image_path starts with http(s), assume external URL
-    if (img.image_path.startsWith("http://") || img.image_path.startsWith("https://")) {
-      return img.image_path; // full Unsplash URL
-    }
-
-    // Otherwise, assume local storage path, prefix with /storage/
-    return `/storage/${img.image_path}`;
-  }
-
   // --- Render helpers ---
 
   function renderHeader() {
@@ -375,7 +358,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       <>
         <div className="flex flex-wrap gap-2 relative">
           {images.map((img) => {
-            const src = getImageSrc(img);
+            const src = resolveImageSrc(img.path);
             return (
               <div
                 key={img.id}

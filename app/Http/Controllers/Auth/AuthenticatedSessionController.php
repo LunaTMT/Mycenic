@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Redirect;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -50,7 +51,7 @@ class AuthenticatedSessionController extends Controller
         // Use the redirect parameter from the request, or fallback to home
         $redirectUrl = $request->input('redirect', route('home'));
 
-        return redirect()->intended($redirectUrl)->with('flash.success', 'Login successful!');
+        return redirect()->intended($redirectUrl)->with('flash.success', 'Login successful.');
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -61,6 +62,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return Redirect::to('/')->with('flash.success', 'Logout successful.');
     }
 }

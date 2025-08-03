@@ -16,17 +16,13 @@ class Item extends Model
         'stock',
         'category',
         'weight',
-        'images',
         'stripe_product_id',
         'stripe_price_id',
         'isPsyilocybinSpores',
-        'image_sources',
         'options',
     ];
 
     protected $casts = [
-        'images' => 'array',
-        'image_sources' => 'array',
         'options' => 'array',
         'isPsyilocybinSpores' => 'boolean',
         'price' => 'decimal:2',
@@ -42,9 +38,15 @@ class Item extends Model
         return $this->hasMany(Review::class);
     }
 
+    public function images()
+    {
+        return $this->morphMany(Image::class, 'imageable');
+    }
+
+
+
     public function getAverageRatingAttribute(): float
     {
         return round($this->reviews()->avg('rating') ?? 0, 2);
     }
-
 }

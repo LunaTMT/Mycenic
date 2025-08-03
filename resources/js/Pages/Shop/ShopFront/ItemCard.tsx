@@ -3,9 +3,11 @@ import { Link, usePage } from "@inertiajs/react";
 import { AiOutlineClose } from "react-icons/ai";
 import Swal from "sweetalert2";
 import { Inertia } from "@inertiajs/inertia";
-import { Item, User } from "@/types/types";
-import { resolveSrc } from "@/utils/resolveSrc";
+import { User } from "@/types/User";
+import { Item } from "@/types/Item";
+
 import StaticStarRating from "../../../Components/Stars/StaticStarRating";
+import { resolveImageSrc } from "@/utils/resolveImageSrc";
 
 interface ItemCardProps {
   item: Item;
@@ -38,7 +40,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
     });
   };
 
-  const imageSrc = resolveSrc(item.images[0] ?? "/assets/images/missing_image.png");
+  console.log(item.images)
 
   return (
     <div
@@ -61,7 +63,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
       >
         <div className="w-full aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800 ">
           <img
-            src={imageSrc}
+            src={resolveImageSrc(item.images[0].path)}
             alt={item.name}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"

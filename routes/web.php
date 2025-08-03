@@ -5,7 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-use App\Models\{Item, Order};
+use App\Models\{Item, Order, User};
 
 use App\Http\Controllers\{
     AddressController,
@@ -30,9 +30,7 @@ use App\Http\Controllers\{
 };
 
 use App\Http\Middleware\AdminMiddleware;
-
 use Stripe\{Stripe, Checkout\Session};
-
 use App\Mail\OrderConfirmation;
 
 /*
@@ -71,28 +69,21 @@ Route::get('login/{provider}/callback', [SocialAuthController::class, 'handlePro
 | Profile & User Management (Authenticated)
 |--------------------------------------------------------------------------
 */
+Route::middleware('auth')->prefix('profile')->group(function () {
+    Route::get('/', [ProfileController::class, 'index'])->name('profile.index');
+    Route::patch('/', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/shipping', [ProfileController::class, 'updateShipping'])->name('profile.update-shipping');
+    Route::post('/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+ 
+    Route::get('/addresses', [AddressController::class, 'index'])->name('profile.addresses.index');
+    Route::post('/addresses', [AddressController::class, 'store'])->name('profile.addresses.store');
+});
+
+
+Route::middleware(['auth', 'admin'])->get('/admin/all-users', [ProfileController::class, 'searchUsers'])->name('admin.all-users.search');
+
 Route::middleware('auth')->group(function () {
-    Route::prefix('profile')->group(function () {
-        Route::get('/', [ProfileController::class, 'index'])->name('profile.index');
-        Route::patch('/', [ProfileController::class, 'update'])->name('profile.update');
-        Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
-        Route::patch('/shipping', [ProfileController::class, 'updateShipping'])->name('profile.update-shipping');
-        Route::post('/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
-
-        Route::post('/addresses', [ProfileController::class, 'storeAddress'])->name('profile.addresses.store');
-        Route::get('/addresses', [AddressController::class, 'index'])->name('profile.addresses.index');
-
-        Route::get('/shipping-details', function () {
-            $user = auth()->user();
-
-            return response()->json([
-                'address' => $user->address,
-                'city'    => $user->city,
-                'zip'     => $user->zip,
-            ]);
-        })->name('profile.shipping-details');
-    });
-
     Route::get('/user/shipping-address', function () {
         return response()->json(auth()->user()?->only(['name', 'address', 'city', 'zip', 'email']));
     })->name('user.shipping.address');
@@ -101,7 +92,6 @@ Route::middleware('auth')->group(function () {
         $user = auth()->user();
         $requiredFields = ['name', 'address', 'city', 'zip'];
         $hasCompleteAddress = $user && collect($requiredFields)->every(fn($field) => filled($user->$field));
-
         return response()->json(['hasShippingAddress' => $hasCompleteAddress]);
     })->name('user.has.shipping.address');
 });
@@ -120,12 +110,9 @@ Route::post('/user/addresses', [AddressController::class, 'store'])->name('user.
 |--------------------------------------------------------------------------
 */
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
-
-
 Route::get('/item/{id?}', [ItemController::class, 'index'])->name('item');
 Route::post('/item/{id}/update', [ItemController::class, 'update'])->name('item.update');
 Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.stock');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -140,7 +127,6 @@ Route::prefix('cart')->group(function () {
     Route::post('/fetch-shipping-rates', [CartController::class, 'getShippingRates'])->name('cart.shipping.rates');
 });
 
-// Stock update route
 Route::post('/item/update-stock/remove', function (Request $request) {
     $item = Item::find($request->itemId);
 
@@ -149,7 +135,6 @@ Route::post('/item/update-stock/remove', function (Request $request) {
         $item->save();
         return response()->json(['success' => true, 'stock' => $item->stock]);
     }
-
     return response()->json(['error' => 'Not enough stock or item not found'], 400);
 })->name('cart.updateStock.remove');
 
@@ -183,6 +168,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
 });
+
 /*
 |--------------------------------------------------------------------------
 | Checkout & Payment Routes
@@ -203,18 +189,20 @@ Route::post('/payment/intent', [PaymentController::class, 'createPaymentIntent']
 | Orders Routes (Authenticated)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
 
+
+Route::middleware('auth')->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/fetch', [OrderController::class, 'index'])->name('orders.fetch');
+    Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
     Route::get('/orders/{order}/return', [OrderController::class, 'returnInstructions'])->name('orders.return');
     Route::post('/orders/{order}/return/fetch-return-options', [OrderController::class, 'fetchReturnOptions'])->name('orders.return.options');
     Route::post('/orders/{order}/return/create-payment-intent', [OrderController::class, 'getPaymentIntent'])->name('orders.return.payment-intent');
     Route::post('/orders/{order}/return/finish', [OrderController::class, 'finishReturn']);
     Route::get('/orders/{order}/is-returnable', [OrderController::class, 'isReturnable']);
-
     Route::get('/orders-test', fn () => 'working');
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -238,7 +226,7 @@ Route::get('/orders/track/{carrier}/{tracking_id}', [ShippingController::class, 
 | Returns Routes (Authenticated)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
     Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('returns.show');
     Route::post('/returns', [ReturnController::class, 'store'])->name('returns.store');

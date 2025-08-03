@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Address;
-use App\Models\User;  // Import User model
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AddressController extends Controller
 {
@@ -14,47 +15,73 @@ class AddressController extends Controller
      */
     public function index(Request $request)
     {
-        $addresses = $request->user()->addresses;
+        $authUser = $request->user();
+
+        // If the authenticated user is an admin and a user_id query param is passed,
+        // fetch the addresses for that user, otherwise use the authenticated user
+        if ($authUser->isAdmin() && $request->has('user_id')) {
+            $user = User::find($request->query('user_id'));
+            if (!$user) {
+                return response()->json(['error' => 'User not found'], 404);
+            }
+        } else {
+            $user = $authUser;
+        }
+
+        Log::info('Fetching addresses for user', ['user_id' => $user->id]);
+
+        $addresses = $user->addresses;
 
         return response()->json($addresses);
     }
+
 
     /**
      * Store a newly created address.
      */
     public function store(Request $request)
     {
-        // Validate the incoming request, with required name, email and optional phone
-        $validated = $request->validate([
-            'name'    => ['required', 'string', 'max:255'],  // Required name field
-            'address' => ['required', 'string', 'max:255'],
-            'city'    => ['required', 'string', 'max:255'],
-            'zip'     => ['required', 'string', 'max:20'],
-            'phone'   => ['nullable', 'string', 'max:15'],  // Optional phone field
-            'email'   => ['required', 'email', 'max:255'],  // Required email field
-        ]);
+        Log::info('Address store request received', ['input' => $request->all()]);
 
-        // Check if the user with the provided email exists
-        $user = User::where('email', $validated['email'])->first();
+        $user = $request->user();
 
-        // If the user doesn't exist, create a new one with no password (soft registration)
-        if (!$user) {
-            $user = User::create([
-                'name'  => $validated['name'],
-                'email' => $validated['email'],
-                'password' => null, // No password for soft registration
+        if ($user) {
+            // Authenticated user: validate without email (email comes from auth)
+            $validated = $request->validate([
+                'name'    => ['nullable', 'string', 'max:255'],  // optional override or empty
+                'address' => ['required', 'string', 'max:255'],
+                'city'    => ['required', 'string', 'max:255'],
+                'zip'     => ['required', 'string', 'max:20'],
             ]);
+
+     
+            $validated['name'] = $validated['name'] ?? $user->name;
+     
+
+            Log::info('Authenticated user submitting address', ['user_id' => $user->id]);
+        } else {
+            // Guest user: validate including email and name
+            $validated = $request->validate([
+                'name'    => ['nullable', 'string', 'max:255'],
+                'email'   => ['required', 'email', 'max:255'],
+                'address' => ['required', 'string', 'max:255'],
+                'city'    => ['required', 'string', 'max:255'],
+            ]);
+
+            Log::info('Guest user submitting address', ['email' => $validated['email']]);
         }
 
-        // Create a new address record and set the user_id
+
+        // Create address linked to user
         $address = new Address($validated);
         $address->user_id = $user->id;
         $address->save();
 
-        // Return a response with a success message and the new address
+        Log::info('New address saved', ['address_id' => $address->id, 'user_id' => $user->id]);
+
         return response()->json([
-            'message' => 'Address added successfully.',
             'address' => $address,
         ]);
     }
+
 }

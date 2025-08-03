@@ -9,7 +9,6 @@ import { FormEventHandler, useRef, useState } from 'react';
 import { Inertia } from '@inertiajs/inertia';
 import Swal from 'sweetalert2';
 
-
 export default function DeleteUserForm({ className = '' }: { className?: string }) {
   const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
   const passwordInput = useRef<HTMLInputElement>(null);
@@ -32,20 +31,9 @@ export default function DeleteUserForm({ className = '' }: { className?: string 
 
   const deleteUser: FormEventHandler = (e) => {
     e.preventDefault();
-
     destroy(route('profile.destroy'), {
       preserveScroll: false,
-      onSuccess: () => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Account Deleted',
-          text: 'Your account has been successfully deleted.',
-          confirmButtonColor: '#d33',
-          confirmButtonText: 'OK',
-        }).then(() => {
-          Inertia.visit('/', { preserveScroll: false });
-        });
-      },
+      onSuccess: () => {},
       onError: () => passwordInput.current?.focus(),
       onFinish: () => reset(),
     });
@@ -93,10 +81,12 @@ export default function DeleteUserForm({ className = '' }: { className?: string 
           </div>
 
           <div className="mt-6 flex justify-center gap-3 w-full">
-            <SecondaryButton onClick={closeModal} className="rounded-md">
+            <SecondaryButton onClick={closeModal} className="p-2 rounded-md">
               Cancel
             </SecondaryButton>
-            <DangerButton disabled={processing}>Delete Account</DangerButton>
+            <DangerButton type="submit" disabled={processing}>
+              Delete Account
+            </DangerButton>
           </div>
         </form>
       </Modal>

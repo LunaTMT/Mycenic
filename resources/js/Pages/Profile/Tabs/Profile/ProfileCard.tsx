@@ -1,31 +1,22 @@
-import { usePage, useForm, router } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
-import { FaUpload } from 'react-icons/fa';
-
-import { resolveSrc } from '@/utils/resolveSrc';
-
-interface User {
-  name: string;
-  email?: string;
-  created_at?: string;
-  avatar?: string | null;
-  email_verified_at?: string | null;
-}
+import { FaUpload, FaUserShield } from 'react-icons/fa';
+import { resolveSrc } from '@/utils/resolveImageSrc';
+import { useProfile } from '@/Contexts/Profile/ProfileContext';  // <-- import context hook
+import type { User } from '@/types/types';
 
 export default function ProfileCard() {
-  const page = usePage();
-  const user = page.props.auth.user as User;
+  const { user } = useProfile(); // get user from ProfileContext
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { post, processing, errors, reset } = useForm();
-
+  console.log(user);
   useEffect(() => {
     if (user.avatar) {
-      // Use resolveSrc utility here
       const resolved = resolveSrc(user.avatar);
       setAvatarUrl(resolved);
     } else {
@@ -61,6 +52,15 @@ export default function ProfileCard() {
     }
   }
 
+  const adminIconClasses = `
+    absolute bottom-2 right-2 
+    bg-yellow-500 text-white 
+    dark:bg-[#7289da] 
+    rounded-full p-1 
+    shadow-[0_0_1px_#FFD700,0_0_3px_#FFD700,0_0_5px_#FFD700]
+    dark:shadow-[0_0_2px_#93c5fd,0_0_4px_#60a5fa,0_0_6px_#2563eb]
+  `;
+
   return (
     <div
       className="
@@ -77,18 +77,27 @@ export default function ProfileCard() {
         hover:brightness-105 dark:hover:brightness-110
       "
     >
-      {/* Left: Avatar and user info */}
+      {/* Left: Avatar and icon */}
       <div className="flex items-center gap-6 flex-1">
         <div className="flex flex-col items-start">
-          {/* Avatar and icon */}
           <div className="relative">
             {(preview || avatarUrl) && (
               <img
                 src={preview || avatarUrl || undefined}
                 alt={`${user.name}'s Avatar`}
-                className="w-30 aspect-square rounded-lg object-cover border-4 border-white dark:border-[#424549] shadow cursor-pointer"
+                className="w-28 h-28 rounded-md object-cover border-4 border-white dark:border-[#424549] shadow cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
                 title="Click to change avatar"
+              />
+            )}
+
+            {/* Admin icon */}
+            {user.role === 'admin' && (
+              <FaUserShield
+                title="Admin"
+                className={adminIconClasses}
+                size={28}
+                aria-label="Admin user"
               />
             )}
 
@@ -100,26 +109,26 @@ export default function ProfileCard() {
               onChange={onChangeAvatar}
             />
 
-            {/* Upload icon overlay */}
+            {/* Upload button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={processing}
               className={`
-                p-2 rounded-full
-                font-Poppins text-white text-center flex justify-center items-center
-                bg-yellow-500
-                dark:bg-[#7289da]
-                ${processing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                 absolute bottom-2 right-2
+                p-2 rounded-full border-2 border-white dark:border-[#424549]
+                bg-yellow-500 dark:bg-[#7289da]
+                text-white flex items-center justify-center
+                shadow-md
+                ${processing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
               `}
               title={processing ? 'Uploading...' : 'Change profile picture'}
             >
-              <FaUpload className="text-white w-5 h-5" />
+              <FaUpload className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Show error if any */}
+          {/* Upload error */}
           {errors.avatar && (
             <p className="text-red-500 text-xs mt-2 font-medium dark:text-red-400">
               {errors.avatar}
@@ -132,7 +141,9 @@ export default function ProfileCard() {
           <h2 className="text-2xl font-semibold text-white">{user.name}</h2>
 
           {user.email && (
-            <p className="text-sm break-words opacity-90 dark:opacity-80 text-white">{user.email}</p>
+            <p className="text-sm break-words opacity-90 dark:opacity-80 text-white">
+              {user.email}
+            </p>
           )}
 
           {user.created_at && (

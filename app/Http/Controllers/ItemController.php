@@ -27,6 +27,7 @@ class ItemController extends Controller
                 },
                 'reviews.images',
                 'reviews.replies.user',
+                'images',  
             ])->find($id);
 
             if (!$item) {

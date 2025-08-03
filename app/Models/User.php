@@ -43,7 +43,6 @@ class User extends Authenticatable
         'name',
         'email',
         'avatar',
-        'role'
     ];
 
     /**
@@ -69,8 +68,6 @@ class User extends Authenticatable
 
     /**
      * Determine if the user has set a password.
-     *
-     * @return bool
      */
     public function hasPassword(): bool
     {
@@ -101,5 +98,8 @@ class User extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
-    
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

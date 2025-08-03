@@ -1,60 +1,42 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, EffectCoverflow } from "swiper/modules";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
-import { resolveSrc } from "@/utils/resolveSrc";
+import { resolveImageSrc } from "@/utils/resolveImageSrc";
 
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-coverflow";
 
 const ImageGallery: React.FC = () => {
-  const {
-    images,
-    imageSources,
-    selectedIndex,
-    setSelectedIndex,
-    selectedImage,
-    setSelectedImage,
-    item,
-    swiperRef,
-    setSwiperRef,
-  } = useItemContext();
+  const { item } = useItemContext();
+  const images = Array.isArray(item.images) ? item.images : [];
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const swiperRef = useRef<any>(null);
 
   useEffect(() => {
-    if (images.length === 0) {
-      setSelectedImage("");
-      return;
+    if (images.length > 0) {
+      setSelectedImage(resolveImageSrc(images[selectedIndex].path));
     }
-    if (selectedIndex < 0 || selectedIndex >= images.length) {
-      return;
+    if (swiperRef.current && swiperRef.current.slideTo) {
+      swiperRef.current.slideTo(selectedIndex);
     }
-    const src = images[selectedIndex];
-    const source = imageSources?.[selectedIndex];
-    setSelectedImage(resolveSrc(src, source));
-  }, [selectedIndex, images, imageSources, setSelectedImage]);
+  }, [selectedIndex, images]);
 
-  useEffect(() => {
-    if (swiperRef && selectedIndex !== swiperRef.realIndex) {
-      swiperRef.slideTo(selectedIndex);
-    }
-  }, [selectedIndex, swiperRef]);
-
-  const handleSlideClick = (idx: number) => {
-    setSelectedIndex(idx);
-    if (swiperRef) {
-      swiperRef.slideTo(idx);
-    }
-  };
+  if (images.length === 0) {
+    return <div>No images available</div>;
+  }
 
   return (
     <div className="w-full h-full flex flex-col border rounded-lg bg-white dark:bg-[#1e2124]/30 border-black/20 dark:border-white/20 overflow-hidden">
-      {/* Main image container with rounded corners and overflow hidden */}
-      <div className="h-[75%] flex items-center justify-center rounded-lg rounded-b-none overflow-hidden">
+      {/* Main Image Container */}
+      <div className="h-[75%] flex items-center justify-center rounded-lg rounded-b-none overflow-hidden bg-gray-50 dark:bg-gray-900">
         {selectedImage ? (
           <img
             src={selectedImage}
-            alt="Selected"
+            alt={`Image ${selectedIndex + 1}`}
             className="object-cover w-full h-full"
           />
         ) : (
@@ -62,11 +44,14 @@ const ImageGallery: React.FC = () => {
         )}
       </div>
 
-      {/* Thumbnails */}
-      <div className="h-[25%] py-5 border-t border-black/10 dark:border-white/10">
+      {/* Thumbnails Swiper */}
+      <div className="h-[25%] pt-2 border-t border-black/10 dark:border-white/10 flex items-center justify-center">
         <Swiper
+          onSwiper={(swiper) => {
+            swiperRef.current = swiper;
+          }}
           slidesPerView="auto"
-          initialSlide={2}
+          initialSlide={0}
           centeredSlides
           spaceBetween={10}
           effect="coverflow"
@@ -80,41 +65,42 @@ const ImageGallery: React.FC = () => {
           pagination={{ clickable: true }}
           modules={[EffectCoverflow, Pagination]}
           onSlideChange={(swiper) => setSelectedIndex(swiper.realIndex)}
-          onSwiper={(swiper) => setSwiperRef(swiper)}
-          className="h-full"
+          className="h-full w-full flex items-center justify-center"
+          style={{ overflow: "visible" }}
         >
-          {images.map((src, idx) => {
-            const thumbSrc = resolveSrc(src, imageSources?.[idx]);
-            return (
-              <SwiperSlide
-                key={idx}
-                style={{
-                  width: "100px",
-                  height: "100px",
-                  cursor: "pointer",
-                  borderRadius: "0.5rem",
-                  overflow: "hidden",
-                }}
-                onClick={() => handleSlideClick(idx)}
-              >
-                <img
-                  src={thumbSrc}
-                  alt={item?.name ?? `Thumbnail ${idx}`}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    borderRadius: "0.5rem",
-                  }}
-                  className={`border transition-all duration-200 dark:bg-white/40 bg-black/20 ${
-                    selectedIndex === idx
-                      ? "p-[2px] border-gray-400 dark:border-white/50"
-                      : "border-transparent"
-                  }`}
-                />
-              </SwiperSlide>
-            );
-          })}
+          {images.map((img, idx) => (
+            <SwiperSlide
+              key={idx}
+              onClick={() => setSelectedIndex(idx)}
+              style={{
+                width: "100px",
+                height: "100px",
+                cursor: "pointer",
+                borderRadius: "0.75rem",
+                overflow: "hidden",
+                transformOrigin: "center center",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: selectedIndex === idx ? "2px" : "0",
+              }}
+              className={`transition-all duration-300 rounded-xl ${
+                selectedIndex === idx
+                  ? "scale-[1.03] bg-yellow-500 dark:bg-[#384361]"
+                  : "bg-transparent dark:bg-transparent"
+              }`}
+            >
+              <img
+                src={resolveImageSrc(img.path)}
+                alt={`Thumbnail ${idx + 1}`}
+                className={`w-full h-full object-cover rounded-xl block border transition-all duration-200 ${
+                  selectedIndex === idx
+                    ? "border-yellow-400 dark:border-[#93c5fd]"
+                    : "border-transparent"
+                }`}
+              />
+            </SwiperSlide>
+          ))}
         </Swiper>
       </div>
     </div>

@@ -5,12 +5,15 @@ import TextInput from '@/Components/Login/TextInput';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
+import { useProfile } from '@/Contexts/Profile/ProfileContext';
 
-export default function UpdatePasswordForm({
+export default function PasswordForm({
     className = '',
 }: {
     className?: string;
 }) {
+    const { user } = useProfile();
+
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
@@ -50,29 +53,20 @@ export default function UpdatePasswordForm({
 
     return (
         <section
-            className={`rounded-lg shadow-md   w-1/2  border dark:border-white/20 border-black/20 p-4  ${className}`}
+            className={`rounded-lg shadow-md w-1/2 border dark:border-white/20 border-black/20 p-4 ${className}`}
         >
-
-
             <form onSubmit={updatePassword} className="space-y-4">
                 <div>
-                    <InputLabel
-                        htmlFor="current_password"
-                        value="Current Password"
-                    />
-
+                    <InputLabel htmlFor="current_password" value="Current Password" />
                     <TextInput
                         id="current_password"
                         ref={currentPasswordInput}
                         value={data.current_password}
-                        onChange={(e) =>
-                            setData('current_password', e.target.value)
-                        }
+                        onChange={(e) => setData('current_password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full "
+                        className="mt-1 block w-full"
                         autoComplete="current-password"
                     />
-
                     <InputError
                         message={errors.current_password}
                         className="mt-2 dark:text-red-400"
@@ -80,21 +74,16 @@ export default function UpdatePasswordForm({
                 </div>
 
                 <div>
-                    <InputLabel
-                        htmlFor="password"
-                        value="New Password"
-                    />
-
+                    <InputLabel htmlFor="password" value="New Password" />
                     <TextInput
                         id="password"
                         ref={passwordInput}
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full "
+                        className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
-
                     <InputError
                         message={errors.password}
                         className="mt-2 dark:text-red-400"
@@ -102,29 +91,22 @@ export default function UpdatePasswordForm({
                 </div>
 
                 <div>
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
+                    <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
                     <TextInput
                         id="password_confirmation"
                         value={data.password_confirmation}
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
+                        onChange={(e) => setData('password_confirmation', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full "
+                        className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
-
                     <InputError
                         message={errors.password_confirmation}
                         className="mt-2 dark:text-red-400"
                     />
                 </div>
 
-                <div className="flex items-center gap-4 ">
+                <div className="flex items-center gap-4">
                     <PrimaryButton className="rounded-lg py-2 px-6" disabled={processing}>
                         UPDATE
                     </PrimaryButton>
