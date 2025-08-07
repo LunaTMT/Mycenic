@@ -24,6 +24,7 @@
         "@zag-js/scroll-snap": "^1.7.0",
         "axios": "^1.8.4",
         "browser-image-compression": "^2.0.2",
+        "country-state-city": "^3.2.1",
         "framer-motion": "^12.5.0",
         "hamburger-react": "^2.5.2",
         "laravel-vite-plugin": "^1.2.0",

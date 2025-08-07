@@ -85,11 +85,11 @@ class User extends Authenticatable
     /**
      * Get all addresses associated with the user.
      */
-    public function addresses()
+    public function shippingDetails()
     {
-        return $this->hasMany(Address::class);
+        return $this->hasMany(ShippingDetail::class);
     }
-
+    
     /**
      * Get all reviews written by the user.
      */

@@ -1,53 +1,57 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useShipping } from '@/Contexts/Profile/ShippingContext';
-import { useProfile } from '@/Contexts/Profile/ProfileContext';
+import ShippingAddressCard from './ShippingAddressCard';
+import AddAddressCard from './AddAddressCard';
 import ShippingAddressForm from '../Partials/ShippingAddressForm';
-import AddressMap from '@/Components/Map/AddressMap';
-import AddressList from './AddressList';
-import AddButton from '@/Components/Buttons/AddItem';
+import Modal from '@/Components/Login/Modal';
 
 interface Props {
   className?: string;
 }
 
 export default function ShippingDetails({ className = '' }: Props) {
-  
-  const { showForm, toggleShowForm, selectedAddress } = useShipping();
-  
+  const {
+    shippingDetails,
+    selectedShippingDetail,
+    setDefaultShippingDetail,
+  } = useShipping();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const maxAddresses = 6;
+  const showAddCard = shippingDetails.length < maxAddresses;
+  const addressesToShow = shippingDetails.slice(0, maxAddresses);
 
   return (
     <section
-      className={`rounded-lg w-full h-full shadow-md border dark:border-white/20 border-black/20 overflow-hidden ${className}`}
-      style={{ minHeight: '500px' }}
+      className={`rounded-lg w-full h-full shadow-md ${className}`}
+      style={{ minHeight: '200px' }}
     >
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b dark:border-white/20 border-black/20">
-        <h2 className="text-xl font-semibold text-black dark:text-white">Saved Addresses</h2>
-         <AddButton onClick={toggleShowForm} isActive={showForm} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {addressesToShow.length ? (
+          addressesToShow.map((detail) => (
+            <ShippingAddressCard
+              key={detail.id}
+              detail={detail}
+              isSelected={selectedShippingDetail?.id === detail.id}
+              onSelect={() => setDefaultShippingDetail(detail)}
+            />
+          ))
+        ) : (
+          <p className="text-center text-gray-500 dark:text-gray-400 col-span-3">
+            No saved addresses.
+          </p>
+        )}
+
+        {showAddCard && <AddAddressCard onClick={() => setIsModalOpen(true)} />}
       </div>
 
-      {/* Main Content */}
-      <div className="rounded-lg p-4 flex gap-6 h-[calc(100%-64px)]">
-        {/* Address List */}
-        <div className="flex flex-col w-1/2 h-full overflow-hidden">
-          
-          <div className="flex-shrink-0 mb-4 overflow-auto max-h-full">
-            <AddressList />
-          </div>
-
-          {/* Add Address Form */}
-          {showForm && (
-            <div className="flex-shrink-0 rounded-lg p-4 shadow-md border dark:border-white/20 border-black/20 mt-auto">
-              <ShippingAddressForm />
-            </div>
-          )}
+      <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="lg" closeable>
+        <div className="p-6">
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">Add Shipping Address</h2>
+          <ShippingAddressForm closeModal={() => setIsModalOpen(false)} />
         </div>
-
-        {/* Map */}
-        <div className="w-1/2 h-[300px] rounded-lg overflow-hidden border dark:border-white/20 border-black/20">
-          <AddressMap address={selectedAddress} />
-        </div>
-      </div>
+      </Modal>
     </section>
   );
 }

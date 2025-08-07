@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
-use App\Models\Address;
+use App\Models\ShippingDetail;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -34,9 +34,6 @@ class UserFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
         return $this->state(fn(array $attributes) => [
@@ -44,21 +41,18 @@ class UserFactory extends Factory
         ]);
     }
 
-    /**
-     * Create between 1 and 3 addresses after user creation and log progress.
-     */
     public function configure()
     {
         return $this->afterCreating(function (User $user) {
-            Log::info("Creating addresses for User ID {$user->id} ({$user->email})");
+            Log::info("Creating shipping details for User ID {$user->id} ({$user->email})");
 
             $count = rand(1, 3);
-            Address::factory()->count($count)->create([
+            ShippingDetail::factory()->count($count)->create([
                 'user_id' => $user->id,
-                'country' => 'UK', // default country
+                'country' => 'United Kingdom',
             ]);
 
-            Log::info("Created {$count} addresses for User ID {$user->id}");
+            Log::info("Created {$count} shipping details for User ID {$user->id}");
         });
     }
 }

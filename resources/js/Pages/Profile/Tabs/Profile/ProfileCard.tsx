@@ -2,9 +2,9 @@ import { useForm, router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { FaUpload, FaUserShield } from 'react-icons/fa';
-import { resolveSrc } from '@/utils/resolveImageSrc';
+import { resolveImageSrc } from '@/utils/resolveImageSrc';
 import { useProfile } from '@/Contexts/Profile/ProfileContext';  // <-- import context hook
-import type { User } from '@/types/types';
+import { User } from '@/types/User';
 
 export default function ProfileCard() {
   const { user } = useProfile(); // get user from ProfileContext
@@ -17,7 +17,7 @@ export default function ProfileCard() {
   console.log(user);
   useEffect(() => {
     if (user.avatar) {
-      const resolved = resolveSrc(user.avatar);
+      const resolved = resolveImageSrc(user.avatar);
       setAvatarUrl(resolved);
     } else {
       setAvatarUrl(null);

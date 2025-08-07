@@ -82,7 +82,7 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
         viewport={{ once: true }}
       >
         <Menu url={url} />
-
+       
       </motion.header>
 
           {/* Main + Sidebar Container */}

@@ -18,6 +18,7 @@ use App\Http\Controllers\Shop\ShopController;
 use App\Http\Controllers\Shop\Item\{ItemController, QuestionController, ReviewController};
 use App\Http\Controllers\User\{OrderController, ProfileController, ReturnController};
 
+
 // If you have GoogleController (but it's not in your folders, remove if unused)
 use App\Http\Controllers\Auth\GoogleController;
 
@@ -93,11 +94,18 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Addresses (Public or Auth)
+| Shipping Details (Public or Auth)
 |--------------------------------------------------------------------------
 */
-Route::get('/user/addresses', [AddressController::class, 'index'])->name('user.addresses.index');
-Route::post('/user/addresses', [AddressController::class, 'store'])->name('user.addresses.store');
+Route::middleware('auth')->prefix('profile')->group(function () {
+    Route::get('/shipping-details', [ShippingDetailController::class, 'index'])->name('profile.shipping-details.index');
+    Route::post('/shipping-details', [ShippingDetailController::class, 'store'])->name('profile.shipping-details.store');
+    Route::get('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'show'])->name('profile.shipping-details.show');
+    Route::put('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'update'])->name('profile.shipping-details.update');
+    Route::delete('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'destroy'])->name('profile.shipping-details.destroy');
+});
+
+
 
 /*
 |--------------------------------------------------------------------------

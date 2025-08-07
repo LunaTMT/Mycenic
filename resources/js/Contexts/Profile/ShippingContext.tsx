@@ -8,23 +8,25 @@ import React, {
 } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { Address } from '@/types/types';
+import { ShippingDetail } from '@/types/Shipping';
 
 interface ShippingContextType {
-  addresses: Address[];
-  selectedAddress: Address | null;
+  shippingDetails: ShippingDetail[];
+  selectedShippingDetail: ShippingDetail | null;
   hoveredId: number | null;
   showForm: boolean;
 
-  setAddresses: (addresses: Address[]) => void;
-  setSelectedAddress: (address: Address) => void;
+  setShippingDetails: (shippingDetails: ShippingDetail[]) => void;
+  setSelectedShippingDetail: (detail: ShippingDetail) => void;
   setHoveredId: (id: number | null) => void;
   setShowForm: (show: boolean) => void;
   toggleShowForm: () => void;
 
-  fetchAddresses: () => void;
-  
-  addAddress: (address: { address: string; city: string; zip: string }) => Promise<void>;
+  fetchShippingDetails: (userId?: number) => void;
+
+  addShippingDetail: (detail: ShippingDetail) => Promise<void>;
+
+  setDefaultShippingDetail: (detail: ShippingDetail) => Promise<void>;
 }
 
 const ShippingContext = createContext<ShippingContextType | undefined>(undefined);
@@ -33,116 +35,134 @@ export const ShippingProvider = ({
   user,
   children,
 }: {
-  user: any;  // Replace 'any' with your User type if you have one
+  user: any; // replace with your User type if available
   children: ReactNode;
 }) => {
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>([]);
+  const [selectedShippingDetail, setSelectedShippingDetail] = useState<ShippingDetail | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const initializedSelectedAddress = useRef(false);
+  const initializedSelectedShippingDetail = useRef(false);
 
   const toggleShowForm = () => {
     setShowForm(prev => !prev);
   };
 
   useEffect(() => {
-    if (!initializedSelectedAddress.current) return;
+    if (!initializedSelectedShippingDetail.current) return;
 
-    if (selectedAddress) {
-      localStorage.setItem('selectedAddressId', selectedAddress.id.toString());
+    if (selectedShippingDetail) {
+      localStorage.setItem('selectedShippingDetailId', selectedShippingDetail.id.toString());
     } else {
-      localStorage.removeItem('selectedAddressId');
+      localStorage.removeItem('selectedShippingDetailId');
     }
-  }, [selectedAddress]);
+  }, [selectedShippingDetail]);
 
-  const fetchAddresses = async (userId?: number) => {
-    if (!userId && addresses.length > 0) {
-      // If no userId provided and addresses are already loaded, skip fetching
-      console.log('Addresses already loaded, skipping fetch');
+  const fetchShippingDetails = async (userId?: number) => {
+    if (!userId && shippingDetails.length > 0) {
+      console.log('Shipping details already loaded, skipping fetch');
       return;
     }
 
     try {
-      const url = userId ? `/profile/addresses?user_id=${userId}` : '/profile/addresses';
-      console.log(`Fetching addresses from: ${url}`);
+      const url = userId ? `/profile/shipping-details?user_id=${userId}` : '/profile/shipping-details';
       const res = await axios.get(url);
-      setAddresses(res.data);
+      setShippingDetails(res.data);
 
       if (res.data.length === 0) {
-        setSelectedAddress(null);
-        localStorage.removeItem('selectedAddressId');
-        initializedSelectedAddress.current = true;
+        setSelectedShippingDetail(null);
+        localStorage.removeItem('selectedShippingDetailId');
+        initializedSelectedShippingDetail.current = true;
         return;
       }
 
-      const savedId = localStorage.getItem('selectedAddressId');
+      const savedId = localStorage.getItem('selectedShippingDetailId');
       if (savedId) {
-        const savedAddress = res.data.find(
-          (addr: Address) => addr.id === parseInt(savedId)
+        const savedDetail = res.data.find(
+          (detail: ShippingDetail) => detail.id === parseInt(savedId)
         );
-        if (savedAddress) {
-          setSelectedAddress(savedAddress);
-          initializedSelectedAddress.current = true;
+        if (savedDetail) {
+          setSelectedShippingDetail(savedDetail);
+          initializedSelectedShippingDetail.current = true;
           return;
         }
       }
 
-      setSelectedAddress(res.data[0]);
-      initializedSelectedAddress.current = true;
+      setSelectedShippingDetail(res.data[0]);
+      initializedSelectedShippingDetail.current = true;
     } catch (error) {
-      toast.error('Failed to load addresses');
-      initializedSelectedAddress.current = true;
+      toast.error('Failed to load shipping details');
+      initializedSelectedShippingDetail.current = true;
     }
   };
 
-  const addAddress = async (addressData: {
-    address: string;
-    city: string;
-    zip: string;
-  }) => {
+  const addShippingDetail = async (detailData: ShippingDetail) => { 
     try {
-      const res = await axios.post('/profile/addresses', addressData);
-      const newAddress: Address = res.data;
+      console.log(detailData);
+      const res = await axios.post('/profile/shipping-details', detailData);
+      // Optionally you can keep the newly added detail from response
+      // const newDetail: ShippingDetail = res.data;
 
-      // Add new address to existing list without refetching
-      setAddresses(prev => [...prev, newAddress]);
-      setSelectedAddress(newAddress);
+      // Refetch the full list to keep consistent state
+      await fetchShippingDetails(user.id);
+
       setShowForm(false);
-      toast.success('Address added successfully');
+      toast.success('Shipping detail added successfully');
     } catch (error: any) {
       if (error.response?.data?.errors) {
         const messages = Object.values(error.response.data.errors).flat();
         messages.forEach(msg => toast.error(msg));
       } else {
-        toast.error('Failed to add address');
+        toast.error('Failed to add shipping detail');
       }
     }
   };
 
+  const setDefaultShippingDetail = async (detail: ShippingDetail) => {
+    console.log(detail);
+    try {
+      await axios.put(`/profile/shipping-details/${detail.id}`, {
+        ...detail,
+        is_default: true,
+      });
+
+      setShippingDetails((prev) =>
+        prev.map((d) => ({
+          ...d,
+          is_default: d.id === detail.id,
+        }))
+      );
+
+      setSelectedShippingDetail(detail);
+      toast.success('Default shipping address updated');
+    } catch (error) {
+      toast.error('Failed to update default shipping address');
+    }
+  };
+
   useEffect(() => {
-    // Reset and fetch addresses when user changes
-    initializedSelectedAddress.current = false;
-    setAddresses([]);
-    setSelectedAddress(null);
-    fetchAddresses(user.id);
+    initializedSelectedShippingDetail.current = false;
+    setShippingDetails([]);
+    setSelectedShippingDetail(null);
+    fetchShippingDetails(user.id);
   }, [user]);
 
   return (
     <ShippingContext.Provider
       value={{
-        addresses,
-        selectedAddress,
+        shippingDetails,
+        selectedShippingDetail,
         hoveredId,
         showForm,
-        setAddresses,
-        setSelectedAddress,
+        setShippingDetails,
+        setSelectedShippingDetail,
         setHoveredId,
         setShowForm,
         toggleShowForm,
-        fetchAddresses,
-        addAddress,
+        fetchShippingDetails,
+        addShippingDetail,
+        setDefaultShippingDetail,
       }}
     >
       {children}

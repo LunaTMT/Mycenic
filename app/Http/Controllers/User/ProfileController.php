@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers\User;
 
-
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -17,7 +15,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\File;
 
-use App\Models\Address;
+use App\Models\ShippingDetail;
 use App\Models\User;
 
 use App\Http\Controllers\Controller;
@@ -30,20 +28,18 @@ class ProfileController extends Controller
     public function index(Request $request): Response
     {
         $currentUser = $request->user();
-
         $user = $currentUser;
 
         // If admin and there's a user_id in query, load that user instead
         if ($currentUser->isAdmin() && $request->has('user_id')) {
-            $userToView = User::with('addresses')->find($request->query('user_id'));
+            $userToView = User::with('shippingDetails')->find($request->query('user_id'));
             if ($userToView) {
                 $user = $userToView;
             }
         } else {
-            $user->load('addresses');
+            $user->load('shippingDetails');
         }
 
-        // Get initialTab from query — null if not present
         $initialTab = $request->query('initialTab');
 
         return Inertia::render('Profile/Profile', [
@@ -81,19 +77,19 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update user's shipping details.
+     * Update user's shipping details (updates user's default shipping detail).
      */
     public function updateShipping(Request $request): RedirectResponse
     {
         Log::info('Shipping update started', [
             'user_id' => $request->user()->id,
-            'input' => $request->only(['address', 'city', 'zip']),
+            'input' => $request->only(['address_line1', 'city', 'zip']),
         ]);
 
         $data = $request->validate([
-            'address' => ['required', 'string', 'max:255'],
-            'city'    => ['required', 'string', 'max:100'],
-            'zip'     => ['required', 'string', 'max:20'],
+            'address_line1' => ['required', 'string', 'max:255'],
+            'city'          => ['required', 'string', 'max:100'],
+            'zip'           => ['required', 'string', 'max:20'],
         ]);
 
         Log::info('Shipping details validated', [
@@ -103,20 +99,22 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        try {
-            $user->update([
-                'address' => $data['address'],
-                'city'    => $data['city'],
-                'zip'     => $data['zip'],
-            ]);
+        // Update user's default shipping detail or create one if none
+        $defaultShipping = $user->shippingDetails()->where('is_default', true)->first();
 
-            Log::info('Shipping details updated successfully', ['user_id' => $user->id]);
-        } catch (\Exception $e) {
-            Log::error('Error updating shipping details', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
+        if ($defaultShipping) {
+            $defaultShipping->update($data);
+        } else {
+            // Create new default shipping detail
+            $data['full_name'] = $user->name; // Or collect from request
+            $data['phone'] = $user->phone ?? ''; // Or collect from request
+            $data['country'] = 'United Kingdom';
+            $data['is_default'] = true;
+
+            $user->shippingDetails()->create($data);
         }
+
+        Log::info('Shipping details updated successfully', ['user_id' => $user->id]);
 
         return Redirect::route('profile.index')->with('status', 'shipping-updated');
     }
@@ -124,60 +122,56 @@ class ProfileController extends Controller
     /**
      * Update the user's avatar image.
      */
-    public function updateAvatar(Request $request)
+    public function updateAvatar(Request $request): RedirectResponse
     {
         $request->validate([
             'avatar' => ['required', 'image', 'max:2048'],
         ]);
 
         $user = $request->user();
-
         $avatar = $request->file('avatar');
 
-        // Get the original extension, fallback to jpg if missing
-        $extension = $avatar->getClientOriginalExtension();
-        if (!$extension) {
-            $extension = 'jpg'; // fallback extension
-        }
-
+        $extension = $avatar->getClientOriginalExtension() ?: 'jpg';
         $filename = Str::random(40) . '.' . $extension;
         $destinationPath = public_path('assets/avatars');
 
-        // Ensure the directory exists
         if (!File::exists($destinationPath)) {
             File::makeDirectory($destinationPath, 0755, true);
         }
 
-        // Move the uploaded file to public/assets/avatars
         $avatar->move($destinationPath, $filename);
 
-        // Remove old avatar if local (not default or external URL)
-        if ($user->avatar && !Str::startsWith($user->avatar, 'http') && !Str::startsWith($user->avatar, 'default-avatar.png')) {
+        // Delete old avatar if local and not default or external URL
+        if ($user->avatar && !Str::startsWith($user->avatar, ['http', 'default-avatar.png'])) {
             $oldPath = public_path($user->avatar);
             if (File::exists($oldPath)) {
                 File::delete($oldPath);
             }
         }
 
-        // Save new avatar path relative to public with extension
         $user->avatar = 'assets/avatars/' . $filename;
         $user->save();
 
-        return redirect()->route('profile.index')->with('status', 'Avatar updated.');
+        return Redirect::route('profile.index')->with('status', 'avatar-updated');
     }
 
     /**
-     * Store a new address for the user.
+     * Store a new shipping detail for the user.
      */
-    public function storeAddress(Request $request)
+    public function storeShippingDetail(Request $request)
     {
         try {
             $validated = $request->validate([
-                'label'   => 'nullable|string|max:50',
-                'address' => 'required|string|max:255',
-                'city'    => 'required|string|max:100',
-                'zip'     => 'required|string|max:20',
-                'country' => 'nullable|string|max:100',
+                'full_name'           => 'required|string|max:255',
+                'phone'               => 'required|string|max:50',
+                'address_line1'       => 'required|string|max:255',
+                'address_line2'       => 'nullable|string|max:255',
+                'city'                => 'required|string|max:100',
+                'zip'                 => 'required|string|max:20',
+                'state'               => 'nullable|string|max:100',
+                'country'             => 'nullable|string|max:100',
+                'delivery_instructions'=> 'nullable|string|max:1000',
+                'is_default'          => 'nullable|boolean',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -186,34 +180,26 @@ class ProfileController extends Controller
             ], 422);
         }
 
-        $validated['country'] = $validated['country'] ?? 'UK';
+        $validated['country'] = $validated['country'] ?? 'United Kingdom';
 
         $user = $request->user();
 
-        $exists = $user->addresses()
-            ->where('address', $validated['address'])
-            ->where('city', $validated['city'])
-            ->where('zip', $validated['zip'])
-            ->where('country', $validated['country'])
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'message' => 'This address already exists.',
-            ], 409);
+        // Optional: if is_default set true, reset other defaults
+        if (!empty($validated['is_default']) && $validated['is_default']) {
+            $user->shippingDetails()->update(['is_default' => false]);
         }
 
-        $address = $user->addresses()->create($validated);
+        $shippingDetail = $user->shippingDetails()->create($validated);
 
-        \Log::info('New address stored', [
-            'user_id'    => $user->id,
-            'address_id' => $address->id,
-            'data'       => $validated,
+        Log::info('New shipping detail stored', [
+            'user_id' => $user->id,
+            'shipping_detail_id' => $shippingDetail->id,
+            'data' => $validated,
         ]);
 
         return response()->json([
-            'message' => 'Address stored successfully.',
-            'address' => $address,
+            'message' => 'Shipping detail stored successfully.',
+            'shippingDetail' => $shippingDetail,
         ]);
     }
 
@@ -237,7 +223,6 @@ class ProfileController extends Controller
 
         Log::info('Account deleted', ['user_id' => $user->id]);
 
-        // Flash a success message before redirecting
         return Redirect::to('/')->with('flash.success', 'Account successfully deleted.');
     }
 
@@ -260,14 +245,14 @@ class ProfileController extends Controller
         return response()->json($users);
     }
 
-    public function getAddresses(Request $request)
+    /**
+     * Get user's shipping details.
+     */
+    public function getShippingDetails(Request $request)
     {
         $user = $request->user();
+        $shippingDetails = $user->shippingDetails()->latest()->get();
 
-        // Load addresses
-        $addresses = $user->addresses()->latest()->get();
-
-        return response()->json($addresses);
+        return response()->json($shippingDetails);
     }
-
 }
