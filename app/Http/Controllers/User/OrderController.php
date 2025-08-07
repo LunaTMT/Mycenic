@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\User;
 
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -18,6 +18,7 @@ use App\Models\ReturnModel;
 use App\Models\User;
 use App\Services\ShippoService;
 
+use App\Http\Controllers\Controller;
 use Shippo_Shipment;
 
 class OrderController extends Controller

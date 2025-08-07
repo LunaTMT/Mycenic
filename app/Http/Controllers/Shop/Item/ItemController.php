@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Shop\Item;
 
+use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use App\Models\Item;
 use Illuminate\Http\Request;

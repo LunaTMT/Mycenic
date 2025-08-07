@@ -40,7 +40,7 @@ createInertiaApp({
                     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
                         <CartProvider>
                             <ShippingProvider>
-                                {/* 🧠 Wrap QuestionsProvider here */}
+                                
                              
                                     <App {...props} />
                            

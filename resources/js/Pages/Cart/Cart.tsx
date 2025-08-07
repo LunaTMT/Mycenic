@@ -7,8 +7,8 @@ import GuestLayout from "@/Layouts/GuestLayout";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 import Breadcrumb from "@/Components/Nav/Breadcrumb";
-import Item from "./Item/Item";
-import Summary from "./Summary/Summary";
+import Item from "./old/Item/Item";
+import Summary from "./old/Summary/Summary";
 
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { User } from "@/types";
@@ -18,17 +18,9 @@ const Cart: React.FC = ( ) => {
   console.log(auth);
   const Layout = auth? AuthenticatedLayout : GuestLayout;
 
-  const { cart, hasPsyilocybinSporeSyringe } = useCart();
-  
-  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
+  const { cart } = useCart();
 
-  useEffect(() => {
-    load(import.meta.env.VITE_NOCAPTCHA_SITEKEY).then((recaptcha) => {
-      recaptcha.execute("cart").then((token) => {
-        setRecaptchaToken(token);
-      });
-    });
-  }, []);
+  
 
   return (
     <Layout>

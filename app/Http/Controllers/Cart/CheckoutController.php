@@ -1,13 +1,14 @@
 <?php
-// app/Http/Controllers/CheckoutController.php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Cart;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
+
 
 class CheckoutController extends Controller
 {

@@ -7,8 +7,8 @@ import GuestLayout from "@/Layouts/GuestLayout";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 import Breadcrumb from "@/Components/Nav/Breadcrumb";
-import Item from "../../Cart/Item/Item";
-import Summary from "../../Cart/Summary/Summary";
+import Item from "../../../Cart/old/Item/Item";
+import Summary from "../../../Cart/old/Summary/Summary";
 
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 

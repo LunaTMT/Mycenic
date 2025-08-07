@@ -7,27 +7,22 @@ use Inertia\Inertia;
 
 use App\Models\{Item, Order, User};
 
-use App\Http\Controllers\{
-    AddressController,
-    ReturnController,
-    ReviewController,
-    AboutController,
-    CartController,
-    CheckoutController,
-    CustomerController,
-    EmailController,
-    ItemController,
-    OrderController,
-    PaymentController,
-    ProfileController,
-    PromoCodeController,
-    ShippingController,
-    QuestionController,
-    ShopController,
-    Auth\AuthenticatedSessionController,
-    Auth\SocialAuthController,
-    Auth\GoogleController
-};
+// Controllers grouped by folders
+use App\Http\Controllers\About\AboutController;
+use App\Http\Controllers\Auth\{AuthenticatedSessionController, SocialAuthController};
+use App\Http\Controllers\Cart\{CartController, CheckoutController, PromoCodeController};
+use App\Http\Controllers\Email\EmailController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ShippingDetailController;
+use App\Http\Controllers\Shop\ShopController;
+use App\Http\Controllers\Shop\Item\{ItemController, QuestionController, ReviewController};
+use App\Http\Controllers\User\{OrderController, ProfileController, ReturnController};
+
+// If you have GoogleController (but it's not in your folders, remove if unused)
+use App\Http\Controllers\Auth\GoogleController;
+
+
+
 
 use App\Http\Middleware\AdminMiddleware;
 use Stripe\{Stripe, Checkout\Session};
@@ -119,13 +114,16 @@ Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.
 | Cart Routes
 |--------------------------------------------------------------------------
 */
+
+
 Route::prefix('cart')->group(function () {
-    Route::get('/', [CartController::class, 'index'])->name('cart');
-    Route::get('/fetch-shipping-details', [CartController::class, 'getShippingDetails'])->name('cart.get.shipping.details');
-    Route::post('/store-shipping-details', [CartController::class, 'storeShippingDetails'])->name('cart.store.shipping.details');
-    Route::post('/fetch-shipping-estimate', [CartController::class, 'getShippingEstimate'])->name('cart.shipping.estimate');
-    Route::post('/fetch-shipping-rates', [CartController::class, 'getShippingRates'])->name('cart.shipping.rates');
+    Route::get('/', [CartController::class, 'index'])->name('cart');          // Loads cart page via Inertia
+    Route::get('/data', [CartController::class, 'getCartData']);              // Returns cart JSON data
+    Route::post('/add', [CartController::class, 'addToCart']);                // Add item
+    Route::post('/remove', [CartController::class, 'removeFromCart']);        // Remove item
+    Route::post('/clear', [CartController::class, 'clearCart']);              // Clear cart
 });
+
 
 Route::post('/item/update-stock/remove', function (Request $request) {
     $item = Item::find($request->itemId);

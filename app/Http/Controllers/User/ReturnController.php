@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\User;
 
 use App\Models\ReturnModel;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;  
-
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Controller;
 
 class ReturnController extends Controller
 {

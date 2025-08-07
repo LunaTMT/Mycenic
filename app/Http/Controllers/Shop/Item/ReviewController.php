@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Shop\Item;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Review;
 use App\Models\ReviewImage;

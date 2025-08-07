@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\User;
+
 
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -17,7 +18,9 @@ use Inertia\Response;
 use Illuminate\Support\Facades\File;
 
 use App\Models\Address;
-use App\Models\User; // Added User model for searchUsers method
+use App\Models\User;
+
+use App\Http\Controllers\Controller;
 
 class ProfileController extends Controller
 {

@@ -12,6 +12,7 @@ import { ToastContainer, toast } from "react-toastify";
 
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
+import CartSidebar from "./CartSidebar";
 
 interface PageProps {
   auth: {
@@ -38,6 +39,7 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
   const { url } = usePage();
   const { scrollDirection } = useNav();
   const { darkMode } = useDarkMode();
+
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -79,18 +81,15 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
         }}
         viewport={{ once: true }}
       >
-        <Menu url={url}/>
-
-        {/* Bottom Nav */}
-        <div className="relative sm:px-6 lg:px-8 w-full max-w-7xl mx-auto flex items-center justify-end ">
-          {header}
-        </div>
+        <Menu url={url} />
 
       </motion.header>
 
-      <main className="relative w-full h-full dark:bg-[#1e2124]">
-        {children}
-      </main>
+          {/* Main + Sidebar Container */}
+      <div className="flex flex-1 min-h-0 max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-auto">{children}</main>
+        <CartSidebar />
+      </div>
 
       <ScrollTop />
 
@@ -105,7 +104,19 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
         style={{ zIndex: 100 }}
       />
 
-
+      {showLogoutModal && (
+        <Modal onClose={() => setShowLogoutModal(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Confirm Logout
+            </h3>
+            <div className="flex justify-end space-x-4">
+              <SecondaryButton onClick={() => setShowLogoutModal(false)}>Cancel</SecondaryButton>
+              <PrimaryButton onClick={handleLogout}>Logout</PrimaryButton>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

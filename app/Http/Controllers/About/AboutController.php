@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\About;
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 
 class AboutController extends Controller
 {
