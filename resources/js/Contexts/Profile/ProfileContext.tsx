@@ -1,13 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import axios from "axios";
-import { User } from "@/types/types";
+import { User } from "@/types/User";
 
 interface ProfileContextType {
-  user: User;
-  setUser: (user: User) => void;
-  orders: any[] | null;
-  loadingOrders: boolean;
-  ordersError: string | null;
+  user: User | null;
+  setUser: (user: User | null) => void;
+  fetchUser: (userId: number) => Promise<void>;
   onSelectUser: (selectedUserId: number) => void;
 }
 
@@ -22,35 +20,31 @@ export function useProfile() {
 }
 
 interface ProfileProviderProps {
-  initialUser: User;
+  initialUser?: User | null;
   children: ReactNode;
 }
 
-export function ProfileProvider({ initialUser, children }: ProfileProviderProps) {
-  const [user, setUser] = useState<User>(initialUser);
+export function ProfileProvider({ initialUser = null, children }: ProfileProviderProps) {
+  const [user, setUser] = useState<User | null>(initialUser);
 
-  const [orders, setOrders] = useState<any[] | null>(null);
-  const [loadingOrders, setLoadingOrders] = useState(false);
-  const [ordersError, setOrdersError] = useState<string | null>(null);
+  // Fetch user by ID and update state
+  const fetchUser = async (userId: number) => {
+    try {
+      const response = await axios.get(`/profile`, {
+        params: { user_id: userId },
+      });
+      console.log(response.data);
+      const fetchedUser = response.data.props?.user || response.data.user;
+      setUser(fetchedUser);
+    } catch (error) {
+      setUser(null);
+      console.error("Failed to fetch user", error);
+    }
+  };
 
-  useEffect(() => {
-    setLoadingOrders(true);
-    setOrdersError(null);
-
-    axios
-      .get("/orders")
-      .then((res) => setOrders(res.data.orders || []))
-      .catch(() => {
-        setOrders([]);
-        setOrdersError("Failed to load orders. Please try again later.");
-      })
-      .finally(() => setLoadingOrders(false));
-  }, []);
-
+  // On user select, fetch and set user immediately (no reload)
   const onSelectUser = (selectedUserId: number) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("user_id", selectedUserId.toString());
-    window.location.href = url.toString();
+    fetchUser(selectedUserId);
   };
 
   return (
@@ -58,9 +52,7 @@ export function ProfileProvider({ initialUser, children }: ProfileProviderProps)
       value={{
         user,
         setUser,
-        orders,
-        loadingOrders,
-        ordersError,
+        fetchUser,
         onSelectUser,
       }}
     >

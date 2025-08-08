@@ -3,11 +3,10 @@ import { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { FaUpload, FaUserShield } from 'react-icons/fa';
 import { resolveImageSrc } from '@/utils/resolveImageSrc';
-import { useProfile } from '@/Contexts/Profile/ProfileContext';  // <-- import context hook
-import { User } from '@/types/User';
+import { useUser } from '@/Contexts/UserContext';
 
 export default function ProfileCard() {
-  const { user } = useProfile(); // get user from ProfileContext
+  const { user } = useUser();
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);

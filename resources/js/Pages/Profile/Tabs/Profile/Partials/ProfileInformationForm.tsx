@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import InputError from '@/Components/Login/InputError';
 import InputLabel from '@/Components/Login/InputLabel';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
@@ -5,7 +6,7 @@ import TextInput from '@/Components/Login/TextInput';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-import { useProfile } from '@/Contexts/Profile/ProfileContext';
+import { useUser } from '@/Contexts/UserContext';
 import { Link } from '@inertiajs/react';
 
 export default function ProfileInformationForm({
@@ -13,17 +14,23 @@ export default function ProfileInformationForm({
 }: {
   className?: string;
 }) {
-  const { user } = useProfile();
+  const { user } = useUser();
 
-  // define mustVerifyEmail and status as null (or false)
-  const mustVerifyEmail: boolean | null = null;
-  const status: string | null = null;
-
-  const { data, setData, patch, errors, processing, recentlySuccessful } =
+  // form state and helpers
+  const { data, setData, patch, errors, processing, recentlySuccessful, reset } =
     useForm({
       name: user.name,
       email: user.email,
     });
+
+  // Sync form data when user changes
+  useEffect(() => {
+    setData('name', user.name);
+    setData('email', user.email);
+  }, [user, setData]);
+
+  const mustVerifyEmail: boolean | null = null;
+  const status: string | null = null;
 
   const submit: FormEventHandler = (e) => {
     e.preventDefault();

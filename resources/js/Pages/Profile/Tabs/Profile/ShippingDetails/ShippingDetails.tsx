@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useShipping } from '@/Contexts/Profile/ShippingContext';
 import ShippingAddressCard from './ShippingAddressCard';
 import AddAddressCard from './AddAddressCard';
@@ -11,16 +11,22 @@ interface Props {
 
 export default function ShippingDetails({ className = '' }: Props) {
   const {
-    shippingDetails,
+    shippingDetails = [],
     selectedShippingDetail,
     setDefaultShippingDetail,
+    showForm,
+    toggleShowForm,
+    setSelectedShippingDetail,
   } = useShipping();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const maxAddresses = 6;
   const showAddCard = shippingDetails.length < maxAddresses;
   const addressesToShow = shippingDetails.slice(0, maxAddresses);
+
+  const handleAddNew = () => {
+    setSelectedShippingDetail(null); // Clear any edit state
+    toggleShowForm(); // Open modal
+  };
 
   return (
     <section
@@ -28,28 +34,24 @@ export default function ShippingDetails({ className = '' }: Props) {
       style={{ minHeight: '200px' }}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {addressesToShow.length ? (
-          addressesToShow.map((detail) => (
-            <ShippingAddressCard
-              key={detail.id}
-              detail={detail}
-              isSelected={selectedShippingDetail?.id === detail.id}
-              onSelect={() => setDefaultShippingDetail(detail)}
-            />
-          ))
-        ) : (
-          <p className="text-center text-gray-500 dark:text-gray-400 col-span-3">
-            No saved addresses.
-          </p>
-        )}
+        {addressesToShow.length > 0 && addressesToShow.map((detail) => (
+          <ShippingAddressCard
+            key={detail.id}
+            detail={detail}
+            isSelected={selectedShippingDetail?.id === detail.id}
+            onSelect={() => setDefaultShippingDetail(detail)}
+          />
+        ))}
 
-        {showAddCard && <AddAddressCard onClick={() => setIsModalOpen(true)} />}
+        {showAddCard && <AddAddressCard onClick={handleAddNew} />}
       </div>
 
-      <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="lg" closeable>
+      <Modal show={showForm} onClose={toggleShowForm} maxWidth="lg" closeable>
         <div className="p-6">
-          <h2 className="text-xl font-semibold mb-4 dark:text-white">Add Shipping Address</h2>
-          <ShippingAddressForm closeModal={() => setIsModalOpen(false)} />
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">
+            {selectedShippingDetail ? 'Edit Shipping Address' : 'Add Shipping Address'}
+          </h2>
+          <ShippingAddressForm closeModal={toggleShowForm} />
         </div>
       </Modal>
     </section>

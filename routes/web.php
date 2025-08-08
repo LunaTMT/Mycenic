@@ -17,6 +17,8 @@ use App\Http\Controllers\ShippingDetailController;
 use App\Http\Controllers\Shop\ShopController;
 use App\Http\Controllers\Shop\Item\{ItemController, QuestionController, ReviewController};
 use App\Http\Controllers\User\{OrderController, ProfileController, ReturnController};
+use App\Http\Controllers\User\UserController;
+
 
 
 // If you have GoogleController (but it's not in your folders, remove if unused)
@@ -74,6 +76,11 @@ Route::middleware('auth')->prefix('profile')->group(function () {
  
     Route::get('/addresses', [AddressController::class, 'index'])->name('profile.addresses.index');
     Route::post('/addresses', [AddressController::class, 'store'])->name('profile.addresses.store');
+});
+
+
+Route::middleware('auth')->prefix('user')->group(function () {
+    Route::get('/', [UserController::class, 'index'])->name('profile.index');
 });
 
 

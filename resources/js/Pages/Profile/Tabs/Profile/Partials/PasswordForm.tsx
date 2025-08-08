@@ -5,14 +5,14 @@ import TextInput from '@/Components/Login/TextInput';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
-import { useProfile } from '@/Contexts/Profile/ProfileContext';
+import { useUser } from '@/Contexts/UserContext';
 
 export default function PasswordForm({
     className = '',
 }: {
     className?: string;
 }) {
-    const { user } = useProfile();
+    const { user } = useUser();
 
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);

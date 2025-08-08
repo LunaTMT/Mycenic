@@ -3,13 +3,9 @@ import axios from "axios";
 import Dropdown from "@/Components/Dropdown/Dropdown";
 import ArrowIcon from "@/Components/Icon/ArrowIcon";
 import TextInput from "@/Components/Login/TextInput";
-import { useProfile } from "@/Contexts/Profile/ProfileContext";
+import { useUser } from "@/Contexts/UserContext";
+import { User } from "@/types/User";
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
 
 export default function UserSelector() {
   const [users, setUsers] = useState<User[]>([]);
@@ -18,7 +14,8 @@ export default function UserSelector() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const { user: currentUser, onSelectUser} = useProfile(); // 👈 Get current user from context
+  // Get current user and onSelectUser from UserContext
+  const { user: currentUser, onSelectUser } = useUser();
 
   useEffect(() => {
     setLoading(true);
@@ -89,7 +86,7 @@ export default function UserSelector() {
                   <li
                     key={user.id}
                     onClick={() => {
-                      onSelectUser(user.id); // make sure this function is defined somewhere
+                      onSelectUser(user.id);  // updates context user here
                       setOpen(false);
                     }}
                     className={`px-4 py-2 cursor-pointer text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-[#7289da]/70 ${

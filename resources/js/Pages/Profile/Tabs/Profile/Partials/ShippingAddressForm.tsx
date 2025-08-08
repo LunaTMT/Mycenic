@@ -7,6 +7,7 @@ import TextInput from '@/Components/Login/TextInput';
 import { useShipping } from '@/Contexts/Profile/ShippingContext';
 import { countries, countriesWithStates } from '@/utils/countries';
 import SecondaryButton from '@/Components/Buttons/SecondaryButton';
+import { ShippingDetail } from '@/types/Shipping';
 
 type FieldKey =
   | 'full_name'
@@ -24,7 +25,7 @@ interface ShippingAddressFormProps {
 }
 
 export default function ShippingAddressForm({ closeModal }: ShippingAddressFormProps) {
-  const { addShippingDetail } = useShipping();
+  const { addShippingDetail, editShippingDetail, selectedShippingDetail } = useShipping();
 
   const { data, setData, processing, errors, reset } = useForm<Record<FieldKey, string>>({
     full_name: '',
@@ -38,6 +39,26 @@ export default function ShippingAddressForm({ closeModal }: ShippingAddressFormP
     delivery_instructions: '',
   });
 
+  // Prefill form if editing
+  useEffect(() => {
+    if (selectedShippingDetail) {
+      setData({
+        full_name: selectedShippingDetail.full_name || '',
+        phone: selectedShippingDetail.phone || '',
+        country: selectedShippingDetail.country || 'United Kingdom',
+        address_line1: selectedShippingDetail.address_line1 || '',
+        address_line2: selectedShippingDetail.address_line2 || '',
+        city: selectedShippingDetail.city || '',
+        state: selectedShippingDetail.state || '',
+        zip: selectedShippingDetail.zip || '',
+        delivery_instructions: selectedShippingDetail.delivery_instructions || '',
+      });
+    } else {
+      reset(); // if adding new, clear form
+    }
+  }, [selectedShippingDetail, setData, reset]);
+
+  // Clear state if country doesn't have states
   useEffect(() => {
     if (!countriesWithStates.includes(data.country)) {
       setData('state', '');
@@ -47,11 +68,17 @@ export default function ShippingAddressForm({ closeModal }: ShippingAddressFormP
   const submit: FormEventHandler = async (e) => {
     e.preventDefault();
     try {
-      await addShippingDetail(data);
+      if (selectedShippingDetail) {
+        // Editing existing
+        await editShippingDetail(selectedShippingDetail.id, data as ShippingDetail);
+      } else {
+        // Adding new
+        await addShippingDetail(data as ShippingDetail);
+      }
       reset();
       closeModal();
     } catch (err) {
-      console.error('Failed to add address:', err);
+      console.error('Failed to save address:', err);
     }
   };
 
@@ -208,7 +235,7 @@ export default function ShippingAddressForm({ closeModal }: ShippingAddressFormP
           className="w-1/2 rounded-lg"
           disabled={processing}
         >
-          Add Address
+          {selectedShippingDetail ? 'Update Address' : 'Add Address'}
         </PrimaryButton>
       </div>
     </form>

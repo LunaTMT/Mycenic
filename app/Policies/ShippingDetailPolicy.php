@@ -4,16 +4,22 @@ namespace App\Policies;
 
 use App\Models\ShippingDetail;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ShippingDetailPolicy
 {
     /**
-     * Determine whether the user can view any models.
+     * Global check for admin to bypass all other checks.
      */
+    public function before(User $user, $ability)
+    {
+        if ($user->isAdmin()) {
+            return true;  // Admin can do everything
+        }
+    }
+
     public function viewAny(User $user): bool
     {
-        return false;
+        return false; // non-admins can't view all
     }
 
     public function view(User $user, ShippingDetail $shippingDetail): bool
@@ -31,18 +37,11 @@ class ShippingDetailPolicy
         return $user->id === $shippingDetail->user_id;
     }
 
-
-    /**
-     * Determine whether the user can restore the model.
-     */
     public function restore(User $user, ShippingDetail $shippingDetail): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
     public function forceDelete(User $user, ShippingDetail $shippingDetail): bool
     {
         return false;

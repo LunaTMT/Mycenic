@@ -40,10 +40,9 @@ function OrdersTabContent() {
 
 interface Props {
   initialTab?: TabKey | null;
-  user: User;
 }
 
-export default function Profile({ initialTab, user: initialUser }: Props) {
+export default function Profile({ initialTab}: Props) {
   const validTabs: TabKey[] = ["profile", "orders", "returns"];
 
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
@@ -57,10 +56,10 @@ export default function Profile({ initialTab, user: initialUser }: Props) {
   }, [activeTab]);
 
   const { auth } = usePage<PageProps>().props;
-  const isAdmin = auth.user?.is_admin ?? false;
+  const isAdmin = true;
 
   return (
-    <ProfileProvider initialUser={initialUser}>
+    <ProfileProvider >
       <AuthenticatedLayout
         header={isAdmin && <UserSelector />}
       >
@@ -78,7 +77,8 @@ export default function Profile({ initialTab, user: initialUser }: Props) {
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="p-8 h-full"
               >
-                {activeTab === "profile" && <ProfileTabContent />}
+              
+                {activeTab === "profile" && <ProfileTabContent />} 
                 {activeTab === "orders" && <CustomerOrders />}
                 {activeTab === "returns" && <ReturnsTabContent />}
               </motion.div>
@@ -87,5 +87,6 @@ export default function Profile({ initialTab, user: initialUser }: Props) {
         </div>
       </AuthenticatedLayout>
     </ProfileProvider>
+    
   );
 }

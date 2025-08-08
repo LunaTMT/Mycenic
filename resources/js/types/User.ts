@@ -1,4 +1,4 @@
-import { Address } from "./Address";
+import { ShippingDetail } from "./Shipping";
 
 export interface User {
   id: number;
@@ -10,5 +10,10 @@ export interface User {
   phone?: string | null;
   provider?: string | null;
   provider_id?: string | null;
-  addresses?: Address[];
+  shippingDetails?: ShippingDetail[];
 }
+
+// User or Guest union type
+export type UserOrGuest = 
+  | (User & { isGuest: false })
+  | { isGuest: true; id: 0; name: string; email: string; avatar: string; role: "guest"; is_admin: false; phone: null; provider: null; provider_id: null; shippingDetails: ShippingDetail[] };

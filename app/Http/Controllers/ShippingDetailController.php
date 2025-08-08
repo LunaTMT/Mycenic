@@ -16,21 +16,48 @@ class ShippingDetailController extends Controller
     /**
      * Display a listing of the shipping details for the current user.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $user = Auth::user();
+        $currentUser = Auth::user();
 
-        $shippingDetails = ShippingDetail::where('user_id', $user->id)->get();
+        $userId = $request->query('user_id');
+
+        if ($userId && $currentUser->isAdmin()) {
+            // Admin can fetch shipping details of any user by user_id
+            \Log::info('Admin fetching shipping details', [
+                'admin_id' => $currentUser->id,
+                'user_id' => $userId,
+            ]);
+
+            $shippingDetails = ShippingDetail::where('user_id', $userId)->get();
+
+            \Log::info('Number of shipping details fetched for user', [
+                'user_id' => $userId,
+                'count' => $shippingDetails->count(),
+            ]);
+        } else {
+            // Non-admin or no user_id: return current user's shipping details
+            \Log::info('Fetching shipping details for current user', [
+                'user_id' => $currentUser->id,
+            ]);
+
+            $shippingDetails = ShippingDetail::where('user_id', $currentUser->id)->get();
+
+            \Log::info('Number of shipping details fetched', [
+                'count' => $shippingDetails->count(),
+            ]);
+        }
 
         return response()->json($shippingDetails);
     }
+
 
     /**
      * Store a newly created shipping detail.
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
+        $currentUser = Auth::user();
 
         $validated = $request->validate([
             'country' => 'required|string|max:255',
@@ -43,14 +70,23 @@ class ShippingDetailController extends Controller
             'state' => 'nullable|string|max:255',
             'is_default' => 'boolean',
             'delivery_instructions' => 'nullable|string',
+            'user_id' => 'nullable|integer|exists:users,id', // allow user_id if admin
         ]);
 
-        // If this is default, reset others
-        if (!empty($validated['is_default']) && $validated['is_default'] === true) {
-            ShippingDetail::where('user_id', $user->id)->update(['is_default' => false]);
+        // Determine which user_id to use
+        if ($currentUser->isAdmin() && !empty($validated['user_id'])) {
+            $userId = $validated['user_id'];
+        } else {
+            $userId = $currentUser->id;
         }
 
-        $shippingDetail = ShippingDetail::create(array_merge($validated, ['user_id' => $user->id]));
+        // If this is default, reset others for that user
+        if (!empty($validated['is_default']) && $validated['is_default'] === true) {
+            ShippingDetail::where('user_id', $userId)->update(['is_default' => false]);
+        }
+
+        // Create with user_id set accordingly
+        $shippingDetail = ShippingDetail::create(array_merge($validated, ['user_id' => $userId]));
 
         return response()->json($shippingDetail, 201);
     }

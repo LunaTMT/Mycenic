@@ -1,14 +1,8 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useRef,
-  ReactNode,
-} from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { ShippingDetail } from '@/types/Shipping';
+import { useUser } from '../UserContext';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface ShippingContextType {
   shippingDetails: ShippingDetail[];
@@ -17,110 +11,113 @@ interface ShippingContextType {
   showForm: boolean;
 
   setShippingDetails: (shippingDetails: ShippingDetail[]) => void;
-  setSelectedShippingDetail: (detail: ShippingDetail) => void;
+  setSelectedShippingDetail: (detail: ShippingDetail | null) => void;
   setHoveredId: (id: number | null) => void;
   setShowForm: (show: boolean) => void;
   toggleShowForm: () => void;
 
-  fetchShippingDetails: (userId?: number) => void;
-
+  fetchShippingDetails: () => void;
   addShippingDetail: (detail: ShippingDetail) => Promise<void>;
+  editShippingDetail: (id: number, updatedDetail: Partial<ShippingDetail>) => Promise<void>;
+  deleteShippingDetail: (id: number) => Promise<void>;
 
   setDefaultShippingDetail: (detail: ShippingDetail) => Promise<void>;
 }
 
 const ShippingContext = createContext<ShippingContextType | undefined>(undefined);
 
-export const ShippingProvider = ({
-  user,
-  children,
-}: {
-  user: any; // replace with your User type if available
-  children: ReactNode;
-}) => {
+export const ShippingProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useUser();
+
   const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>([]);
   const [selectedShippingDetail, setSelectedShippingDetail] = useState<ShippingDetail | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const initializedSelectedShippingDetail = useRef(false);
+  const toggleShowForm = () => setShowForm(prev => !prev);
+  const closeForm = () => setShowForm(false);
 
-  const toggleShowForm = () => {
-    setShowForm(prev => !prev);
-  };
-
-  useEffect(() => {
-    if (!initializedSelectedShippingDetail.current) return;
-
-    if (selectedShippingDetail) {
-      localStorage.setItem('selectedShippingDetailId', selectedShippingDetail.id.toString());
-    } else {
-      localStorage.removeItem('selectedShippingDetailId');
-    }
-  }, [selectedShippingDetail]);
-
-  const fetchShippingDetails = async (userId?: number) => {
-    if (!userId && shippingDetails.length > 0) {
-      console.log('Shipping details already loaded, skipping fetch');
-      return;
-    }
-
+  const fetchShippingDetails = async () => {
+    console.log(user.id);
     try {
-      const url = userId ? `/profile/shipping-details?user_id=${userId}` : '/profile/shipping-details';
+      const url = `/profile/shipping-details?user_id=${user.id}`;
       const res = await axios.get(url);
       setShippingDetails(res.data);
 
       if (res.data.length === 0) {
         setSelectedShippingDetail(null);
         localStorage.removeItem('selectedShippingDetailId');
-        initializedSelectedShippingDetail.current = true;
         return;
       }
 
       const savedId = localStorage.getItem('selectedShippingDetailId');
       if (savedId) {
         const savedDetail = res.data.find(
-          (detail: ShippingDetail) => detail.id === parseInt(savedId)
+          (detail: ShippingDetail) => detail.id === parseInt(savedId, 10)
         );
         if (savedDetail) {
           setSelectedShippingDetail(savedDetail);
-          initializedSelectedShippingDetail.current = true;
           return;
         }
       }
 
       setSelectedShippingDetail(res.data[0]);
-      initializedSelectedShippingDetail.current = true;
     } catch (error) {
       toast.error('Failed to load shipping details');
-      initializedSelectedShippingDetail.current = true;
     }
   };
 
-  const addShippingDetail = async (detailData: ShippingDetail) => { 
+  const addShippingDetail = async (detailData: ShippingDetail) => {
+    if (!user) {
+      toast.error('User not logged in');
+      return;
+    }
     try {
-      console.log(detailData);
-      const res = await axios.post('/profile/shipping-details', detailData);
-      // Optionally you can keep the newly added detail from response
-      // const newDetail: ShippingDetail = res.data;
-
-      // Refetch the full list to keep consistent state
-      await fetchShippingDetails(user.id);
-
-      setShowForm(false);
+      const url = `/profile/shipping-details?user_id=${user.id}`;
+      await axios.post(url, detailData);
+      await fetchShippingDetails();
+      closeForm();
       toast.success('Shipping detail added successfully');
     } catch (error: any) {
       if (error.response?.data?.errors) {
-        const messages = Object.values(error.response.data.errors).flat();
-        messages.forEach(msg => toast.error(msg));
+        Object.values(error.response.data.errors).flat().forEach(msg => toast.error(msg));
       } else {
         toast.error('Failed to add shipping detail');
       }
     }
   };
 
+  const editShippingDetail = async (id: number, updatedDetail: Partial<ShippingDetail>) => {
+    if (!user) {
+      toast.error('User not logged in');
+      return;
+    }
+    try {
+      await axios.put(`/profile/shipping-details/${id}`, updatedDetail);
+      await fetchShippingDetails();
+      closeForm();
+      toast.success('Shipping detail updated successfully');
+    } catch {
+      toast.error('Failed to update shipping detail');
+    }
+  };
+
+  const deleteShippingDetail = async (id: number) => {
+    try {
+      await axios.delete(`/profile/shipping-details/${id}`);
+      setShippingDetails((prev) => prev.filter(detail => detail.id !== id));
+
+      if (selectedShippingDetail?.id === id) {
+        setSelectedShippingDetail(shippingDetails.length > 1 ? shippingDetails[0] : null);
+      }
+
+      toast.success('Shipping detail deleted successfully');
+    } catch {
+      toast.error('Failed to delete shipping detail');
+    }
+  };
+
   const setDefaultShippingDetail = async (detail: ShippingDetail) => {
-    console.log(detail);
     try {
       await axios.put(`/profile/shipping-details/${detail.id}`, {
         ...detail,
@@ -136,17 +133,25 @@ export const ShippingProvider = ({
 
       setSelectedShippingDetail(detail);
       toast.success('Default shipping address updated');
-    } catch (error) {
+    } catch {
       toast.error('Failed to update default shipping address');
     }
   };
 
   useEffect(() => {
-    initializedSelectedShippingDetail.current = false;
     setShippingDetails([]);
     setSelectedShippingDetail(null);
-    fetchShippingDetails(user.id);
+
+    fetchShippingDetails();
   }, [user]);
+
+  useEffect(() => {
+    if (selectedShippingDetail) {
+      localStorage.setItem('selectedShippingDetailId', selectedShippingDetail.id.toString());
+    } else {
+      localStorage.removeItem('selectedShippingDetailId');
+    }
+  }, [selectedShippingDetail]);
 
   return (
     <ShippingContext.Provider
@@ -162,6 +167,8 @@ export const ShippingProvider = ({
         toggleShowForm,
         fetchShippingDetails,
         addShippingDetail,
+        editShippingDetail,
+        deleteShippingDetail,
         setDefaultShippingDetail,
       }}
     >
@@ -172,7 +179,6 @@ export const ShippingProvider = ({
 
 export const useShipping = () => {
   const context = useContext(ShippingContext);
-  if (!context)
-    throw new Error('useShipping must be used within a ShippingProvider');
+  if (!context) throw new Error('useShipping must be used within a ShippingProvider');
   return context;
 };

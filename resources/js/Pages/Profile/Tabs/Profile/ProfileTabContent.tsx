@@ -7,8 +7,8 @@ import ProfileCard from "./ProfileCard";
 import SubContent from "@/Components/Tabs/SubTab/SubContent";
 import SubNavigation from "@/Components/Tabs/SubTab/SubNavigation";
 import { ShippingProvider } from "@/Contexts/Profile/ShippingContext";
-import { useProfile } from "@/Contexts/Profile/ProfileContext";
 import UserReviews from "./UserReviews";
+import { useUser } from "@/Contexts/UserContext";
 
 type TabKey = "credentials" | "shipping" | "reviews" | "delete";
 
@@ -24,7 +24,8 @@ const rightTabs: { key: TabKey; label: string }[] = [
 
 
 export default function ProfileTabContent() {
-  const { user } = useProfile();
+  const { user } = useUser();
+  console.log(user);
   const validTabs: TabKey[] = ["credentials", "shipping", "reviews", "delete"];
 
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
@@ -58,7 +59,7 @@ export default function ProfileTabContent() {
         </SubContent>
 
         <SubContent activeKey={activeTab} tabKey="shipping">
-          <ShippingProvider user={user}>
+          <ShippingProvider>
             <ShippingDetails />
           </ShippingProvider>
         </SubContent>
