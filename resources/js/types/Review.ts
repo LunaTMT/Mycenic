@@ -1,4 +1,5 @@
 import { User } from "./User";
+import { Image } from "./Image";
 
 export interface Review {
   id: number;
@@ -11,7 +12,7 @@ export interface Review {
   disliked: boolean;
   created_at: string;
   updated_at: string;
-  images: { id: number; url: string }[];
+  images: Image[];
   parent_id?: number | null;
   replies: Review[];
 }

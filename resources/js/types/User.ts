@@ -11,9 +11,23 @@ export interface User {
   provider?: string | null;
   provider_id?: string | null;
   shippingDetails?: ShippingDetail[];
+  created_at?: string;  // added this field here
 }
 
 // User or Guest union type
 export type UserOrGuest = 
   | (User & { isGuest: false })
-  | { isGuest: true; id: 0; name: string; email: string; avatar: string; role: "guest"; is_admin: false; phone: null; provider: null; provider_id: null; shippingDetails: ShippingDetail[] };
+  | { 
+      isGuest: true; 
+      id: 0; 
+      name: string; 
+      email: string; 
+      avatar: string; 
+      role: "guest"; 
+      is_admin: false; 
+      phone: null; 
+      provider: null; 
+      provider_id: null; 
+      shippingDetails: ShippingDetail[];
+      created_at?: undefined; // explicitly undefined for guest
+    };

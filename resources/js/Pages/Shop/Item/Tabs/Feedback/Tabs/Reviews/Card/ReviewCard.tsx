@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { usePage, router } from "@inertiajs/react";
 import { toast } from "react-toastify";
 
@@ -19,19 +19,14 @@ import Dropdown from "@/Components/Dropdown/Dropdown";
 import { BsThreeDots } from "react-icons/bs";
 import DeleteConfirmationModal from "../../Components/ImageGallery/DeleteConfirmationModal";
 import LikeDislikeButtons from "../../Components/LikeDislikeButtons";
-import ZoomModal from "../../Components/ImageGallery/ZoomModal";
 
-import { resolveImageSrc } from "@/utils/resolveImageSrc";
-
-import { Image } from "@/types/Image";
+import { Image, LocalImage } from "@/types/Image";
+import ImageGallery from "./Content/ImageGallery";
 
 interface ReviewCardProps {
   review: Review;
   depth?: number;
 }
-
-// Extend Image interface for new images that have a file upload
-type ReviewImage = Image & { file?: File };
 
 const MAX_LENGTH = 300;
 
@@ -51,76 +46,55 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
   const { auth } = usePage().props as { auth: { user: any | null } };
   const authUser = auth?.user ?? null;
 
-  // Edit states
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(review.content || "");
   const [editedRating, setEditedRating] = useState(Number(review.rating) || 0);
 
-  // Reply states
   const [replyText, setReplyText] = useState("");
   const replies = review.replies ?? [];
   const localRepliesCount = replies.length;
 
   const showAuthNotice = !authUser && openReplyFormId === reviewId;
 
-  // Delete states for review deletion
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Permissions
   const isOwner = authUser?.id === review.user?.id;
   const isAdmin = authUser?.is_admin || false;
   const canEdit = isOwner || isAdmin;
   const canDelete = isOwner || isAdmin;
 
-  // --- Image gallery states ---
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Track images - use ReviewImage type with optional file for new uploads
-  const [images, setImages] = useState<ReviewImage[]>(() =>
-    (review.images ?? []).map((img) => ({
-      ...img,
-      file: undefined,
-    }))
-  );
-
-  // Track IDs of images deleted by user, to send to backend
+  // Images state management in ReviewCard
+  const [images, setImages] = useState<(Image | LocalImage)[]>(review.images ?? []);
   const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
 
-  // Zoom and delete confirm for images
-  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deletingImage, setDeletingImage] = useState(false);
-  const [imageToDelete, setImageToDelete] = useState<number | null>(null);
-
-  const maxImages = 5;
-
   useEffect(() => {
-    setImages(
-      (review.images ?? []).map((img) => ({
-        ...img,
-        file: undefined,
-      }))
-    );
-    setDeletedImageIds([]); // reset on review change
+    setImages((prevImages) => {
+      const serverImages = review.images || [];
+
+      const localNewImages = prevImages.filter((img): img is LocalImage => "file" in img);
+
+      const filteredServerImages = serverImages.filter(
+        (serverImg) => !localNewImages.some((localImg) => localImg.id === serverImg.id)
+      );
+
+      return [...filteredServerImages, ...localNewImages];
+    });
+    setDeletedImageIds([]);
   }, [review.images]);
 
-  // --- Handlers ---
-
-  // Start editing review
+  // Editing handlers
   function startEditing() {
     setEditedContent(review.content || "");
     setEditedRating(Number(review.rating) || 0);
     setIsEditing(true);
   }
 
-  // Cancel editing
   function cancelEditing() {
     setIsEditing(false);
     setDeletedImageIds([]);
   }
 
-  // Save edited review, including new and deleted images
   function saveEditedReview() {
     if (!editedContent.trim()) {
       toast.error("Review content cannot be empty.");
@@ -135,19 +109,16 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     formData.append("content", editedContent);
     formData.append("rating", editedRating.toString());
 
-    // Append deleted image IDs
     deletedImageIds.forEach((id) => {
       formData.append("deleted_image_ids[]", id.toString());
     });
 
-    // Append new images
     images.forEach((img) => {
-      if (img.file) {
+      if ("file" in img) {
         formData.append("images[]", img.file);
       }
     });
 
-    // Add _method = PUT for Laravel to recognize the request as PUT
     formData.append("_method", "PUT");
 
     router.post(`/reviews/${reviewId}`, formData, {
@@ -164,7 +135,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     });
   }
 
-  // Reply form handlers
+  // Reply handlers
   function handleReplyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     if (e.target.value.length <= MAX_LENGTH) {
       setReplyText(e.target.value);
@@ -225,7 +196,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       preserveScroll: true,
       onSuccess: () => {
         toast.success("Review deleted successfully.");
-        fetchReviews(); // Refresh the reviews context
+        fetchReviews();
       },
       onError: () => {
         toast.error("Failed to delete review.");
@@ -237,47 +208,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     });
   }
 
-  // Image Gallery handlers
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const files = Array.from(e.target.files);
-    const remaining = maxImages - images.length;
-    if (files.length > remaining)
-      alert(`You can only add ${remaining} more image(s).`);
-
-    const newImages: ReviewImage[] = files.slice(0, remaining).map((file) => ({
-      id: Date.now() + Math.random(),
-      imageable_id: 0,
-      imageable_type: "",
-      path: URL.createObjectURL(file),
-      created_at: "",
-      updated_at: "",
-      file,
-    }));
-
-    setImages((prev) => [...prev, ...newImages]);
-    e.target.value = "";
-  };
-
-  // Mark image for deletion and remove from display
-  const deleteImage = (id: number) => {
-    const imgToDelete = images.find((img) => img.id === id);
-    if (imgToDelete && !imgToDelete.file) {
-      setDeletedImageIds((prev) => [...prev, id]);
-    }
-    setImages((prev) => prev.filter((img) => img.id !== id));
-  };
-
-  const confirmDeleteImage = () => {
-    if (imageToDelete === null) return;
-    setDeletingImage(true);
-    deleteImage(imageToDelete);
-    setDeletingImage(false);
-    setImageToDelete(null);
-    setConfirmingDelete(false);
-  };
-
-  // --- Render helpers ---
+  // Render helpers
 
   function renderHeader() {
     return (
@@ -292,12 +223,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
               />
             )}
           </div>
-          <ArrowButton
-            isOpen={isExpanded}
-            onClick={handleToggleExpand}
-            w="24"
-            h="24"
-          />
+          <ArrowButton isOpen={isExpanded} onClick={handleToggleExpand} w="24" h="24" />
         </div>
 
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
@@ -327,10 +253,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     if (isEditing) {
       return (
         <>
-          <InputLabel
-            htmlFor="review"
-            value={depth === 0 ? "Your Review" : "Your Reply"}
-          />
+          <InputLabel htmlFor="review" value={depth === 0 ? "Your Review" : "Your Reply"} />
           <div className="relative text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] shadow-sm flex flex-col">
             <textarea
               id="review"
@@ -358,80 +281,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
       <div className="text-sm leading-relaxed text-gray-800 dark:text-gray-100 break-words">
         {review.content}
       </div>
-    );
-  }
-
-  // --- Inline ImageGallery component ---
-  function ImageGallery() {
-    return (
-      <>
-        <div className="flex flex-wrap gap-2 relative">
-          {images.map((img) => {
-            const src = resolveImageSrc(img.path);
-            return (
-              <div
-                key={img.id}
-                className="relative w-20 h-20 rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 transform transition-transform duration-300 hover:scale-105"
-              >
-                <img
-                  src={src}
-                  alt="Gallery image"
-                  className="w-full h-full object-cover cursor-pointer"
-                  onClick={() => setZoomedImage(src)}
-                />
-                {isEditing && (
-                  <>
-                    <div className="absolute inset-0 bg-black/30 opacity-20 hover:opacity-100 transition-opacity" />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setImageToDelete(img.id);
-                        setConfirmingDelete(true);
-                      }}
-                      className="absolute top-1 right-1 z-10 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs shadow-md hover:scale-110 transition-transform"
-                      title="Remove image"
-                    >
-                      <FaTrashAlt className="text-sm" />
-                    </button>
-                  </>
-                )}
-              </div>
-            );
-          })}
-
-          {isEditing && images.length < maxImages && (
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="w-20 h-20 flex items-center justify-center border border-dashed border-gray-400 dark:border-gray-600 rounded-md text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            >
-              <FaPlus />
-              <input
-                type="file"
-                accept="image/*"
-                ref={inputRef}
-                onChange={handleFileInputChange}
-                className="hidden"
-                multiple
-              />
-            </button>
-          )}
-        </div>
-
-        <DeleteConfirmationModal
-          show={confirmingDelete}
-          onClose={() => setConfirmingDelete(false)}
-          onConfirm={confirmDeleteImage}
-          deleting={deletingImage}
-          item="image"
-          message="Once deleted, this image will be permanently removed."
-        />
-
-        {zoomedImage && (
-          <ZoomModal imageUrl={zoomedImage} onClose={() => setZoomedImage(null)} />
-        )}
-      </>
     );
   }
 
@@ -593,7 +442,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     );
   }
 
-  // --- Main render ---
   return (
     <div
       className={`relative p-4 space-y-4 shadow-xl rounded-lg bg-white dark:bg-[#1e2124]/60 ${
@@ -612,7 +460,13 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
 
             <div className="space-y-2">
               {renderReviewContent()}
-              {<ImageGallery />}
+              <ImageGallery
+                images={images}
+                setImages={setImages}
+                deletedImageIds={deletedImageIds}
+                setDeletedImageIds={setDeletedImageIds}
+                isEditing={isEditing}
+              />
             </div>
 
             <div className="flex flex-col gap-4 w-full">

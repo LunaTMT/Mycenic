@@ -4,13 +4,13 @@ import { usePage } from "@inertiajs/react";
 import OrderRow from "./Table/Row/OrderRow";
 import { OrderProvider } from "@/Contexts/Orders/OrdersContext";
 import { Order } from "@/types/Order";
-import { useProfile } from "@/Contexts/Profile/ProfileContext";
+import { useUser } from "@/Contexts/UserContext";
 
 export default function CustomerOrders() {
   const { props } = usePage();
   const auth = props.auth;
 
-  const { user } = useProfile();
+  const { user } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 

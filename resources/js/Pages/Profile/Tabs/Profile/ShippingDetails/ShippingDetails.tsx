@@ -51,7 +51,7 @@ export default function ShippingDetails({ className = '' }: Props) {
           <h2 className="text-xl font-semibold mb-4 dark:text-white">
             {selectedShippingDetail ? 'Edit Shipping Address' : 'Add Shipping Address'}
           </h2>
-          <ShippingAddressForm closeModal={toggleShowForm} />
+          <ShippingAddressForm />
         </div>
       </Modal>
     </section>

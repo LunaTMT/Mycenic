@@ -69,13 +69,9 @@ Route::get('login/{provider}/callback', [SocialAuthController::class, 'handlePro
 */
 Route::middleware('auth')->prefix('profile')->group(function () {
     Route::get('/', [ProfileController::class, 'index'])->name('profile.index');
-    Route::patch('/', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::patch('/shipping', [ProfileController::class, 'updateShipping'])->name('profile.update-shipping');
-    Route::post('/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
- 
-    Route::get('/addresses', [AddressController::class, 'index'])->name('profile.addresses.index');
-    Route::post('/addresses', [AddressController::class, 'store'])->name('profile.addresses.store');
+
 });
 
 

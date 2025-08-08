@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useProfile } from "@/Contexts/Profile/ProfileContext";
+
 import { Review } from "@/types/Review";
 import { toast } from "react-toastify";
 import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";

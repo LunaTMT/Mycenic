@@ -20,12 +20,10 @@ type FieldKey =
   | 'zip'
   | 'delivery_instructions';
 
-interface ShippingAddressFormProps {
-  closeModal: () => void;
-}
 
-export default function ShippingAddressForm({ closeModal }: ShippingAddressFormProps) {
-  const { addShippingDetail, editShippingDetail, selectedShippingDetail } = useShipping();
+
+export default function ShippingAddressForm() {
+  const { addShippingDetail, editShippingDetail, selectedShippingDetail, toggleShowForm} = useShipping();
 
   const { data, setData, processing, errors, reset } = useForm<Record<FieldKey, string>>({
     full_name: '',
@@ -76,7 +74,9 @@ export default function ShippingAddressForm({ closeModal }: ShippingAddressFormP
         await addShippingDetail(data as ShippingDetail);
       }
       reset();
-      closeModal();
+
+   
+      console.log("toggling form")
     } catch (err) {
       console.error('Failed to save address:', err);
     }
@@ -224,7 +224,7 @@ export default function ShippingAddressForm({ closeModal }: ShippingAddressFormP
 
       <div className="flex gap-4 mt-4">
         <SecondaryButton
-          onClick={closeModal}
+          onClick={toggleShowForm}
           className="w-1/2"
         >
           Cancel

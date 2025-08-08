@@ -78,6 +78,7 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
       await fetchShippingDetails();
       closeForm();
       toast.success('Shipping detail added successfully');
+      
     } catch (error: any) {
       if (error.response?.data?.errors) {
         Object.values(error.response.data.errors).flat().forEach(msg => toast.error(msg));
@@ -95,8 +96,9 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
     try {
       await axios.put(`/profile/shipping-details/${id}`, updatedDetail);
       await fetchShippingDetails();
-      closeForm();
+      
       toast.success('Shipping detail updated successfully');
+      closeForm();
     } catch {
       toast.error('Failed to update shipping detail');
     }

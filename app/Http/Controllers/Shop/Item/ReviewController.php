@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Shop\Item;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Review;
-use App\Models\ReviewImage;
+use App\Models\Image;  // Use general Image model
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -13,7 +12,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\OpenAIModerationService;
 use Illuminate\Support\Facades\Redirect;
-use Inertia\Inertia;
 
 class ReviewController extends Controller
 {
@@ -89,18 +87,16 @@ class ReviewController extends Controller
             foreach ($request->file('images') as $imageFile) {
                 try {
                     $path = $imageFile->store('review_images', 'public');
-                    $review->images()->create(['image_path' => $path]);
+                    $review->images()->create(['path' => $path]);
                     Log::info('Stored review image', ['path' => $path]);
                 } catch (\Exception $e) {
                     Log::error('Failed to store image', ['error' => $e->getMessage()]);
-                    // Optionally add an error flash here
                 }
             }
         }
 
         return redirect()->back()->with('success', 'Review submitted successfully.');
     }
-
 
     public function vote(Request $request, Review $review)
     {
@@ -134,7 +130,6 @@ class ReviewController extends Controller
             Log::info('Existing vote found', ['vote' => $existingVote->vote]);
 
             if ($existingVote->vote === $vote) {
-                // Toggle off
                 if ($vote === 'like') {
                     $review->likes = max(0, $review->likes - 1);
                 } else {
@@ -149,7 +144,6 @@ class ReviewController extends Controller
                     'dislikes' => $review->dislikes,
                 ]);
             } else {
-                // Update vote
                 if ($existingVote->vote === 'like') {
                     $review->likes = max(0, $review->likes - 1);
                 } else {
@@ -234,8 +228,6 @@ class ReviewController extends Controller
         }
     }
 
-
-
     public function destroy(int $reviewId)
     {
         $user = Auth::user();
@@ -271,14 +263,13 @@ class ReviewController extends Controller
         }
     }
 
-
     protected function deleteReviewWithReplies(Review $review)
     {
         Log::info('Starting recursive delete for review', ['review_id' => $review->id]);
 
         foreach ($review->images as $image) {
             try {
-                Storage::disk('public')->delete($image->image_path);
+                Storage::disk('public')->delete($image->path);
                 $image->delete();
                 Log::info('Deleted image from review', ['image_id' => $image->id]);
             } catch (\Exception $e) {
@@ -320,7 +311,7 @@ class ReviewController extends Controller
             'rating' => 'sometimes|required|numeric|min:0.5|max:5',
             'images.*' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
             'deleted_image_ids' => 'sometimes|array',
-            'deleted_image_ids.*' => 'integer|exists:review_images,id',
+            'deleted_image_ids.*' => 'integer|exists:images,id',
         ]);
 
         if ($validated->fails()) {
@@ -347,9 +338,9 @@ class ReviewController extends Controller
         if ($request->has('deleted_image_ids')) {
             Log::info('Deleting images from review', ['review_id' => $review->id]);
             foreach ($request->input('deleted_image_ids') as $imageId) {
-                $image = ReviewImage::find($imageId);
-                if ($image && $image->review_id === $review->id) {
-                    Storage::disk('public')->delete($image->image_path);
+                $image = Image::find($imageId);
+                if ($image && $image->imageable_type === Review::class && $image->imageable_id === $review->id) {
+                    Storage::disk('public')->delete($image->path);
                     $image->delete();
                     Log::info('Deleted review image', ['image_id' => $imageId]);
                 }
@@ -360,9 +351,8 @@ class ReviewController extends Controller
             Log::info('Adding new images to review', ['review_id' => $review->id]);
             foreach ($request->file('images') as $file) {
                 $path = $file->store('review_images', 'public');
-                ReviewImage::create([
-                    'review_id' => $review->id,
-                    'image_path' => $path,
+                $review->images()->create([
+                    'path' => $path,
                 ]);
                 Log::info('Stored new review image', ['path' => $path]);
             }

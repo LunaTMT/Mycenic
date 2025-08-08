@@ -7,6 +7,7 @@ interface UserContextType {
   setUser: (user: UserOrGuest) => void;
   fetchUser: (userId: number) => Promise<void>;
   onSelectUser: (selectedUserId: number) => void;
+  updateAvatar: (file: File) => Promise<UserOrGuest>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -21,7 +22,6 @@ interface UserProviderProps {
   children: ReactNode;
 }
 
-// Define guest user default
 const guestUser: UserOrGuest = {
   isGuest: true,
   id: 0,
@@ -41,9 +41,7 @@ const LOCAL_STORAGE_KEY = "app_user";
 export function UserProvider({ children }: UserProviderProps) {
   const [user, setUserState] = useState<UserOrGuest>(guestUser);
   const [loading, setLoading] = useState(true);
-  console.log(user);
 
-  // Load user from localStorage or fetch from backend
   useEffect(() => {
     const savedUser = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (savedUser) {
@@ -56,7 +54,6 @@ export function UserProvider({ children }: UserProviderProps) {
         setLoading(false);
       }
     } else {
-      // No saved user, fetch logged-in user
       axios
         .get("/user")
         .then((response) => {
@@ -69,15 +66,13 @@ export function UserProvider({ children }: UserProviderProps) {
             setUserState(guestUser);
           }
         })
-        .catch((error) => {
-          console.error("Failed to load logged-in user", error);
+        .catch(() => {
           setUserState(guestUser);
         })
         .finally(() => setLoading(false));
     }
   }, []);
 
-  // Wrap setUser to sync localStorage
   const setUser = (user: UserOrGuest) => {
     setUserState(user);
     if (!user.isGuest) {
@@ -87,7 +82,6 @@ export function UserProvider({ children }: UserProviderProps) {
     }
   };
 
-  // Fetch arbitrary user by ID and update state + localStorage
   const fetchUser = async (userId: number) => {
     try {
       const response = await axios.get("/user", { params: { user_id: userId } });
@@ -95,8 +89,7 @@ export function UserProvider({ children }: UserProviderProps) {
       if (fetchedUser) {
         setUser({ ...fetchedUser, isGuest: false });
       }
-    } catch (error) {
-      console.error("Failed to fetch user", error);
+    } catch {
       setUser(guestUser);
     }
   };
@@ -105,12 +98,32 @@ export function UserProvider({ children }: UserProviderProps) {
     fetchUser(selectedUserId);
   };
 
+  // New function to update avatar and update user state
+  const updateAvatar = async (file: File): Promise<UserOrGuest> => {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      await axios.post("/profile/update", formData);
+      // After upload, explicitly refetch user data:
+      const response = await axios.get("/user");
+      const refreshedUser: UserOrGuest = { ...response.data.user, isGuest: false };
+      setUser(refreshedUser);
+      return refreshedUser;
+    } catch (error) {
+      console.error("Failed to update avatar", error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return <div>Loading user...</div>;
   }
 
   return (
-    <UserContext.Provider value={{ user, setUser, fetchUser, onSelectUser }}>
+    <UserContext.Provider
+      value={{ user, setUser, fetchUser, onSelectUser, updateAvatar }}
+    >
       {children}
     </UserContext.Provider>
   );

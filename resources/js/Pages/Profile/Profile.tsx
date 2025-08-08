@@ -7,7 +7,6 @@ import TabNavigation from "@/Components/Tabs/TabNavigation";
 import ProfileTabContent from "./Tabs/Profile/ProfileTabContent";
 import CustomerOrders from "./Tabs/Orders/CustomerOrders";
 import UserSelector from "./Components/UserSelector";
-import { ProfileProvider } from "@/Contexts/Profile/ProfileContext";
 
 
 import { PageProps, User } from "@/types/types";
@@ -59,7 +58,7 @@ export default function Profile({ initialTab}: Props) {
   const isAdmin = true;
 
   return (
-    <ProfileProvider >
+
       <AuthenticatedLayout
         header={isAdmin && <UserSelector />}
       >
@@ -86,7 +85,6 @@ export default function Profile({ initialTab}: Props) {
           </div>
         </div>
       </AuthenticatedLayout>
-    </ProfileProvider>
     
   );
 }
