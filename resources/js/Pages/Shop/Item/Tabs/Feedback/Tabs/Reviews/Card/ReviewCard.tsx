@@ -23,10 +23,15 @@ import ZoomModal from "../../Components/ImageGallery/ZoomModal";
 
 import { resolveImageSrc } from "@/utils/resolveImageSrc";
 
+import { Image } from "@/types/Image";
+
 interface ReviewCardProps {
   review: Review;
   depth?: number;
 }
+
+// Extend Image interface for new images that have a file upload
+type ReviewImage = Image & { file?: File };
 
 const MAX_LENGTH = 300;
 
@@ -70,15 +75,15 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
 
   // --- Image gallery states ---
   const inputRef = useRef<HTMLInputElement>(null);
-  // Track images - existing images have id and image_path; new images have file only
-  const [images, setImages] = useState<
-    { id: number; image_path?: string; file?: File }[]
-  >(() =>
-    (review.images ?? []).map((img, i) => ({
-      id: img.id ?? i + 1, // Use DB image id if exists, fallback to index + 1
-      image_path: img.image_path,
+
+  // Track images - use ReviewImage type with optional file for new uploads
+  const [images, setImages] = useState<ReviewImage[]>(() =>
+    (review.images ?? []).map((img) => ({
+      ...img,
+      file: undefined,
     }))
   );
+
   // Track IDs of images deleted by user, to send to backend
   const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
 
@@ -92,9 +97,9 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
 
   useEffect(() => {
     setImages(
-      (review.images ?? []).map((img, i) => ({
-        id: img.id ?? i + 1,
-        image_path: img.image_path,
+      (review.images ?? []).map((img) => ({
+        ...img,
+        file: undefined,
       }))
     );
     setDeletedImageIds([]); // reset on review change
@@ -157,7 +162,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
         toast.error("Failed to update review.");
       },
     });
-
   }
 
   // Reply form handlers
@@ -233,7 +237,6 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     });
   }
 
-
   // Image Gallery handlers
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -242,10 +245,16 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
     if (files.length > remaining)
       alert(`You can only add ${remaining} more image(s).`);
 
-    const newImages = files.slice(0, remaining).map((file) => ({
+    const newImages: ReviewImage[] = files.slice(0, remaining).map((file) => ({
       id: Date.now() + Math.random(),
+      imageable_id: 0,
+      imageable_type: "",
+      path: URL.createObjectURL(file),
+      created_at: "",
+      updated_at: "",
       file,
     }));
+
     setImages((prev) => [...prev, ...newImages]);
     e.target.value = "";
   };
@@ -253,7 +262,7 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
   // Mark image for deletion and remove from display
   const deleteImage = (id: number) => {
     const imgToDelete = images.find((img) => img.id === id);
-    if (imgToDelete && imgToDelete.image_path) {
+    if (imgToDelete && !imgToDelete.file) {
       setDeletedImageIds((prev) => [...prev, id]);
     }
     setImages((prev) => prev.filter((img) => img.id !== id));

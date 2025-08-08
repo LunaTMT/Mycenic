@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useProfile } from "@/Contexts/Profile/ProfileContext";
-import { Review } from "@/types/types";
+import { Review } from "@/types/Review";
 import { toast } from "react-toastify";
 import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import ReviewCard from "@/Pages/Shop/Item/Tabs/Feedback/Tabs/Reviews/Card/ReviewCard";
+import { useUser } from "@/Contexts/UserContext";
 
 const UserReviews = () => {
-  const { user } = useProfile();
+  const { user } = useUser();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,6 +27,7 @@ const UserReviews = () => {
       const url = `/reviews?user_id=${user.id}`;
 
       const res = await axios.get<Review[]>(url);
+      console.log(res.data);
       setReviews(res.data);
     } catch (error) {
       console.error("Error fetching reviews:", error);

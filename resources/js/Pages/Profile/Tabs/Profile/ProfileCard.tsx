@@ -13,7 +13,7 @@ export default function ProfileCard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { post, processing, errors, reset } = useForm();
-  console.log(user);
+  
   useEffect(() => {
     if (user.avatar) {
       const resolved = resolveImageSrc(user.avatar);
