@@ -10,9 +10,6 @@ use Illuminate\Support\Str;
 use App\Services\UnsplashService;
 use Illuminate\Support\Facades\Log;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
- */
 class UserFactory extends Factory
 {
     protected $model = User::class;
@@ -21,15 +18,12 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
-        $unsplash = new UnsplashService();
-
         return [
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'avatar' => $unsplash->getRandomMushroomImage() ?? 'https://i.pravatar.cc/150?img=12',
             'role' => 'user',
         ];
     }
@@ -45,6 +39,14 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function (User $user) {
             Log::info("Creating shipping details for User ID {$user->id} ({$user->email})");
+
+            $unsplash = new UnsplashService();
+            $avatarUrl = $unsplash->getRandomMushroomImage() ?? 'https://i.pravatar.cc/150?img=12';
+
+            // Create polymorphic avatar image
+            $user->avatar()->create([
+                'path' => $avatarUrl,
+            ]);
 
             $count = rand(1, 3);
             ShippingDetail::factory()->count($count)->create([

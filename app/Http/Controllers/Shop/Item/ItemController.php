@@ -19,31 +19,39 @@ class ItemController extends Controller
 
     public function index(Request $request, $id)
     {
-        \Log::info("ItemController@index called with ID: {$id}");
+        Log::info("ItemController@index called with ID: {$id}");
 
         try {
             $item = Item::with([
+                'images',
                 'reviews' => function ($query) {
-                    $query->whereNull('parent_id')->with('user');
+                    $query->whereNull('parent_id')
+                        ->with([
+                            'user.avatar',           // <-- top-level user avatar
+                            'images',
+                            'replies.user.avatar',   // avatar for replies
+                            'replies.images',
+                            'replies.replies',       // recursive if needed
+                        ]);
                 },
-                'reviews.images',
-                'reviews.replies.user',
-                'images',  
             ])->find($id);
 
+
             if (!$item) {
-                \Log::warning("Item with ID {$id} not found.");
+                Log::warning("Item with ID {$id} not found.");
                 return response()->json(['error' => 'Item not found'], 404);
             }
 
             return Inertia::render('Shop/Item/ItemPage', [
                 'item' => $item,
             ]);
+
         } catch (\Exception $e) {
-            \Log::error('Error fetching item in ItemController@index', [
+            Log::error('Error fetching item in ItemController@index', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json(['error' => 'Unable to fetch item'], 500);
         }
     }

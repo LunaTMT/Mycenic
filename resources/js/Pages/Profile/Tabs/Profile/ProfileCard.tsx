@@ -59,7 +59,7 @@ export default function ProfileCard() {
           <div className="relative w-28 h-28">
             {user.avatar ? (
               <img
-                src={user.avatar}
+                src={user.avatar.path}
                 alt={`${user.name}'s Avatar`}
                 className="w-28 h-28 rounded-md object-cover border border-gray-300 dark:border-gray-600 cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}

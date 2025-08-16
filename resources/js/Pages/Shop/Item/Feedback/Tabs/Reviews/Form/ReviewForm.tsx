@@ -6,7 +6,7 @@ import { usePage, router } from "@inertiajs/react";
 
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
-import StarRating from "./StarRating";
+import StarRating from "../Card/Content/StarRating";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 

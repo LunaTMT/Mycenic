@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\OpenAIModerationService;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\DB;
+
 
 class ReviewController extends Controller
 {
@@ -22,37 +24,29 @@ class ReviewController extends Controller
         Log::info('ReviewController initialized');
         $this->moderationService = $moderationService;
     }
-
+    
     public function index(Request $request)
     {
-        $authUser = $request->user();
-        Log::info('Review index called', ['authUser' => $authUser ? $authUser->id : null, 'query_params' => $request->query()]);
+        Log::info('Review index called', ['query_params' => $request->query()]);
 
-        $query = Review::with(['user', 'images', 'replies'])->whereNull('parent_id');
-
-        if ($authUser && $request->has('user_id')) {
-            Log::info('User_id param present', ['user_id' => $request->query('user_id')]);
-            if ($authUser->isAdmin()) {
-                Log::info('Admin user fetching reviews for user_id', ['authUserId' => $authUser->id, 'targetUserId' => $request->query('user_id')]);
-                $query->where('user_id', $request->query('user_id'));
-            } else {
-                Log::warning('Unauthorized user tried to fetch other user reviews', ['authUserId' => $authUser->id, 'attemptedUserId' => $request->query('user_id')]);
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
-        } elseif ($authUser) {
-            Log::info('Fetching reviews for authenticated user only', ['authUserId' => $authUser->id]);
-            $query->where('user_id', $authUser->id);
-        } else {
-            Log::warning('Unauthenticated request to fetch reviews');
-            return response()->json(['error' => 'Unauthenticated'], 401);
+        $itemId = $request->query('item_id');
+        if (!$itemId) {
+            Log::warning('No item_id provided');
+            return response()->json(['error' => 'Item ID is required'], 400);
         }
 
-        $reviews = $query->orderBy('created_at', 'desc')->get();
+        // Fetch top-level reviews for the given item, including related user, avatar, images, and replies
+        $reviews = Review::with(['user.avatar', 'images', 'replies'])
+            ->whereNull('parent_id')
+            ->where('item_id', $itemId)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        Log::info('Returning reviews count', ['count' => $reviews->count()]);
+        Log::info('Returning reviews count', ['count' => $reviews->count(), 'item_id' => $itemId]);
 
         return response()->json($reviews);
     }
+
 
     public function store(Request $request)
     {
@@ -104,91 +98,61 @@ class ReviewController extends Controller
         $user = $request->user();
         $guestToken = $user ? null : ($request->cookie('guest_token') ?? $request->input('guest_token'));
 
-        Log::info('Vote request', [
-            'user_id' => $user?->id,
-            'guest_token' => $guestToken,
-            'vote' => $vote,
-            'review_id' => $review->id,
-        ]);
-
         if (!in_array($vote, ['like', 'dislike'])) {
-            Log::warning('Invalid vote value', ['vote' => $vote]);
             return response()->json(['error' => 'Invalid vote value'], 400);
         }
 
         if (!$user && !$guestToken) {
-            Log::warning('Missing guest token for anonymous vote');
             return response()->json(['error' => 'Missing guest token'], 400);
         }
 
-        $existingVote = $review->votes()
-            ->when($user, fn($q) => $q->where('user_id', $user->id))
-            ->when(!$user, fn($q) => $q->where('guest_token', $guestToken))
-            ->first();
+        DB::transaction(function () use ($review, $vote, $user, $guestToken, &$response) {
+            // Find existing vote
+            $existingVote = $review->votes()
+                ->when($user, fn($q) => $q->where('user_id', $user->id))
+                ->when(!$user, fn($q) => $q->where('guest_token', $guestToken))
+                ->lockForUpdate() // prevent race conditions
+                ->first();
 
-        if ($existingVote) {
-            Log::info('Existing vote found', ['vote' => $existingVote->vote]);
-
-            if ($existingVote->vote === $vote) {
-                if ($vote === 'like') {
-                    $review->likes = max(0, $review->likes - 1);
-                } else {
-                    $review->dislikes = max(0, $review->dislikes - 1);
-                }
-                $review->save();
-                $existingVote->delete();
-
-                return response()->json([
-                    'message' => 'Vote removed',
-                    'likes' => $review->likes,
-                    'dislikes' => $review->dislikes,
-                ]);
-            } else {
-                if ($existingVote->vote === 'like') {
-                    $review->likes = max(0, $review->likes - 1);
-                } else {
-                    $review->dislikes = max(0, $review->dislikes - 1);
-                }
-
-                if ($vote === 'like') {
-                    $review->likes += 1;
-                } else {
-                    $review->dislikes += 1;
-                }
-                $review->save();
-
-                $existingVote->vote = $vote;
-                $existingVote->save();
-
-                return response()->json([
-                    'message' => 'Vote updated',
-                    'likes' => $review->likes,
-                    'dislikes' => $review->dislikes,
-                ]);
-            }
-        } else {
-            Log::info('No existing vote found, creating new vote');
-
-            if ($vote === 'like') {
-                $review->likes += 1;
-            } else {
-                $review->dislikes += 1;
-            }
-            $review->save();
-
-            $review->votes()->create([
-                'user_id' => $user?->id,
-                'guest_token' => $guestToken,
-                'vote' => $vote,
+            $adjustCounts = fn($type, $delta) => $review->update([
+                $type === 'like' ? 'likes' : 'dislikes' => max(0, $review->{$type === 'like' ? 'likes' : 'dislikes'} + $delta)
             ]);
 
-            return response()->json([
-                'message' => 'Vote added',
+            if ($existingVote) {
+                if ($existingVote->vote === $vote) {
+                    // Remove vote
+                    $adjustCounts($vote, -1);
+                    $existingVote->delete();
+                    $message = 'Vote removed';
+                } else {
+                    // Switch vote
+                    $adjustCounts($existingVote->vote, -1);
+                    $adjustCounts($vote, 1);
+                    $existingVote->update(['vote' => $vote]);
+                    $message = 'Vote updated';
+                }
+            } else {
+                // New vote
+                $adjustCounts($vote, 1);
+                $review->votes()->create([
+                    'user_id' => $user?->id,
+                    'guest_token' => $guestToken,
+                    'vote' => $vote,
+                ]);
+                $message = 'Vote added';
+            }
+
+            $response = [
+                'message' => $message,
                 'likes' => $review->likes,
                 'dislikes' => $review->dislikes,
-            ]);
-        }
+            ];
+        });
+
+        return response()->json($response);
     }
+
+
 
     public function reply(Request $request, $reviewId)
     {
@@ -304,10 +268,10 @@ class ReviewController extends Controller
 
     public function update(Request $request, Review $review)
     {
-        Log::info('Updating review', ['review_id' => $review->id, 'input' => $request->all()]);
+        Log::info("Updating review input", $request->all());
 
         $validated = Validator::make($request->all(), [
-            'content' => 'required|string|max:300',
+            'content' => 'sometimes|string|max:300',
             'rating' => 'sometimes|required|numeric|min:0.5|max:5',
             'images.*' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
             'deleted_image_ids' => 'sometimes|array',
@@ -340,7 +304,7 @@ class ReviewController extends Controller
             foreach ($request->input('deleted_image_ids') as $imageId) {
                 $image = Image::find($imageId);
                 if ($image && $image->imageable_type === Review::class && $image->imageable_id === $review->id) {
-                    Storage::disk('public')->delete($image->path);
+                    Storage::disk('public')->delete(str_replace('/storage/', '', $image->path));
                     $image->delete();
                     Log::info('Deleted review image', ['image_id' => $imageId]);
                 }
@@ -350,11 +314,14 @@ class ReviewController extends Controller
         if ($request->hasFile('images')) {
             Log::info('Adding new images to review', ['review_id' => $review->id]);
             foreach ($request->file('images') as $file) {
-                $path = $file->store('review_images', 'public');
+                $path = $file->store('review_images', 'public'); // stored in storage/app/public/review_images
+                $publicPath = Storage::url($path); // "/storage/review_images/filename.jpg"
+
                 $review->images()->create([
-                    'path' => $path,
+                    'path' => $publicPath,
                 ]);
-                Log::info('Stored new review image', ['path' => $path]);
+
+                Log::info('Stored new review image', ['path' => $publicPath]);
             }
         }
 
@@ -363,4 +330,5 @@ class ReviewController extends Controller
 
         return Redirect::back()->with('review', $review);
     }
+
 }

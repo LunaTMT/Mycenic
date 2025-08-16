@@ -1,6 +1,6 @@
 import React from "react";
 import { FaUserShield } from "react-icons/fa";
-import { Review } from "@/types/types";
+import { Review } from "@/types/Review";
 import { resolveImageSrc } from "@/utils/resolveImageSrc";
 
 interface AvatarProps {
@@ -9,11 +9,7 @@ interface AvatarProps {
 
 export default function Avatar({ review }: AvatarProps) {
   const user = review.user;
-  console.log(user)
-  const userName = user?.name ?? "User";
-  const avatarSrc = user?.avatar ?? "/default-avatar.png";
-  const isAdmin = user?.role === "admin";
-
+  const isAdmin = user.role === "admin";
   const adminIconClasses = `
     absolute bottom-1 right-1 
     bg-yellow-500 text-white 
@@ -27,8 +23,8 @@ export default function Avatar({ review }: AvatarProps) {
     <div className="flex items-start flex-shrink-0 space-x-2">
       <div className="relative w-28 h-28">
         <img
-          src={resolveImageSrc(avatarSrc)}
-          alt={`${userName}'s avatar`}
+          src={resolveImageSrc(user.avatar)}
+          alt={`${user.name}'s avatar`}
           className="w-28 h-28 rounded-md object-cover border border-gray-300 dark:border-gray-600"
         />
         {isAdmin && (

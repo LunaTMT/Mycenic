@@ -4,17 +4,14 @@ import SortByDropdown from "./Header/SortByDropdown";
 import ReviewCard from "./Card/ReviewCard";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 
-
 export default function Reviews() {
   const {
     showForm,
     setShowForm,
-    currentReviews,
-    sortBy,
-    handleSortChange,
-    currentPage,
-    setCurrentPage,
-    totalPages,
+    // currentReviews,
+    // currentPage,
+    // setCurrentPage,
+    // totalPages,
     reviews,
   } = useReviews();
 
@@ -22,7 +19,7 @@ export default function Reviews() {
     return <p className="text-gray-500 dark:text-gray-400">No reviews yet.</p>;
   }
 
-  console.log(currentReviews);
+  // console.log(currentReviews);
   return (
     <section className="space-y-2 ">
       <header className="flex flex-wrap items-center justify-between gap-2">
@@ -37,10 +34,9 @@ export default function Reviews() {
           </button>
         </div>
         <div className="flex-shrink-0">
-          <SortByDropdown />
+          {/* <SortByDropdown /> */}
         </div>
       </header>
-
 
       {showForm && (
         <section id="review-form">
@@ -49,15 +45,14 @@ export default function Reviews() {
       )}
 
       <div className="space-y-4">
-        {currentReviews.map((review) => (
+        {reviews.map((review) => (
           <ReviewCard key={review.id} review={review} />
         ))}
       </div>
 
+      {/*
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-4">
-
-
           {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i}
@@ -71,10 +66,9 @@ export default function Reviews() {
               {i + 1}
             </button>
           ))}
-
-          
         </div>
       )}
+      */}
     </section>
   );
 }

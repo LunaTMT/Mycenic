@@ -1,6 +1,6 @@
 import React from "react";
 import InputLabel from "@/Components/Login/InputLabel";
-import StarRating from "./StarRating";
+import StarRating from "../Card/Content/StarRating";
 import { Review } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 

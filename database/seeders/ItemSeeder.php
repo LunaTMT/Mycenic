@@ -12,7 +12,7 @@ class ItemSeeder extends Seeder
     public function run(): void
     {
         Item::factory()
-            ->count(5)
+            ->count(1)
             ->create()
             ->each(function (Item $item) {
                 // Generate between 1 and 8 images for each item

@@ -27,12 +27,12 @@ const guestUser: UserOrGuest = {
   id: 0,
   name: "Guest",
   email: "",
-  avatar: "",
   role: "guest",
   is_admin: false,
   phone: null,
   provider: null,
   provider_id: null,
+  avatar: null,
   shippingDetails: [],
 };
 
@@ -48,9 +48,9 @@ export function UserProvider({ children }: UserProviderProps) {
       try {
         const parsedUser = JSON.parse(savedUser) as UserOrGuest;
         setUserState(parsedUser);
-        setLoading(false);
       } catch {
         localStorage.removeItem(LOCAL_STORAGE_KEY);
+      } finally {
         setLoading(false);
       }
     } else {
@@ -88,8 +88,10 @@ export function UserProvider({ children }: UserProviderProps) {
       const fetchedUser: User = response.data.user;
       if (fetchedUser) {
         setUser({ ...fetchedUser, isGuest: false });
+        console.log("Fetched user:", fetchedUser);
       }
-    } catch {
+    } catch (error) {
+      console.error("Error fetching user:", error);
       setUser(guestUser);
     }
   };
@@ -98,14 +100,13 @@ export function UserProvider({ children }: UserProviderProps) {
     fetchUser(selectedUserId);
   };
 
-  // New function to update avatar and update user state
   const updateAvatar = async (file: File): Promise<UserOrGuest> => {
     const formData = new FormData();
     formData.append("avatar", file);
 
     try {
       await axios.post("/profile/update", formData);
-      // After upload, explicitly refetch user data:
+      // Re-fetch updated user data after avatar upload
       const response = await axios.get("/user");
       const refreshedUser: UserOrGuest = { ...response.data.user, isGuest: false };
       setUser(refreshedUser);

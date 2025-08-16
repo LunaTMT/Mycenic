@@ -15,6 +15,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\File;
 
+use Illuminate\Support\Facades\Storage;  
+
 use App\Models\ShippingDetail;
 use App\Models\User;
 
@@ -32,12 +34,13 @@ class ProfileController extends Controller
 
         // If admin and there's a user_id in query, load that user instead
         if ($currentUser->isAdmin() && $request->has('user_id')) {
-            $userToView = User::with('shippingDetails')->find($request->query('user_id'));
+            $userToView = User::with(['shippingDetails', 'avatar'])->find($request->query('user_id'));
             if ($userToView) {
                 $user = $userToView;
             }
         } else {
-            $user->load('shippingDetails');
+            // Load shipping details and avatar for current user
+            $user->load(['shippingDetails', 'avatar']);
         }
 
         $initialTab = $request->query('initialTab');
@@ -47,9 +50,9 @@ class ProfileController extends Controller
             'status' => session('status'),
             'user' => $user,
             'initialTab' => $initialTab,
-            'isAdmin' => $currentUser->isAdmin(),
         ]);
     }
+
 
     /**
      * Update the user's profile information.
@@ -67,39 +70,31 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
             Log::info('Avatar file detected, processing upload', ['user_id' => $user->id]);
 
-            $avatar = $request->file('avatar');
-            $extension = $avatar->getClientOriginalExtension() ?: 'jpg';
-            $filename = Str::random(40) . '.' . $extension;
-            $destinationPath = public_path('assets/avatars');
-
-            if (!File::exists($destinationPath)) {
-                Log::info('Avatar destination directory does not exist, creating...', ['path' => $destinationPath]);
-                File::makeDirectory($destinationPath, 0755, true);
-            }
-
-            try {
-                $avatar->move($destinationPath, $filename);
-                Log::info('Avatar file moved successfully', ['filename' => $filename, 'path' => $destinationPath]);
-            } catch (\Exception $e) {
-                Log::error('Failed to move avatar file', ['error' => $e->getMessage()]);
-                // Optionally rethrow or handle the error here
-                throw $e;
-            }
-
-            if ($user->avatar && !Str::startsWith($user->avatar, ['http', 'default-avatar.png'])) {
-                $oldPath = public_path($user->avatar);
-                if (File::exists($oldPath)) {
-                    Log::info('Deleting old avatar', ['old_avatar_path' => $oldPath]);
-                    File::delete($oldPath);
-                } else {
-                    Log::warning('Old avatar file not found for deletion', ['old_avatar_path' => $oldPath]);
+            // Delete old avatar image record and file if exists
+            if ($user->avatar) {
+                $oldPath = str_replace('/storage/', '', $user->avatar->path); // Remove storage prefix for deletion
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                    Log::info('Deleted old avatar file', ['path' => $oldPath]);
                 }
+                $user->avatar()->delete();
             }
 
-            $validated['avatar'] = 'assets/avatars/' . $filename;
+            // Store new avatar file in 'avatars' directory on 'public' disk
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $publicPath = Storage::url($path); // e.g. "/storage/avatars/abc.jpg"
+
+            // Create new avatar image record related to user
+            $user->avatar()->create([
+                'path' => $publicPath,
+            ]);
+
+            Log::info('Stored new avatar', ['path' => $publicPath]);
         }
 
-        $user->fill($validated);
+        // Fill other validated fields except avatar (already handled)
+        $fields = collect($validated)->except('avatar')->toArray();
+        $user->fill($fields);
 
         if ($user->isDirty('email')) {
             Log::info('User email changed, resetting email verification', ['user_id' => $user->id]);
@@ -112,8 +107,6 @@ class ProfileController extends Controller
         // Return empty 204 No Content response
         return response()->noContent();
     }
-
-
 
     /**
      * Delete the user's account.

@@ -45,7 +45,7 @@ const ItemTab: React.FC = () => {
         {/* Cart Section */}
         <div className="mt-6">
           <OptionsSelector />
-          <AddToCartSection />
+          {/* <AddToCartSection /> */}
         </div>
       </div>
     </div>

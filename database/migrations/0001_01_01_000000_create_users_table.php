@@ -19,7 +19,7 @@ return new class extends Migration
 
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
-            $table->string('avatar')->nullable();
+            
 
             // OAuth columns
             $table->string('provider')->nullable();

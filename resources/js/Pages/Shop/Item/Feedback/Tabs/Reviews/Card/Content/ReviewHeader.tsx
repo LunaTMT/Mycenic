@@ -1,38 +1,31 @@
 import React from "react";
-import StaticStarRating from "@/Components/Stars/StaticStarRating";
+import { Review } from "@/types/Review";
 import { FaUserShield } from "react-icons/fa";
-import ArrowButton from "@/Components/Icon/ArrowIcon";
-import { Review } from "@/types/types";
-import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import StaticStarRating from "@/Components/Stars/StaticStarRating";
+import ArrowIcon from "@/Components/Icon/ArrowIcon";
+import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext"; // Adjust path if needed
 
 interface Props {
   review: Review;
 }
 
 export default function ReviewHeader({ review }: Props) {
-  const { expandedIds, toggleExpandedId } = useReviews();
+  const { isExpanded, onToggleExpand } = useReviews();
 
-  const reviewId = review.id?.toString() ?? "";
-  const isExpanded = expandedIds.has(reviewId);
+  const expanded = isExpanded(review.id);
+  const user = review.user;
 
-  if (!review) return <div>Loading...</div>;
 
   return (
     <div className="relative flex flex-col gap-0.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 font-semibold text-sm text-gray-900 dark:text-white">
-          {review.user?.name ?? "Unknown User"}
-          {review.user?.isAdmin && (
-            <FaUserShield
-              className="text-yellow-500 dark:text-[#7289da]"
-              title="Admin"
-            />
-          )}
-        </div>
+          {user.name}
 
-        <ArrowButton
-          isOpen={isExpanded}
-          onClick={() => toggleExpandedId(reviewId)}
+        </div>
+        <ArrowIcon
+          isOpen={expanded}
+          onClick={() => onToggleExpand(review.id)}
           w="24"
           h="24"
         />
@@ -51,10 +44,11 @@ export default function ReviewHeader({ review }: Props) {
         ) : (
           "Unknown date"
         )}
-
-        <div className="ml-2">
-          <StaticStarRating rating={Number(review.rating)} size={14} />
-        </div>
+        {review.parent_id === null && (
+          <div className="ml-2">
+            <StaticStarRating rating={Number(review.rating)} size={14} />
+          </div>
+        )}
       </div>
     </div>
   );

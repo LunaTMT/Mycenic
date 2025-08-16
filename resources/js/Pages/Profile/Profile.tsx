@@ -28,15 +28,6 @@ function ReturnsTabContent() {
   );
 }
 
-function OrdersTabContent() {
-  return (
-    <div className="text-center text-gray-700 dark:text-gray-300">
-      <h2 className="text-2xl font-semibold mb-4">Orders</h2>
-      <p>Orders tab content goes here.</p>
-    </div>
-  );
-}
-
 interface Props {
   initialTab?: TabKey | null;
 }
@@ -55,6 +46,7 @@ export default function Profile({ initialTab}: Props) {
   }, [activeTab]);
 
   const { auth } = usePage<PageProps>().props;
+
   const isAdmin = true;
 
   return (

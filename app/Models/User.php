@@ -11,15 +11,10 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, Billable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
-        'password',  // Optional in the case of soft registration
+        'password',
         'phone',
         'address',
         'city',
@@ -28,71 +23,54 @@ class User extends Authenticatable
         'stripe_status',
         'stripe_subscription_id',
         'google_id',
-        'avatar',
         'provider',
         'provider_id',
+        // removed 'avatar'
     ];
 
-    /**
-     * The attributes that should be visible in arrays.
-     *
-     * @var array<int, string>
-     */
     protected $visible = [
         'id',
         'name',
         'email',
         'avatar',
+        'shippingDetails',
+        'role'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'trial_ends_at' => 'datetime',
     ];
 
-    /**
-     * Determine if the user has set a password.
-     */
+
+
     public function hasPassword(): bool
     {
         return !is_null($this->password);
     }
 
-    /**
-     * Check if user is an admin.
-     */
+    public function avatar()
+    {
+        return $this->morphOne(Image::class, 'imageable');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
 
-    /**
-     * Get all addresses associated with the user.
-     */
+
     public function shippingDetails()
     {
         return $this->hasMany(ShippingDetail::class);
     }
-    
-    /**
-     * Get all reviews written by the user.
-     */
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
@@ -102,4 +80,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+
+
 }

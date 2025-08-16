@@ -3,7 +3,7 @@ import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-import { getGuestToken } from "../../../../../../../utils/guestToken"
+import { getGuestToken } from "@/utils/guestToken";
 
 
 

@@ -4,7 +4,7 @@ import axios from "axios";
 import { Review } from "@/types/Review";
 import { toast } from "react-toastify";
 import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
-import ReviewCard from "@/Pages/Shop/Item/Tabs/Feedback/Tabs/Reviews/Card/ReviewCard";
+import ReviewCard from "@/Pages/Shop/Item/Feedback/Tabs/Reviews/Card/ReviewCard";
 import { useUser } from "@/Contexts/UserContext";
 
 const UserReviews = () => {
@@ -21,7 +21,7 @@ const UserReviews = () => {
     }
 
     setLoading(true);
-    console.log("Fetching reviews for user ID:", user.id);
+
 
     try {
       const url = `/reviews?user_id=${user.id}`;

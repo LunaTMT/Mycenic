@@ -12,7 +12,7 @@ export interface Item {
   description?: string | null;
   isPsyilocybinSpores: boolean;
   options?: Record<string, any> | null;
-  reviews?: Review[];
+  reviews: Review[];
   average_rating?: number;
   created_at: string;
 }

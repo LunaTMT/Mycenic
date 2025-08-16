@@ -25,6 +25,7 @@ const rightTabs: { key: TabKey; label: string }[] = [
 
 export default function ProfileTabContent() {
   const { user } = useUser();
+  console.log(user);
   
   const validTabs: TabKey[] = ["credentials", "shipping", "reviews", "delete"];
 

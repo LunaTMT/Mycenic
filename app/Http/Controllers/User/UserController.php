@@ -17,12 +17,12 @@ class UserController extends Controller
         $user = $currentUser;
 
         if ($currentUser->isAdmin() && $request->has('user_id')) {
-            $userToView = User::with('shippingDetails')->find($request->query('user_id'));
+            $userToView = User::with('shippingDetails', 'avatar')->find($request->query('user_id'));
             if ($userToView) {
                 $user = $userToView;
             }
         } else {
-            $user->load('shippingDetails');
+            $user->load('shippingDetails', 'avatar');
         }
 
         return response()->json([

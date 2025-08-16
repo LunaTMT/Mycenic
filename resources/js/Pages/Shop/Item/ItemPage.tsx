@@ -7,8 +7,8 @@ import GuestLayout from "@/Layouts/GuestLayout";
 
 import { ItemProvider } from "@/Contexts/Shop/Items/ItemContext";
 
-import ItemTab from "./Tabs/Item/ItemTab";
-import Feedback from "./Tabs/Feedback/Feedback";
+import ItemTab from "./Item/ItemTab";
+import Feedback from "./Feedback/Feedback";
 
 import { User } from "@/types/User";
 import { Item } from "@/types/Item";
@@ -20,7 +20,7 @@ interface ItemPageProps {
 const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
-  console.log(item);
+  
   return (
     <Layout>
       <Head title={`${item.category}/${item.name}`} />
