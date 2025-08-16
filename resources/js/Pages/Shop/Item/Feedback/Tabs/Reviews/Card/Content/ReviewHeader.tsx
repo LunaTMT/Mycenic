@@ -10,22 +10,20 @@ interface Props {
 }
 
 export default function ReviewHeader({ review }: Props) {
-  const { isExpanded, onToggleExpand } = useReviews();
+  const { isExpanded, toggleExpandedId } = useReviews(); // ✅ use toggleExpandedId instead
 
   const expanded = isExpanded(review.id);
   const user = review.user;
-
 
   return (
     <div className="relative flex flex-col gap-0.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 font-semibold text-sm text-gray-900 dark:text-white">
           {user.name}
-
         </div>
         <ArrowIcon
           isOpen={expanded}
-          onClick={() => onToggleExpand(review.id)}
+          onClick={() => toggleExpandedId(review.id)} // ✅ changed
           w="24"
           h="24"
         />
