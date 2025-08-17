@@ -1,62 +1,31 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-
-import { Review } from "@/types/Review";
-import { toast } from "react-toastify";
-import { ReviewsProvider } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import React from "react";
+import { ReviewsProvider, useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import ReviewCard from "@/Pages/Shop/Item/Feedback/Tabs/Reviews/Card/ReviewCard";
 import { useUser } from "@/Contexts/UserContext";
 
-const UserReviews = () => {
-  const { user } = useUser();
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
+const ReviewsList = () => {
+  const { reviews, fetchReviews } = useReviews();
 
-  const fetchReviews = async () => {
-    if (!user) {
-      console.log("No user available, skipping fetch.");
-      setLoading(false);
-      setReviews([]);
-      return;
-    }
-
-    setLoading(true);
-
-
-    try {
-      const url = `/reviews?user_id=${user.id}`;
-
-      const res = await axios.get<Review[]>(url);
-      console.log(res.data);
-      setReviews(res.data);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      toast.error("Failed to fetch reviews");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReviews();
-  }, [user?.id]);
-
-  if (loading) return <p>Loading reviews...</p>;
+  if (reviews.length === 0) {
+    return <p>No reviews found.</p>;
+  }
 
   return (
-    <div>
-      {reviews.length === 0 ? (
-        <p>No reviews found.</p>
-      ) : (
-        <ReviewsProvider initialReviews={reviews}>
-          <div className="space-y-6">
-            {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
-          </div>
-        </ReviewsProvider>
-      )}
+    <div className="space-y-3">
+      {reviews.map((review) => (
+        <ReviewCard key={review.id} review={review} />
+      ))}
     </div>
+  );
+};
+
+const UserReviews = () => {
+  const { user } = useUser();
+
+  return (
+    <ReviewsProvider userId={user.id}>
+      <ReviewsList />
+    </ReviewsProvider>
   );
 };
 

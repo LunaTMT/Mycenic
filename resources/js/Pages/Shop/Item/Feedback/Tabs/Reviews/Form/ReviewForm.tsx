@@ -6,9 +6,11 @@ import { usePage, router } from "@inertiajs/react";
 
 import AuthNotice from "@/Pages/Shop/Item/Notices/AuthNotice";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
+import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import StarRating from "../Card/Content/StarRating";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+
 
 const MAX_LENGTH = 5000;
 const MAX_IMAGES = 5;
@@ -21,7 +23,7 @@ export default function ReviewForm() {
 
   const { item } = useItemContext();
   
-  const {fetchReviews, setShowForm, handleSortChange, setCurrentPage } = useReviews()
+  const {fetchReviews, setShowForm } = useReviews()
 
 
   const [localContent, setLocalContent] = useState("");
@@ -96,13 +98,8 @@ export default function ReviewForm() {
         setPreviewUrls([]);
         setProcessing(false);
 
-        // Reset sorting to newest so the new review appears on top
-        handleSortChange("newest");
-
-        // Reset to first page to see new reviews
-        setCurrentPage(1);
-
         fetchReviews();
+        console.log("added review");
         setShowForm(false);
       },
       onError: (errors) => {
@@ -197,8 +194,21 @@ export default function ReviewForm() {
       </div>
 
       {/* Submit button */}
-      <div className="flex justify-end mt-4">
-        <PrimaryButton type="submit" disabled={processing} className="px-3 py-1.5 text-sm bg-amber-300">
+      <div className="flex justify-end mt-4 gap-2">
+        <SecondaryButton
+          type="button"
+          onClick={() => setShowForm(false)} // ✅ closes modal/form
+          className="px-3 py-1.5 text-sm"
+        >
+          Cancel
+        </SecondaryButton>
+
+        <PrimaryButton
+          type="submit"
+          disabled={processing}
+          
+          className="px-3 py-1.5 text-sm bg-amber-300"
+        >
           Submit
         </PrimaryButton>
       </div>

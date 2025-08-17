@@ -29,20 +29,47 @@ class ReviewController extends Controller
     {
         Log::info('Review index called', ['query_params' => $request->query()]);
 
+        $userId = $request->query('user_id');
         $itemId = $request->query('item_id');
+        $currentUser = $request->user();
+
+        if ($userId) {
+            // Only allow if admin or the current user matches the requested user_id
+            if (!$currentUser->isAdmin() && $currentUser->id !== (int)$userId) {
+                Log::warning('Unauthorized user review fetch attempt', [
+                    'requested_user_id' => $userId,
+                    'current_user_id' => $currentUser->id,
+                ]);
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $reviews = Review::with(['user.avatar', 'images', 'replies'])
+                ->whereNull('parent_id')          // ✅ top-level only
+                ->where('user_id', $userId)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            Log::info('Returning top-level reviews count for user', [
+                'count' => $reviews->count(),
+                'user_id' => $userId
+            ]);
+
+            return response()->json($reviews);
+        }
+
+        // Fallback: require item_id
         if (!$itemId) {
             Log::warning('No item_id provided');
             return response()->json(['error' => 'Item ID is required'], 400);
         }
 
-        // Fetch top-level reviews for the given item, including related user, avatar, images, and replies
         $reviews = Review::with(['user.avatar', 'images', 'replies'])
-            ->whereNull('parent_id')
+            ->whereNull('parent_id')          // ✅ top-level only
             ->where('item_id', $itemId)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        Log::info('Returning reviews count', ['count' => $reviews->count(), 'item_id' => $itemId]);
+        Log::info('Returning top-level reviews count', ['count' => $reviews->count(), 'item_id' => $itemId]);
 
         return response()->json($reviews);
     }

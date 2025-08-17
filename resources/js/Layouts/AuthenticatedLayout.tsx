@@ -7,7 +7,7 @@ import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 
 import Menu from "./Menu";
 import ScrollTop from "@/Components/Buttons/ScrollToTopButton";
-import Modal from "@/Components/Login/Modal";
+import Modal from "@/Components/Modal/Modal";
 import { ToastContainer, toast } from "react-toastify";
 
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";

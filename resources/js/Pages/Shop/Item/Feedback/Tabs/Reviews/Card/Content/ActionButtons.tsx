@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
@@ -29,6 +29,20 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ review }) => {
 
   const repliesCount = review.replies.length;
   const showAuthNotice = !auth && openReplyFormId === reviewId;
+
+  // Local loading state for preventing multiple submits
+  const [loading, setLoading] = useState(false);
+
+  const handleReply = async () => {
+    if (loading) return; // prevent multiple clicks
+    setLoading(true);
+    try {
+      await addReply(reviewId); // assuming this returns a promise
+      setExpandedId(reviewId, true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ------------------- Editing -------------------
   if (isEditing) {
@@ -75,13 +89,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ review }) => {
     return (
       <div className="flex gap-2">
         <PrimaryButton
-          onClick={() => {
-            addReply(reviewId);
-            setExpandedId(reviewId, true); // Expand parent after replying
-          }}
+          onClick={handleReply}
+          disabled={loading}
           className="text-[13px] font-semibold px-3 py-1"
         >
-          Submit
+          {loading ? "Submitting..." : "Submit"}
         </PrimaryButton>
         <SecondaryButton
           onClick={() => setOpenReplyFormId(null)}

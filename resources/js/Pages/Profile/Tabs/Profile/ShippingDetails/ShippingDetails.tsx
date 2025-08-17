@@ -3,7 +3,7 @@ import { useShipping } from '@/Contexts/Profile/ShippingContext';
 import ShippingAddressCard from './ShippingAddressCard';
 import AddAddressCard from './AddAddressCard';
 import ShippingAddressForm from '../Partials/ShippingAddressForm';
-import Modal from '@/Components/Login/Modal';
+import Modal from '@/Components/Modal/Modal';
 
 interface Props {
   className?: string;

@@ -5,6 +5,9 @@ import { usePage } from "@inertiajs/react";
 import { User } from "@/types/User";
 import { Review } from "@/types/Review";
 
+
+
+
 const MAX_LENGTH = 300;
 
 interface ReplyFormProps {
@@ -31,8 +34,8 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ review }) => {
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <InputLabel htmlFor="reply-text" value="Your Reply" />
+      <InputLabel htmlFor="reply-text" value="Your Reply" />
+      <div className="relative text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] shadow-sm flex flex-col">
         <textarea
           id="reply-text"
           name="reply-text"
@@ -40,11 +43,16 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ review }) => {
           value={replyText}
           onChange={handleReplyChange}
           placeholder="Write your reply here..."
-          className="mt-1 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e2124] px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm resize-none"
+          maxLength={MAX_LENGTH}
+          className="resize-none w-full bg-white dark:bg-[#1e2124] text-gray-900 dark:text-gray-100 px-4 pt-3 pb-12 rounded-md border-none focus:outline-none focus:ring-0 min-h-[120px]"
         />
-        <span className="absolute top-8 right-4 text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
-          {replyText.length} / {MAX_LENGTH}
-        </span>
+        <div className="absolute bottom-2 left-4 right-4 flex justify-between items-center">
+          <div className="text-xs text-gray-500 dark:text-gray-400 select-none pointer-events-none">
+            {replyText.length} / {MAX_LENGTH}
+          </div>
+
+
+        </div>
       </div>
     </div>
   );

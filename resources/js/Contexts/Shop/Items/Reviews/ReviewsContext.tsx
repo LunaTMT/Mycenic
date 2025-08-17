@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, Dispatch, SetStateAction } from "react";
+import React, { createContext, useContext, useState, Dispatch, SetStateAction, useEffect } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { toast } from "react-toastify";
 import { Review } from "@/types/Review";
@@ -59,42 +59,31 @@ const flattenReviews = (reviews: Review[]): Review[] => {
 
 export const ReviewsProvider = ({
   children,
-  initialReviews,
   itemId = null,
+  userId = null,
 }: {
   children: React.ReactNode;
-  initialReviews: Review[];
   itemId?: number | null;
+  userId?: number | null;
 }) => {
   const { props } = usePage();
   const auth = props.auth;
 
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [openReplyFormId, setOpenReplyFormId] = useState<number | null>(null);
   const [showDropdown, setShowDropdown] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [reviewEditStates, setReviewEditStates] = useState<Record<number, ReviewEditState>>({});
 
   const clearReplyText = () => setReplyText("");
 
-  // --- Editing states for each review ---
-  const [reviewEditStates, setReviewEditStates] = useState<Record<number, ReviewEditState>>(() => {
-    const allReviews = flattenReviews(initialReviews);
-    return Object.fromEntries(
-      allReviews.map((r) => [
-        r.id,
-        {
-          content: r.content,
-          rating: r.rating || 0,
-          images: r.images || [],
-          deletedImageIds: [],
-          isEditing: false,
-        },
-      ])
-    );
-  });
+  useEffect(() => {
+    fetchReviews();
+  }, [userId, itemId]);
 
+  // --- Edit state helpers ---
   const updateReviewState = (id: number, updater: Partial<ReviewEditState>) => {
     setReviewEditStates((prev) => ({ ...prev, [id]: { ...prev[id], ...updater } }));
   };
@@ -130,7 +119,6 @@ export const ReviewsProvider = ({
 
   // --- Image handling ---
   const maxImages = 5;
-
   const onAddImages = (reviewId: number, files: FileList) => {
     const state = reviewEditStates[reviewId];
     if (!state) return;
@@ -150,7 +138,6 @@ export const ReviewsProvider = ({
     }));
 
     updateReviewState(reviewId, { images: [...state.images, ...newImages] });
-
     setReviews((prev) =>
       updateNestedReview(prev, reviewId, (r) => ({
         ...r,
@@ -168,19 +155,13 @@ export const ReviewsProvider = ({
       imageId > 0 ? [...state.deletedImageIds, imageId] : state.deletedImageIds;
 
     updateReviewState(reviewId, { images, deletedImageIds });
-
     setReviews((prev) =>
-      updateNestedReview(prev, reviewId, (r) => ({
-        ...r,
-        images,
-      }))
+      updateNestedReview(prev, reviewId, (r) => ({ ...r, images }))
     );
 
     if (deletedImageIds.length > 0) {
       const formData = new FormData();
-      deletedImageIds.forEach((id) =>
-        formData.append("deleted_image_ids[]", id.toString())
-      );
+      deletedImageIds.forEach((id) => formData.append("deleted_image_ids[]", id.toString()));
       formData.append("_method", "PUT");
 
       await router.post(`/reviews/${reviewId}`, formData, {
@@ -205,36 +186,45 @@ export const ReviewsProvider = ({
   const isExpanded = (id: number) => expandedIds.includes(id);
   const showReplyForm = (id: number) => openReplyFormId === id;
 
-  // --- Reply ---
   const addReply = (parentId: number) => {
-    if (!replyText.trim()) return;
-    router.post(
-      `/reviews/${parentId}/reply`,
-      { content: replyText.trim() },
-      {
-        onSuccess: () => {
-          fetchReviews();
-          setOpenReplyFormId(null);
-          setExpandedId(parentId, true);
-          clearReplyText();
-          toast.success("Reply added");
-        },
-        onError: () => toast.error("Failed to add reply"),
-        preserveScroll: true,
-      }
-    );
+    if (!replyText.trim()) return Promise.reject("Empty reply");
+
+    return new Promise<void>((resolve, reject) => {
+      router.post(
+        `/reviews/${parentId}/reply`,
+        { content: replyText.trim() },
+        {
+          onSuccess: () => {
+            fetchReviews();
+            setOpenReplyFormId(null);
+            setExpandedId(parentId, true);
+            clearReplyText();
+            toast.success("Reply added");
+            resolve();
+          },
+          onError: () => {
+            toast.error("Failed to add reply");
+            reject();
+          },
+          preserveScroll: true,
+        }
+      );
+    });
   };
 
-  // --- Fetch all reviews ---
+  // --- Fetch reviews dynamically ---
   const fetchReviews = async () => {
     try {
-      const query = itemId ? `?item_id=${itemId}` : "";
+      let query = "";
+      if (userId) query = `?user_id=${userId}`;
+      else if (itemId) query = `?item_id=${itemId}`;
+
       const res = await fetch(`/reviews${query}`);
       if (!res.ok) throw new Error(res.statusText);
       const data: Review[] = await res.json();
       setReviews(data);
 
-      // add missing edit states
+      // initialize edit states for newly fetched reviews
       const allReviews = flattenReviews(data);
       const newStates: Record<number, ReviewEditState> = {};
       allReviews.forEach((r) => {
@@ -257,19 +247,20 @@ export const ReviewsProvider = ({
   // --- Update review ---
   const updateReview = async (id: number) => {
     const state = reviewEditStates[id];
-    const review = flattenReviews(reviews).find((r) => r.id === id);
-    if (!state || !review) return;
+    if (!state) return;
 
     const { content, rating, images, deletedImageIds } = state;
     const formData = new FormData();
 
     formData.append("content", content);
-    if (review.parent_id === null) formData.append("rating", rating.toString());
+    if (flattenReviews(reviews).find(r => r.id === id)?.parent_id === null) {
+      formData.append("rating", rating.toString());
+    }
     formData.append("_method", "PUT");
 
     images.forEach((img) => "file" in img && formData.append("images[]", img.file));
-    deletedImageIds.forEach((id) =>
-      formData.append("deleted_image_ids[]", id.toString())
+    deletedImageIds.forEach((imgId) =>
+      formData.append("deleted_image_ids[]", imgId.toString())
     );
 
     try {
@@ -277,8 +268,15 @@ export const ReviewsProvider = ({
         preserveScroll: true,
         forceFormData: true,
         onSuccess: () => {
-          fetchReviews();
-          resetReviewEditState(id);
+          setReviews((prev) =>
+            updateNestedReview(prev, id, (r) => ({
+              ...r,
+              content,
+              rating,
+              images: images.filter((img) => !("file" in img)),
+            }))
+          );
+          updateReviewState(id, { content, rating, images, deletedImageIds: [], isEditing: false });
           toast.success("Review updated successfully.");
         },
         onError: () => toast.error("Failed to update review."),
@@ -303,14 +301,8 @@ export const ReviewsProvider = ({
                 ...r,
                 liked,
                 disliked,
-                likes:
-                  r.liked && type === "like"
-                    ? r.likes - 1
-                    : r.likes + (type === "like" ? 1 : 0),
-                dislikes:
-                  r.disliked && type === "dislike"
-                    ? r.dislikes - 1
-                    : r.dislikes + (type === "dislike" ? 1 : 0),
+                likes: r.liked && type === "like" ? r.likes - 1 : r.likes + (type === "like" ? 1 : 0),
+                dislikes: r.disliked && type === "dislike" ? r.dislikes - 1 : r.dislikes + (type === "dislike" ? 1 : 0),
               };
             })
           );
@@ -325,14 +317,13 @@ export const ReviewsProvider = ({
   const toggleLike = (id: number) => toggleReaction(id, "like");
   const toggleDislike = (id: number) => toggleReaction(id, "dislike");
 
-
   // --- Delete review ---
   const deleteReview = async (id: number) => {
     try {
       await router.delete(`/reviews/${id}`, {
         preserveScroll: true,
         onSuccess: () => {
-          fetchReviews(); // refresh full tree after deletion
+          fetchReviews();
           toast.success("Review deleted successfully.");
         },
         onError: () => toast.error("Failed to delete review."),
@@ -341,7 +332,6 @@ export const ReviewsProvider = ({
       toast.error("Failed to delete review.");
     }
   };
-
 
   return (
     <ReviewContext.Provider

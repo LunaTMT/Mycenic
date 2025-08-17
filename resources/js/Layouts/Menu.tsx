@@ -9,7 +9,7 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 
-import Modal from "@/Components/Login/Modal";
+import Modal from "@/Components/Modal/Modal";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 

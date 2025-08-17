@@ -49,7 +49,7 @@ export default function Feedback() {
         />
 
 
-        <ReviewsProvider initialReviews={item.reviews} itemId={item.id}>
+        <ReviewsProvider itemId={item.id}>
           <SubContent activeKey={activeTab} tabKey="reviews">
             <Reviews />
           </SubContent>

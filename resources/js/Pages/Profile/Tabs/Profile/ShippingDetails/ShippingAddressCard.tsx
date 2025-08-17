@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ShippingDetail } from '@/types/Shipping';
 import { useShipping } from '@/Contexts/Profile/ShippingContext';
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
-import Modal from '@/Components/Login/Modal';
+import Modal from '@/Components/Modal/Modal';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 import SecondaryButton from '@/Components/Buttons/SecondaryButton';
 

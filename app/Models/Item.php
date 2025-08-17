@@ -33,20 +33,35 @@ class Item extends Model
     // Append only average_rating
     protected $appends = ['average_rating'];
 
+    /**
+     * All reviews (including replies).
+     */
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
 
+    /**
+     * Only top-level reviews (exclude replies).
+     */
+    public function topLevelReviews()
+    {
+        return $this->hasMany(Review::class)->whereNull('parent_id');
+    }
+
+    /**
+     * Images for the item.
+     */
     public function images()
     {
         return $this->morphMany(Image::class, 'imageable');
     }
 
-
-
+    /**
+     * Average rating calculated from top-level reviews only.
+     */
     public function getAverageRatingAttribute(): float
     {
-        return round($this->reviews()->avg('rating') ?? 0, 2);
+        return round($this->topLevelReviews()->avg('rating') ?? 0, 2);
     }
 }

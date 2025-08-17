@@ -3,15 +3,12 @@ import ReviewForm from "./Form/ReviewForm";
 import SortByDropdown from "./Header/SortByDropdown";
 import ReviewCard from "./Card/ReviewCard";
 import { useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
+import Modal from "@/Components/Modal/Modal";
 
 export default function Reviews() {
   const {
     showForm,
     setShowForm,
-    // currentReviews,
-    // currentPage,
-    // setCurrentPage,
-    // totalPages,
     reviews,
   } = useReviews();
 
@@ -40,7 +37,15 @@ export default function Reviews() {
 
       {showForm && (
         <section id="review-form">
-          <ReviewForm />
+          <Modal
+            show={showForm}
+            onClose={() => setShowForm(false)}   // ✅ pass function, not boolean
+            maxWidth="2xl"
+            closeable
+          >
+            <ReviewForm />
+          </Modal>
+
         </section>
       )}
 

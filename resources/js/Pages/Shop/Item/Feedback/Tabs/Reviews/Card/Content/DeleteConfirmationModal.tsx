@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Modal from "@/Components/Login/Modal";
+import Modal from "@/Components/Modal/Modal";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import DangerButton from "@/Components/Buttons/DangerButton";
 

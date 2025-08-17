@@ -21,6 +21,7 @@ export default function ImageGallery({ review }: ImageGalleryProps) {
   const [deletingImage, setDeletingImage] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const isTopLevel = review.parent_id == null;
 
   function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -93,7 +94,7 @@ export default function ImageGallery({ review }: ImageGalleryProps) {
           );
         })}
 
-        {isEditing && images.length < maxImages && (
+        {isEditing && images.length < maxImages && isTopLevel && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

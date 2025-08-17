@@ -20,7 +20,7 @@ interface ItemPageProps {
 const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
-  
+  console.log(item);
   return (
     <Layout>
       <Head title={`${item.category}/${item.name}`} />
