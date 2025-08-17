@@ -52,7 +52,20 @@ export default function ReviewCard({ review, depth = 0 }: ReviewCardProps) {
             </div>
 
             <div className="flex flex-col gap-4 w-full">
-              <ReplyForm review={review} />
+              <AnimatePresence>
+                {openReplyFormId === review.id && (
+                  <motion.div
+                    key="reply-form"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  >
+                    <ReplyForm review={review} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
 
               <div className="flex justify-between items-center gap-4 flex-wrap">
                 <div className="flex gap-2 flex-wrap items-center">
