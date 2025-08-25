@@ -52,7 +52,7 @@ export default function Modal({
                         leaveTo="opacity-0 scale-100"
                     >
 
-                        <div className="absolute inset-0  bg-black/60 dark:bg-white/30 transition-opacity" />
+                        <div className="absolute inset-0  bg-black/60 dark:bg-black/40 transition-opacity" />
                     </TransitionChild>
                 </div>
 

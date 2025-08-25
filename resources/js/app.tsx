@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { NavProvider } from './Contexts/Layout/NavContext';
 import { DarkModeProvider } from './Contexts/Layout/DarkModeContext';
 import { UserProvider } from './Contexts/UserContext';
+import { CartProvider } from './Contexts/Shop/Cart/CartContext';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Lenis from 'lenis';
@@ -30,7 +31,9 @@ createInertiaApp({
         <NavProvider>
           <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
             <UserProvider>
-              <App {...props} />
+              <CartProvider>
+                <App {...props} />
+              </CartProvider>
             </UserProvider>
           </GoogleOAuthProvider>
         </NavProvider>

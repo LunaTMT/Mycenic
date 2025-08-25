@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 
 import { useNav } from "@/Contexts/Layout/NavContext";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext"; // 👈 add cart context
 
 import Menu from "./Menu";
 import ScrollTop from "@/Components/Buttons/ScrollToTopButton";
@@ -12,7 +13,7 @@ import { ToastContainer, toast } from "react-toastify";
 
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
-import { UserProvider } from "@/Contexts/UserContext";
+import CartSidebar from "./CartSidebar";
 
 interface PageProps {
   auth: {
@@ -39,7 +40,7 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
   const { url } = usePage();
   const { scrollDirection } = useNav();
   const { darkMode } = useDarkMode();
-
+  const { cartOpen, setCartOpen } = useCart(); // 👈 grab cart state
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -73,53 +74,58 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
 
   return (
     <div className="relative w-full min-h-screen dark:bg-[#1e2124]">
-
-        <motion.header
-          className="sticky top-0 z-20 w-full max-h-[11vh] shadow-xl bg-white dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          whileInView={{
-            y: scrollDirection === "down" ? "-6vh" : "0",
-          }}
-          viewport={{ once: true }}
-        >
-          <Menu url={url} />
-            {header && <div className="flex justify-end  w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 ">{header}</div>}
-        </motion.header>
-
-            {/* Main + Sidebar Container */}
-        <div className="flex  w-full">
-          <main className="flex-1 overflow-auto">{children}</main>
-          {/* <CartSidebar /> */}
-        </div>
-
-
-        <ScrollTop />
-
-        <ToastContainer
-          position="bottom-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          closeOnClick
-          pauseOnHover
-          draggable
-          theme={darkMode ? "dark" : "light"}
-          style={{ zIndex: 100 }}
-        />
-
-        {showLogoutModal && (
-          <Modal onClose={() => setShowLogoutModal(false)}>
-            <div className="p-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                Confirm Logout
-              </h3>
-              <div className="flex justify-end space-x-4">
-                <SecondaryButton onClick={() => setShowLogoutModal(false)}>Cancel</SecondaryButton>
-                <PrimaryButton onClick={handleLogout}>Logout</PrimaryButton>
-              </div>
-            </div>
-          </Modal>
+      <motion.header
+        className="sticky top-0 z-20 w-full max-h-[11vh] shadow-xl bg-white dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        whileInView={{
+          y: scrollDirection === "down" ? "-6vh" : "0",
+        }}
+        viewport={{ once: true }}
+      >
+        <Menu url={url} />
+        {header && (
+          <div className="flex justify-end w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 ">
+            {header}
+          </div>
         )}
+      </motion.header>
 
+      {/* Cart Sidebar Modal */}
+      <Modal show={cartOpen} onClose={() => setCartOpen(false)} maxWidth="2xl" closeable>
+        <CartSidebar />
+      </Modal>
+
+      {/* Main + Sidebar Container */}
+      <div className="flex w-full">
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
+
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme={darkMode ? "dark" : "light"}
+        style={{ zIndex: 100 }}
+      />
+
+      {showLogoutModal && (
+        <Modal show={showLogoutModal} onClose={() => setShowLogoutModal(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Confirm Logout
+            </h3>
+            <div className="flex justify-end space-x-4">
+              <SecondaryButton onClick={() => setShowLogoutModal(false)}>
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton onClick={handleLogout}>Logout</PrimaryButton>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

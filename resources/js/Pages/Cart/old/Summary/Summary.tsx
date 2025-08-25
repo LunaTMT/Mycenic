@@ -12,25 +12,6 @@ import { toast } from "react-toastify";
 import { useShipping } from "@/Contexts/Shop/Cart/ShippingContext"; // Import from context
 
 const Summary: React.FC<{ auth: any }> = ({ auth }) => {
-  const {
-    promoDiscount,
-    discountAmount,
-    subtotal,
-    total,
-    cart,
-  } = useCart();
-
-  // Destructure shipping details and cost from the useShipping context
-  const {
-    shippingDetails,
-    shippingCost,
-    setIsFormDropdownOpen,
-    setIsShippingOpen,
-    fetchShippingRates,
-    rates,
-    selectedShippingRate
-
-  } = useShipping();
 
 
 

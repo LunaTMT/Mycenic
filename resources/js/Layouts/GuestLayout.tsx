@@ -5,7 +5,10 @@ import { useNav } from "@/Contexts/Layout/NavContext";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 
 import Menu from "./Menu";
+import Modal from "@/Components/Modal/Modal";
+import CartSidebar from "./CartSidebar";
 import { ToastContainer, toast } from "react-toastify";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 
 interface PageProps {
   auth: {
@@ -25,8 +28,8 @@ export default function Guest({
   const { url } = usePage();
   const { scrollDirection } = useNav();
   const { darkMode } = useDarkMode();
+  const { cartOpen, setCartOpen } = useCart();
 
-  
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);
     if (flash?.error) toast.error(flash.error);
@@ -61,6 +64,11 @@ export default function Guest({
       >
         <Menu url={url} header={header} />
       </motion.header>
+
+      {/* Cart Sidebar Modal */}
+      <Modal show={cartOpen} onClose={() => setCartOpen(false)} maxWidth="2xl" closeable>
+        <CartSidebar />
+      </Modal>
 
       {/* MAIN CONTENT */}
       <main className="relative w-full min-h-[95vh] h-full dark:bg-[#1e2124]">

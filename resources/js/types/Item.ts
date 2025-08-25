@@ -9,10 +9,11 @@ export interface Item {
   stock: number;
   category: string;
   images: Image[]; 
-  description?: string | null;
+  description: string;
   isPsyilocybinSpores: boolean;
-  options?: Record<string, any> | null;
-  reviews: Review[];
+  options: Record<string, any>;
+  reviews?: Review[];
   average_rating?: number;
   created_at: string;
+  weight: number;
 }

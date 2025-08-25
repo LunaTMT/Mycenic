@@ -1,7 +1,7 @@
 /* Light mode */
 .swiper-pagination-bullet {
   background-color: #fbbf24; /* bg-yellow-500 */
-  opacity: 0.5;
+  opacity: 0.2;
   transition: all 0.3s ease;
 }
 
@@ -9,15 +9,15 @@
   background-color: #fbbf24; /* bg-yellow-500 */
   opacity: 1;
   box-shadow:
-    0 0 3px #FFD700,
-    0 0 8px #FFD700,
-    0 0 15px #FFD700;
+    0 0 5px #FFD700,
+    0 0 12px #FFD700,
+    0 0 20px #FFD700;
 }
 
 /* Dark mode */
 .dark .swiper-pagination-bullet {
   background-color: #7289da; /* dark:bg-[#7289da] */
-  opacity: 0.5;
+  opacity: 0.1;
 }
 
 .dark .swiper-pagination-bullet-active {

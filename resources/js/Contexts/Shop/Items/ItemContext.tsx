@@ -8,7 +8,6 @@ interface ItemContextType {
   setSelectedOptions: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   quantity: number;
   setQuantity: React.Dispatch<React.SetStateAction<number>>;
-  price: string;
   item: Item;
   options: Record<string, string[]>;
   swiperRef: any | null;
@@ -35,7 +34,7 @@ export const ItemProvider: React.FC<{ item: Item; children: React.ReactNode }> =
   });
 
   const [quantity, setQuantity] = useState(1);
-  const [price] = useState(item.price);
+
   const [swiperRef, setSwiperRef] = useState<any | null>(null);
 
   return (
@@ -47,7 +46,6 @@ export const ItemProvider: React.FC<{ item: Item; children: React.ReactNode }> =
         setSelectedOptions,
         quantity,
         setQuantity,
-        price,
         item,
         options,
         swiperRef,

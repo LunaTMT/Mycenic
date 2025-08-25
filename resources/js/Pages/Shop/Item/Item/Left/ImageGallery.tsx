@@ -8,6 +8,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-coverflow";
 
+
 const ImageGallery: React.FC = () => {
   const { item } = useItemContext();
   const images = Array.isArray(item.images) ? item.images : [];
@@ -82,7 +83,7 @@ const ImageGallery: React.FC = () => {
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                padding: selectedIndex === idx ? "2px" : "0",
+                padding: selectedIndex === idx ? "1px" : "0",
               }}
               className={`transition-all duration-300 rounded-xl ${
                 selectedIndex === idx
