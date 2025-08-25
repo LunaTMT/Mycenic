@@ -3,10 +3,11 @@ import Counter from "@/Components/Buttons/Counter";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { v4 as uuidv4 } from "uuid"; // install uuid
 
 const AddToCartSection: React.FC = () => {
   const { item, selectedOptions } = useItemContext();
-  const { addToCart } = useCart();
+  const { addToCart, removeItem } = useCart();
   const [quantity, setQuantity] = useState<number>(1);
 
   if (!item) return null;
@@ -16,7 +17,6 @@ const AddToCartSection: React.FC = () => {
 
   const handleAddToCart = () => {
     addToCart({
-      id: item.id,
       item: {
         id: item.id,
         name: item.name,
@@ -30,13 +30,13 @@ const AddToCartSection: React.FC = () => {
     });
   };
 
+
   return (
     <div className="mt-6 space-y-4">
       {/* Quantity + Total Price Inline */}
       <div className="flex items-center gap-6">
         {/* Quantity Counter */}
         <div className="flex flex-col items-center">
-     
           <Counter
             quantity={quantity}
             onChange={setQuantity}

@@ -13,14 +13,13 @@ class CreateShippingDetailsTable extends Migration
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('country')->default('United Kingdom')->index();
             $table->string('full_name');
-            $table->string('phone');
-            $table->string('zip')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('zip');
             $table->string('address_line1');
             $table->string('address_line2')->nullable();
             $table->string('city');
-            $table->string('state')->nullable(); // added for states/provinces/counties
+            $table->string('state')->nullable(); 
             $table->boolean('is_default')->default(false);
-            $table->text('delivery_instructions')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

@@ -62,8 +62,8 @@ class ShippingDetailController extends Controller
         $validated = $request->validate([
             'country' => 'required|string|max:255',
             'full_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:50',
-            'zip' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:50',
+            'zip' => 'required|string|max:20',
             'address_line1' => 'required|string|max:255',
             'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
@@ -121,14 +121,15 @@ class ShippingDetailController extends Controller
         $validated = $request->validate([
             'country' => 'required|string|max:255',
             'full_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:50',
-            'zip' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:50',
+            'zip' => 'required|string|max:20',
             'address_line1' => 'required|string|max:255',
             'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'nullable|string|max:255',
             'is_default' => 'boolean',
             'delivery_instructions' => 'nullable|string',
+            'user_id' => 'nullable|integer|exists:users,id', // allow user_id if admin
         ]);
 
         Log::info('ShippingDetail validated data.', [

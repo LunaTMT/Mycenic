@@ -4,6 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 interface CounterProps {
   quantity: number;
   onChange: (newQuantity: number) => void;
+  onDelete?: () => void; // Optional onDelete callback
   maxStock?: number;
   className?: string;
 }
@@ -11,12 +12,17 @@ interface CounterProps {
 const Counter: React.FC<CounterProps> = ({
   quantity,
   onChange,
+  onDelete,
   maxStock = Infinity,
   className = "",
 }) => {
   const handleDecrement = () => {
     if (quantity <= 1) {
-      toast.info("You can't go below 1 item");
+      if (onDelete) {
+        onDelete(); // Call the onDelete if available
+      } else {
+        toast.info("You can't go below 1 item");
+      }
       return;
     }
     onChange(quantity - 1);
@@ -43,7 +49,7 @@ const Counter: React.FC<CounterProps> = ({
         <button
           className="w-1/3 h-full flex items-center justify-center font-semibold transition-all duration-500 active:transform active:translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleDecrement}
-          disabled={quantity <= 1}
+          disabled={quantity <= 1 && !onDelete} // Disable if quantity is 1 and no onDelete
           aria-label="Decrease quantity"
         >
           -

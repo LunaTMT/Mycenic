@@ -41,6 +41,7 @@
         "scroll-snap": "^5.0.2",
         "sweetalert2": "^11.17.2",
         "swiper": "^11.2.6",
-        "tailwindcss": "^4.0.15"
+        "tailwindcss": "^4.0.15",
+        "uuid": "^11.1.0"
     }
 }

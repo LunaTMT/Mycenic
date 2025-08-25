@@ -49,9 +49,10 @@ const ItemTab: React.FC = () => {
             </p>
           ))}
         </div>
+        
 
         {/* Cart Section */}
-        <div className="mt-6">
+        <div>
           <OptionsSelector />
           <AddToCartSection />
         </div>

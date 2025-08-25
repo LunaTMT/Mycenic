@@ -1,5 +1,6 @@
 import React, { FormEventHandler, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import InputError from '@/Components/Login/InputError';
 import InputLabel from '@/Components/Login/InputLabel';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
@@ -9,24 +10,62 @@ import { countries, countriesWithStates } from '@/utils/countries';
 import SecondaryButton from '@/Components/Buttons/SecondaryButton';
 import { ShippingDetail } from '@/types/Shipping';
 
+// Type for form fields
 type FieldKey =
   | 'full_name'
+  | 'email'
   | 'phone'
   | 'country'
   | 'address_line1'
   | 'address_line2'
   | 'city'
   | 'state'
-  | 'zip'
-  | 'delivery_instructions';
+  | 'zip';
 
-
+const FormInput = ({
+  id,
+  name,
+  type = 'text',
+  value,
+  onChange,
+  label,
+  error,
+  required = false,
+  autoComplete = '',
+}: {
+  id: string;
+  name: string;
+  type?: string;
+  value: string;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+  label: string;
+  error?: string;
+  required?: boolean;
+  autoComplete?: string;
+}) => (
+  <div>
+    <InputLabel htmlFor={id} value={label} />
+    <TextInput
+      id={id}
+      name={name}
+      type={type}
+      value={value}
+      onChange={onChange}
+      className="mt-1 w-full"
+      required={required}
+      autoComplete={autoComplete}
+    />
+    <InputError message={error} className="mt-2" />
+  </div>
+);
 
 export default function ShippingAddressForm() {
-  const { addShippingDetail, editShippingDetail, selectedShippingDetail, toggleShowForm} = useShipping();
+  const { auth } = usePage().props as { auth: { user: any } };
+  const { storeShippingDetail, updateShippingDetail, selectedShippingDetail, toggleShowForm } = useShipping();
 
   const { data, setData, processing, errors, reset } = useForm<Record<FieldKey, string>>({
     full_name: '',
+    email: '',
     phone: '',
     country: 'United Kingdom',
     address_line1: '',
@@ -34,10 +73,8 @@ export default function ShippingAddressForm() {
     city: '',
     state: '',
     zip: '',
-    delivery_instructions: '',
   });
 
-  // Prefill form if editing
   useEffect(() => {
     if (selectedShippingDetail) {
       setData({
@@ -49,7 +86,6 @@ export default function ShippingAddressForm() {
         city: selectedShippingDetail.city || '',
         state: selectedShippingDetail.state || '',
         zip: selectedShippingDetail.zip || '',
-        delivery_instructions: selectedShippingDetail.delivery_instructions || '',
       });
     } else {
       reset(); // if adding new, clear form
@@ -68,15 +104,12 @@ export default function ShippingAddressForm() {
     try {
       if (selectedShippingDetail) {
         // Editing existing
-        await editShippingDetail(selectedShippingDetail.id, data as ShippingDetail);
+        await updateShippingDetail(selectedShippingDetail.id, data as ShippingDetail);
       } else {
         // Adding new
-        await addShippingDetail(data as ShippingDetail);
+        await storeShippingDetail(data as ShippingDetail);
       }
       reset();
-
-   
-      console.log("toggling form")
     } catch (err) {
       console.error('Failed to save address:', err);
     }
@@ -86,19 +119,29 @@ export default function ShippingAddressForm() {
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
-      <div>
-        <InputLabel htmlFor="full_name" value="Full Name" />
-        <TextInput
-          id="full_name"
-          name="full_name"
-          type="text"
-          value={data.full_name}
-          onChange={(e) => setData('full_name', e.target.value)}
-          className="mt-1 w-full"
+      <FormInput
+        id="full_name"
+        name="full_name"
+        value={data.full_name}
+        onChange={(e) => setData('full_name', e.target.value)}
+        label="Full Name"
+        error={errors.full_name}
+        required
+      />
+
+      {/* Conditionally show Email field if user is not logged in */}
+      {!auth.user && (
+        <FormInput
+          id="email"
+          name="email"
+          type="email"
+          value={data.email}
+          onChange={(e) => setData('email', e.target.value)}
+          label="Email"
+          error={errors.email}
           required
         />
-        <InputError message={errors.full_name} className="mt-2" />
-      </div>
+      )}
 
       <div>
         <InputLabel htmlFor="country" value="Country" />
@@ -119,114 +162,77 @@ export default function ShippingAddressForm() {
         <InputError message={errors.country} className="mt-2" />
       </div>
 
-      <div>
-        <InputLabel htmlFor="address_line1" value="Address Line 1" />
-        <TextInput
-          id="address_line1"
-          name="address_line1"
-          type="text"
-          value={data.address_line1}
-          onChange={(e) => setData('address_line1', e.target.value)}
-          className="mt-1 w-full"
-          required
-          autoComplete="address-line1"
-        />
-        <InputError message={errors.address_line1} className="mt-2" />
-      </div>
+      <FormInput
+        id="address_line1"
+        name="address_line1"
+        value={data.address_line1}
+        onChange={(e) => setData('address_line1', e.target.value)}
+        label="Address Line 1"
+        error={errors.address_line1}
+        required
+        autoComplete="address-line1"
+      />
 
-      <div>
-        <InputLabel htmlFor="address_line2" value="Address Line 2 (Optional)" />
-        <TextInput
-          id="address_line2"
-          name="address_line2"
-          type="text"
-          value={data.address_line2}
-          onChange={(e) => setData('address_line2', e.target.value)}
-          className="mt-1 w-full"
-          autoComplete="address-line2"
-        />
-        <InputError message={errors.address_line2} className="mt-2" />
-      </div>
+      <FormInput
+        id="address_line2"
+        name="address_line2"
+        value={data.address_line2}
+        onChange={(e) => setData('address_line2', e.target.value)}
+        label="Address Line 2 (Optional)"
+        error={errors.address_line2}
+        autoComplete="address-line2"
+      />
 
-      <div>
-        <InputLabel htmlFor="city" value="City" />
-        <TextInput
-          id="city"
-          name="city"
-          type="text"
-          value={data.city}
-          onChange={(e) => setData('city', e.target.value)}
-          className="mt-1 w-full"
-          required
-          autoComplete="address-level2"
-        />
-        <InputError message={errors.city} className="mt-2" />
-      </div>
+      <FormInput
+        id="city"
+        name="city"
+        value={data.city}
+        onChange={(e) => setData('city', e.target.value)}
+        label="City"
+        error={errors.city}
+        required
+        autoComplete="address-level2"
+      />
 
       {showStateField && (
-        <div>
-          <InputLabel htmlFor="state" value="State / Province" />
-          <TextInput
-            id="state"
-            name="state"
-            type="text"
-            value={data.state}
-            onChange={(e) => setData('state', e.target.value)}
-            className="mt-1 w-full"
-            autoComplete="address-level1"
-            required={showStateField}
-          />
-          <InputError message={errors.state} className="mt-2" />
-        </div>
+        <FormInput
+          id="state"
+          name="state"
+          value={data.state}
+          onChange={(e) => setData('state', e.target.value)}
+          label="State / Province"
+          error={errors.state}
+          required={showStateField}
+          autoComplete="address-level1"
+        />
       )}
 
-      <div>
-        <InputLabel htmlFor="zip" value="Postal Code" />
-        <TextInput
-          id="zip"
-          name="zip"
-          type="text"
-          value={data.zip}
-          onChange={(e) => setData('zip', e.target.value)}
-          className="mt-1 w-full"
-          required
-          autoComplete="postal-code"
-        />
-        <InputError message={errors.zip} className="mt-2" />
-      </div>
+      <FormInput
+        id="zip"
+        name="zip"
+        value={data.zip}
+        onChange={(e) => setData('zip', e.target.value)}
+        label="Postal Code"
+        error={errors.zip}
+        required
+        autoComplete="postal-code"
+      />
 
-      <div>
-        <InputLabel htmlFor="phone" value="Phone Number (Optional)" />
-        <TextInput
+      {/* Show Phone Number only if user is not logged in */}
+      {!auth.user && (
+        <FormInput
           id="phone"
           name="phone"
           type="tel"
           value={data.phone}
           onChange={(e) => setData('phone', e.target.value)}
-          className="mt-1 w-full"
+          label="Phone Number (Optional)"
+          error={errors.phone}
         />
-        <InputError message={errors.phone} className="mt-2" />
-      </div>
-
-      <div>
-        <InputLabel htmlFor="delivery_instructions" value="Delivery Instructions (Optional)" />
-        <textarea
-          id="delivery_instructions"
-          name="delivery_instructions"
-          value={data.delivery_instructions}
-          onChange={(e) => setData('delivery_instructions', e.target.value)}
-          className="mt-1 w-full rounded border border-gray-300 dark:border-gray-600 p-2 dark:bg-gray-700 dark:text-white"
-          rows={3}
-          placeholder="Leave any special instructions for delivery"
-        />
-        <InputError message={errors.delivery_instructions} className="mt-2" />
-      </div>
+      )}
 
       <div className="flex gap-4 mt-4">
-        <SecondaryButton
-          onClick={toggleShowForm}
-          className="w-1/2"
-        >
+        <SecondaryButton onClick={toggleShowForm} className="w-1/2">
           Cancel
         </SecondaryButton>
 

@@ -17,8 +17,8 @@ interface ShippingContextType {
   toggleShowForm: () => void;
 
   fetchShippingDetails: () => void;
-  addShippingDetail: (detail: ShippingDetail) => Promise<void>;
-  editShippingDetail: (id: number, updatedDetail: Partial<ShippingDetail>) => Promise<void>;
+  storeShippingDetail: (detail: ShippingDetail) => Promise<void>; // Renamed function
+  updateShippingDetail: (id: number, updatedDetail: Partial<ShippingDetail>) => Promise<void>;
   deleteShippingDetail: (id: number) => Promise<void>;
 
   setDefaultShippingDetail: (detail: ShippingDetail) => Promise<void>;
@@ -38,7 +38,6 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
   const closeForm = () => setShowForm(false);
 
   const fetchShippingDetails = async () => {
-    console.log(user.id);
     try {
       const url = `/profile/shipping-details?user_id=${user.id}`;
       const res = await axios.get(url);
@@ -67,7 +66,7 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addShippingDetail = async (detailData: ShippingDetail) => {
+  const storeShippingDetail = async (detailData: ShippingDetail) => { // Renamed function
     if (!user) {
       toast.error('User not logged in');
       return;
@@ -88,7 +87,7 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const editShippingDetail = async (id: number, updatedDetail: Partial<ShippingDetail>) => {
+  const updateShippingDetail = async (id: number, updatedDetail: Partial<ShippingDetail>) => {
     if (!user) {
       toast.error('User not logged in');
       return;
@@ -96,7 +95,6 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
     try {
       await axios.put(`/profile/shipping-details/${id}`, updatedDetail);
       await fetchShippingDetails();
-      
       toast.success('Shipping detail updated successfully');
       closeForm();
     } catch {
@@ -143,7 +141,6 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setShippingDetails([]);
     setSelectedShippingDetail(null);
-
     fetchShippingDetails();
   }, [user]);
 
@@ -168,8 +165,8 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
         setShowForm,
         toggleShowForm,
         fetchShippingDetails,
-        addShippingDetail,
-        editShippingDetail,
+        storeShippingDetail, // Updated the function name here
+        updateShippingDetail,
         deleteShippingDetail,
         setDefaultShippingDetail,
       }}

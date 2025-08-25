@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreignId('cart_id')->constrained()->onDelete('cascade');
             $table->foreignId('item_id')->constrained()->onDelete('cascade');
             
-            $table->string('thumbnail')->nullable()->after('price');
+            $table->string('thumbnail')->nullable();
             $table->integer('quantity')->default(1);
             $table->decimal('price', 10, 2);
             $table->json('options')->nullable();

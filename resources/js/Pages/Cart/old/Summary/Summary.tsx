@@ -3,7 +3,7 @@ import { router } from "@inertiajs/react";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import ShippingDetailsSection from "./Shipping/ShippingDetailsSection";
-import PromoCodeSection from "./PromoCodeSection";
+import PromoCodeSection from "../../PromoCode";
 import PaymentPage from "../Payment/PaymentPage";
 import { FaInfoCircle } from "react-icons/fa";
 import Dropdown from "@/Components/Dropdown/Dropdown";

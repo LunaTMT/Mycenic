@@ -1,7 +1,7 @@
 import { UserOrGuest } from "./User";
 
 export type CartItem = {
-  id: number;
+  id: string;
   item: {
     id: number;
     name: string;

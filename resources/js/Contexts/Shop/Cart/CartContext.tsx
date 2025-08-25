@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { Cart, CartItem } from "@/types/Cart";
+import { v4 as uuidv4 } from "uuid";
 
 interface CartContextType {
   cart: Cart;
   setCart: React.Dispatch<React.SetStateAction<Cart>>;
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (id: number) => void;
+  addToCart: (item: Omit<CartItem, "id">) => void; // id will be generated internally
+  removeItem: (cartItemId: string) => void;
   clearCart: () => void;
-  updateQuantity: (
-    id: number,
-    selectedOptions: Record<string, string> | undefined,
-    newQuantity: number
-  ) => void;
+  updateQuantity: (cartItemId: string, newQuantity: number) => void;
+  setShippingCost: (cost: number) => void; // New method to set shipping cost
   cartOpen: boolean;
   setCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   subtotal: number;
+  shippingCost: number;
+  tax: number;
   total: number;
 }
 
@@ -32,104 +32,93 @@ interface CartProviderProps {
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, setCart] = useState<Cart>(() => {
-    // ✅ Load from localStorage if available
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("cart");
       if (stored) return JSON.parse(stored);
     }
-    return { id: 0, items: [], subtotal: 0, total: 0 };
+    return { id: 0, items: [], subtotal: 0, shippingCost: 0, tax: 0, total: 0 };
   });
 
   const [cartOpen, setCartOpen] = useState<boolean>(false);
 
-  // ✅ Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // ✅ Automatically compute subtotal & total when items change
   const subtotal = useMemo(
     () => cart.items.reduce((sum, item) => sum + item.item.price * item.quantity, 0),
     [cart.items]
   );
 
-  const total = useMemo(() => subtotal, [subtotal]);
+  // Shipping cost can now be set dynamically
+  const shippingCost = useMemo(() => cart.shippingCost, [cart.shippingCost]);
 
-  const addToCart = (item: CartItem) => {
+  // Tax as a percentage of the subtotal
+  const tax = useMemo(() => subtotal * 0.1, [subtotal]);
+
+  // Total includes subtotal, shipping cost, and tax
+  const total = useMemo(() => subtotal + shippingCost + tax, [subtotal, shippingCost, tax]);
+
+  const addToCart = (item: Omit<CartItem, "id">) => {
     setCart((prev) => {
-      const existingIndex = prev.items.findIndex((cartItem) => {
-        if (cartItem.id !== item.id) return false;
-        return (
-          JSON.stringify(cartItem.selectedOptions) ===
-          JSON.stringify(item.selectedOptions)
-        );
-      });
+      // Check if the same product + options already exist
+      const existingIndex = prev.items.findIndex(
+        (cartItem) =>
+          cartItem.item.id === item.item.id &&
+          JSON.stringify(cartItem.selectedOptions) === JSON.stringify(item.selectedOptions)
+      );
 
       let updatedItems;
+
       if (existingIndex > -1) {
+        // Increment quantity, keep the same UUID
         updatedItems = [...prev.items];
         updatedItems[existingIndex] = {
           ...updatedItems[existingIndex],
           quantity: updatedItems[existingIndex].quantity + item.quantity,
         };
       } else {
-        updatedItems = [...prev.items, item];
+        // New item, assign UUID
+        updatedItems = [...prev.items, { ...item, id: uuidv4() }];
       }
 
-      return {
-        ...prev,
-        items: updatedItems,
-        updated_at: new Date().toISOString(),
-      };
+      return { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
     });
 
     setCartOpen(true);
   };
 
-  const removeFromCart = (id: number) => {
-    setCart((prev) => ({
-      ...prev,
-      items: prev.items.filter((i) => i.id !== id),
-      updated_at: new Date().toISOString(),
-    }));
+  const removeItem = (cartItemId: string) => {
+    setCart((prev) => {
+      // Remove the item from the cart based on cartItemId
+      const updatedItems = prev.items.filter((item) => item.id !== cartItemId);
+
+      return { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
+    });
   };
 
   const clearCart = () => {
-    setCart((prev) => ({
-      ...prev,
-      items: [],
-      updated_at: new Date().toISOString(),
-    }));
+    setCart((prev) => ({ ...prev, items: [], updated_at: new Date().toISOString() }));
   };
 
-  const updateQuantity = (
-    id: number,
-    selectedOptions: Record<string, string> | undefined,
-    newQuantity: number
-  ) => {
+  const updateQuantity = (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
 
     setCart((prev) => {
-      const updatedItems = prev.items.map((cartItem) => {
-        const isSameItem =
-          cartItem.id === id &&
-          JSON.stringify(cartItem.selectedOptions) === JSON.stringify(selectedOptions);
-
-        if (isSameItem) {
-          return {
-            ...cartItem,
-            quantity: newQuantity,
-          };
-        }
-        return cartItem;
-      });
-
-      return {
-        ...prev,
-        items: updatedItems,
-        updated_at: new Date().toISOString(),
-      };
+      const updatedItems = prev.items.map((i) =>
+        i.id === cartItemId ? { ...i, quantity: newQuantity } : i
+      );
+      return { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
     });
+  };
+
+  // Function to dynamically set the shipping cost
+  const setShippingCost = (cost: number) => {
+    setCart((prev) => ({
+      ...prev,
+      shippingCost: cost,
+      updated_at: new Date().toISOString(),
+    }));
   };
 
   return (
@@ -138,12 +127,15 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         cart,
         setCart,
         addToCart,
-        removeFromCart,
+        removeItem,
         clearCart,
         updateQuantity,
+        setShippingCost, // Expose setShippingCost
         cartOpen,
         setCartOpen,
         subtotal,
+        shippingCost,
+        tax,
         total,
       }}
     >
