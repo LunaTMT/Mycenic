@@ -7,7 +7,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Item from "./Item";
 import PromoCode from "./PromoCode";
 import OrderNote from "./OrderNote";
-import Shipping from "./Shipping";
+import Shipping from "./Shipping/Shipping";
 
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { User } from "@/types/User";

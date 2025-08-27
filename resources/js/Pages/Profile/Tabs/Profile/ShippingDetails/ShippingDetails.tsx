@@ -11,39 +11,30 @@ interface Props {
 
 export default function ShippingDetails({ className = '' }: Props) {
   const {
-    shippingDetails = [],
+    shippingDetails,
     selectedShippingDetail,
-    setDefaultShippingDetail,
     showForm,
     toggleShowForm,
-    setSelectedShippingDetail,
   } = useShipping();
 
   const maxAddresses = 6;
-  const showAddCard = shippingDetails.length < maxAddresses;
   const addressesToShow = shippingDetails.slice(0, maxAddresses);
-
-  const handleAddNew = () => {
-    setSelectedShippingDetail(null); // Clear any edit state
-    toggleShowForm(); // Open modal
-  };
-
+  const showAddCard = shippingDetails.length < maxAddresses;
+  
   return (
     <section
       className={`rounded-lg w-full h-full shadow-md ${className}`}
       style={{ minHeight: '200px' }}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {addressesToShow.length > 0 && addressesToShow.map((detail) => (
+        {addressesToShow.map((detail) => (
           <ShippingAddressCard
             key={detail.id}
             detail={detail}
-            isSelected={selectedShippingDetail?.id === detail.id}
-            onSelect={() => setDefaultShippingDetail(detail)}
           />
         ))}
 
-        {showAddCard && <AddAddressCard onClick={handleAddNew} />}
+        {showAddCard && <AddAddressCard />}
       </div>
 
       <Modal show={showForm} onClose={toggleShowForm} maxWidth="lg" closeable>

@@ -2,47 +2,48 @@
 
 namespace App\Policies;
 
+
 use App\Models\ShippingDetail;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class ShippingDetailPolicy
 {
-    /**
-     * Global check for admin to bypass all other checks.
-     */
-    public function before(User $user, $ability)
+    public function before(User $user = null, $ability)
     {
-        if ($user->isAdmin()) {
+        if ($user && $user->isAdmin()) {
             return true;  // Admin can do everything
         }
     }
 
-    public function viewAny(User $user): bool
+    public function view(?User $user, ShippingDetail $shippingDetail): bool
     {
-        return false; // non-admins can't view all
+        if ($user) {
+            return $user->id === $shippingDetail->user_id;
+        }
+
+        // Guests: check request email against shipping detail
+        return request()->has('email') && 
+               $shippingDetail->user && 
+               $shippingDetail->user->email === request('email');
     }
 
-    public function view(User $user, ShippingDetail $shippingDetail): bool
+    public function update(?User $user, ShippingDetail $shippingDetail): bool
     {
-        return $user->id === $shippingDetail->user_id;
+        return $this->view($user, $shippingDetail);
     }
 
-    public function update(User $user, ShippingDetail $shippingDetail): bool
+    public function delete(?User $user, ShippingDetail $shippingDetail): bool
     {
-        return $user->id === $shippingDetail->user_id;
+        return $this->view($user, $shippingDetail);
     }
 
-    public function delete(User $user, ShippingDetail $shippingDetail): bool
-    {
-        return $user->id === $shippingDetail->user_id;
-    }
-
-    public function restore(User $user, ShippingDetail $shippingDetail): bool
+    public function restore(?User $user, ShippingDetail $shippingDetail): bool
     {
         return false;
     }
 
-    public function forceDelete(User $user, ShippingDetail $shippingDetail): bool
+    public function forceDelete(?User $user, ShippingDetail $shippingDetail): bool
     {
         return false;
     }

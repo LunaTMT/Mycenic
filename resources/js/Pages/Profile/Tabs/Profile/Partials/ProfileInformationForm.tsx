@@ -39,7 +39,7 @@ export default function ProfileInformationForm({
 
   return (
     <section
-      className={`rounded-lg w-1/2 shadow-md dark:border-white/20 border border-black/20 p-4 ${className}`}
+      className={`rounded-lg w-1/2 shadow-md bg-white dark:bg-[#1e2124]/60 dark:border-white/20 border border-black/20 p-4 ${className}`}
     >
       <form onSubmit={submit} className="bg-red space-y-4">
         <div>

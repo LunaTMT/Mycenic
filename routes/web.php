@@ -103,12 +103,12 @@ Route::middleware('auth')->group(function () {
 */
 Route::middleware('auth')->prefix('profile')->group(function () {
     Route::get('/shipping-details', [ShippingDetailController::class, 'index'])->name('profile.shipping-details.index');
-    Route::post('/shipping-details', [ShippingDetailController::class, 'store'])->name('profile.shipping-details.store');
     Route::get('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'show'])->name('profile.shipping-details.show');
     Route::put('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'update'])->name('profile.shipping-details.update');
     Route::delete('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'destroy'])->name('profile.shipping-details.destroy');
 });
 
+Route::post('/shipping-details', [ShippingDetailController::class, 'store'])->name('profile.shipping-details.store');
 
 
 /*

@@ -11,73 +11,97 @@ interface ShippingContextType {
   showForm: boolean;
 
   setShippingDetails: (shippingDetails: ShippingDetail[]) => void;
-  setSelectedShippingDetail: (detail: ShippingDetail | null) => void;
+  setSelectedShippingDetail: (id: number | null, makeDefault?: boolean) => void;
   setHoveredId: (id: number | null) => void;
   setShowForm: (show: boolean) => void;
   toggleShowForm: () => void;
 
   fetchShippingDetails: () => void;
-  storeShippingDetail: (detail: ShippingDetail) => Promise<void>; // Renamed function
+  storeShippingDetail: (detail: ShippingDetail) => Promise<void>;
   updateShippingDetail: (id: number, updatedDetail: Partial<ShippingDetail>) => Promise<void>;
   deleteShippingDetail: (id: number) => Promise<void>;
-
-  setDefaultShippingDetail: (detail: ShippingDetail) => Promise<void>;
 }
 
 const ShippingContext = createContext<ShippingContextType | undefined>(undefined);
 
 export const ShippingProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
+  console.log(user);
 
   const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>([]);
-  const [selectedShippingDetail, setSelectedShippingDetail] = useState<ShippingDetail | null>(null);
+  const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   const toggleShowForm = () => setShowForm(prev => !prev);
   const closeForm = () => setShowForm(false);
 
+  const selectedShippingDetail = shippingDetails.find(d => d.id === selectedShippingId) || null;
+
+  const setSelectedShippingDetail = async (id: number | null, makeDefault = true) => {
+    setSelectedShippingId(id);
+
+    // Persist selection in localStorage
+    if (id !== null) {
+      localStorage.setItem('selectedShippingDetailId', id.toString());
+    } else {
+      localStorage.removeItem('selectedShippingDetailId');
+    }
+
+    const detail = shippingDetails.find(d => d.id === id);
+    if (detail && makeDefault && !detail.is_default) {
+      try {
+        console.log("making default");
+        await axios.put(`/profile/shipping-details/${id}`, { ...detail, is_default: true });
+        setShippingDetails(prev => prev.map(d => ({ ...d, is_default: d.id === id })));
+        toast.success('Default shipping address updated');
+      } catch {
+        toast.error('Failed to update default shipping address');
+      }
+    }
+  };
+
+
   const fetchShippingDetails = async () => {
     try {
-      const url = `/profile/shipping-details?user_id=${user.id}`;
-      const res = await axios.get(url);
+      if (user.isGuest) return;
+      const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
       setShippingDetails(res.data);
 
       if (res.data.length === 0) {
-        setSelectedShippingDetail(null);
-        localStorage.removeItem('selectedShippingDetailId');
+        setSelectedShippingDetail(null, false);
         return;
       }
 
+      // Check localStorage for previously selected address
       const savedId = localStorage.getItem('selectedShippingDetailId');
-      if (savedId) {
-        const savedDetail = res.data.find(
-          (detail: ShippingDetail) => detail.id === parseInt(savedId, 10)
-        );
-        if (savedDetail) {
-          setSelectedShippingDetail(savedDetail);
-          return;
-        }
+      if (savedId && res.data.some(d => d.id === parseInt(savedId, 10))) {
+        setSelectedShippingDetail(parseInt(savedId, 10), false);
+      } else {
+        // fallback: select the first one
+        setSelectedShippingDetail(res.data[0].id, false);
       }
-
-      setSelectedShippingDetail(res.data[0]);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load shipping details');
     }
   };
 
-  const storeShippingDetail = async (detailData: ShippingDetail) => { // Renamed function
-    if (!user) {
-      toast.error('User not logged in');
-      return;
-    }
+
+  const storeShippingDetail = async (detailData: ShippingDetail) => {
     try {
-      const url = `/profile/shipping-details?user_id=${user.id}`;
-      await axios.post(url, detailData);
-      await fetchShippingDetails();
+      await axios.post(`/profile/shipping-details?user_id=${user.id}`, detailData);
+      const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
+      setShippingDetails(res.data);
+
+      // Automatically select the newly added address and set as default
+      if (res.data.length > 0) {
+        const newItem = res.data[res.data.length - 1];
+        
+        await setSelectedShippingDetail(newItem.id); // selects and sets default
+      }
+
       closeForm();
       toast.success('Shipping detail added successfully');
-      
     } catch (error: any) {
       if (error.response?.data?.errors) {
         Object.values(error.response.data.errors).flat().forEach(msg => toast.error(msg));
@@ -88,13 +112,14 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateShippingDetail = async (id: number, updatedDetail: Partial<ShippingDetail>) => {
-    if (!user) {
-      toast.error('User not logged in');
-      return;
-    }
     try {
       await axios.put(`/profile/shipping-details/${id}`, updatedDetail);
-      await fetchShippingDetails();
+      const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
+      setShippingDetails(res.data);
+
+      // Keep the updated address selected
+      setSelectedShippingDetail(id, false);
+
       toast.success('Shipping detail updated successfully');
       closeForm();
     } catch {
@@ -105,10 +130,12 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
   const deleteShippingDetail = async (id: number) => {
     try {
       await axios.delete(`/profile/shipping-details/${id}`);
-      setShippingDetails((prev) => prev.filter(detail => detail.id !== id));
+      const updatedList = shippingDetails.filter(d => d.id !== id);
+      setShippingDetails(updatedList);
 
-      if (selectedShippingDetail?.id === id) {
-        setSelectedShippingDetail(shippingDetails.length > 1 ? shippingDetails[0] : null);
+      // Reset selection if deleted
+      if (selectedShippingId === id) {
+        setSelectedShippingDetail(updatedList.length ? updatedList[0].id : null, false);
       }
 
       toast.success('Shipping detail deleted successfully');
@@ -117,40 +144,9 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const setDefaultShippingDetail = async (detail: ShippingDetail) => {
-    try {
-      await axios.put(`/profile/shipping-details/${detail.id}`, {
-        ...detail,
-        is_default: true,
-      });
-
-      setShippingDetails((prev) =>
-        prev.map((d) => ({
-          ...d,
-          is_default: d.id === detail.id,
-        }))
-      );
-
-      setSelectedShippingDetail(detail);
-      toast.success('Default shipping address updated');
-    } catch {
-      toast.error('Failed to update default shipping address');
-    }
-  };
-
   useEffect(() => {
-    setShippingDetails([]);
-    setSelectedShippingDetail(null);
     fetchShippingDetails();
   }, [user]);
-
-  useEffect(() => {
-    if (selectedShippingDetail) {
-      localStorage.setItem('selectedShippingDetailId', selectedShippingDetail.id.toString());
-    } else {
-      localStorage.removeItem('selectedShippingDetailId');
-    }
-  }, [selectedShippingDetail]);
 
   return (
     <ShippingContext.Provider
@@ -165,10 +161,9 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
         setShowForm,
         toggleShowForm,
         fetchShippingDetails,
-        storeShippingDetail, // Updated the function name here
+        storeShippingDetail,
         updateShippingDetail,
         deleteShippingDetail,
-        setDefaultShippingDetail,
       }}
     >
       {children}

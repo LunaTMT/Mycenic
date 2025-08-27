@@ -10,13 +10,25 @@ class CreateReviewsTable extends Migration
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+
+            $table->foreignId('user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->text('content')->nullable();
-            $table->decimal('rating', 2, 1)->default(0);
+            $table->decimal('rating', 2, 1)->default(0); // 0.0 - 9.9
             $table->integer('likes')->default(0);
             $table->integer('dislikes')->default(0);
-            $table->foreignId('parent_id')->nullable()->constrained('reviews')->onDelete('cascade');
-            $table->foreignId('item_id')->constrained('items');
+
+            $table->foreignId('parent_id')
+                ->nullable()
+                ->constrained('reviews')
+                ->onDelete('cascade');
+
+            $table->foreignId('item_id')
+                ->constrained('items');
+
             $table->timestamps();
         });
     }

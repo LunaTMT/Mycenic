@@ -6,21 +6,22 @@ import Modal from '@/Components/Modal/Modal';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 import SecondaryButton from '@/Components/Buttons/SecondaryButton';
 
-
 interface Props {
   detail: ShippingDetail;
-  isSelected: boolean;
-  onSelect: () => void;
+  disableSelectedStyles?: boolean;
 }
 
-export default function ShippingAddressCard({ detail, isSelected, onSelect }: Props) {
+export default function ShippingAddressCard({
+  detail,
+  disableSelectedStyles = false,
+}: Props) {
   const { deleteShippingDetail, toggleShowForm, setSelectedShippingDetail } = useShipping();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedShippingDetail(detail);
-    toggleShowForm(); // Opens form pre-filled
+    setSelectedShippingDetail(detail.id, false);
+    toggleShowForm();
   };
 
   const confirmDelete = async () => {
@@ -28,20 +29,40 @@ export default function ShippingAddressCard({ detail, isSelected, onSelect }: Pr
     setShowDeleteModal(false);
   };
 
+  // Base classes
+  const baseClasses = 'relative border rounded-lg p-4 h-48 flex flex-col shadow-sm';
+  const borderClasses = 'dark:border-white/20 border-black/20';
+
+  // Background and ring classes
+  let bgClasses = 'bg-white dark:bg-[#1e2124]/60'
+  let ringClasses = '';
+
+  if (disableSelectedStyles) {
+    bgClasses = 'bg-white dark:bg-[#1e2124]/60 border-gray-300 dark:border-white/20';
+  } else if (detail.is_default) {
+    bgClasses = 'bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-800/40';
+    ringClasses = 'ring-2 ring-green-400 dark:ring-green-300';
+  } else {
+    bgClasses += ' hover:bg-green-50 dark:hover:bg-green-900/50';
+  }
+
   return (
     <>
       <div
-        onClick={onSelect}
+        onClick={async () => {
+          if (!disableSelectedStyles) {
+            await setSelectedShippingDetail(detail.id);
+          }
+        }}
         className={`
-          relative cursor-pointer border rounded-lg p-4 h-48
-          ${detail.is_default ? 'bg-green-200 dark:bg-green-900/30' : 'bg-white dark:bg-gray-800'}
-          ${isSelected ? 'ring-2 ring-green-400 dark:ring-green-300' : 'ring-0'}
-          dark:border-white/20 border-black/20 shadow-sm
-          hover:bg-green-200 dark:hover:bg-green-900/50
-          flex flex-col
+          ${baseClasses} 
+          ${borderClasses} 
+          ${bgClasses} 
+          ${ringClasses} 
+          
         `}
       >
-        {!!detail.is_default && (
+        {!!detail.is_default && !disableSelectedStyles && (
           <div className="absolute top-2 right-2 bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -66,18 +87,12 @@ export default function ShippingAddressCard({ detail, isSelected, onSelect }: Pr
         <p className="text-sm dark:text-gray-300">{detail.country}</p>
         <p className="text-sm mt-2 italic text-gray-500 dark:text-gray-400">{detail.phone}</p>
 
-        {/* Buttons absolutely positioned */}
+        {/* Buttons */}
         <div className="absolute bottom-2 right-2 flex gap-2">
           <button
             onClick={handleEdit}
             aria-label="Edit Address"
-            className={`
-              p-2 rounded-xl font-Poppins text-white
-              bg-yellow-500
-              dark:bg-[#7289da]
-              hover:scale-[103%] transition-all duration-300 
-              flex justify-center items-center
-            `}
+            className="p-2 rounded-xl font-Poppins text-white bg-yellow-500 dark:bg-[#7289da] hover:scale-[103%] transition-all duration-300 flex justify-center items-center"
           >
             <FiEdit size={18} />
           </button>
@@ -87,13 +102,7 @@ export default function ShippingAddressCard({ detail, isSelected, onSelect }: Pr
               setShowDeleteModal(true);
             }}
             aria-label="Delete Address"
-            className={`
-              p-2 rounded-xl font-Poppins text-white
-              bg-yellow-500
-              dark:bg-[#7289da]
-              hover:scale-[103%] transition-all duration-300 
-              flex justify-center items-center
-            `}
+            className="p-2 rounded-xl font-Poppins text-white bg-yellow-500 dark:bg-[#7289da] hover:scale-[103%] transition-all duration-300 flex justify-center items-center"
           >
             <FiTrash2 size={18} />
           </button>
@@ -102,10 +111,7 @@ export default function ShippingAddressCard({ detail, isSelected, onSelect }: Pr
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <Modal
-          show={showDeleteModal}     // <-- add this
-          onClose={() => setShowDeleteModal(false)}
-        >
+        <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
           <div className="p-6 flex justify-center items-center flex-col">
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
               Confirm Delete
@@ -114,13 +120,16 @@ export default function ShippingAddressCard({ detail, isSelected, onSelect }: Pr
               Are you sure you want to delete this shipping address?
             </p>
             <div className="flex justify-end space-x-4">
-              <SecondaryButton className='px-5' onClick={() => setShowDeleteModal(false)}>Cancel</SecondaryButton>
-              <PrimaryButton className='px-5' onClick={confirmDelete}>Confirm</PrimaryButton>
+              <SecondaryButton className="px-5" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton className="px-5" onClick={confirmDelete}>
+                Confirm
+              </PrimaryButton>
             </div>
           </div>
         </Modal>
       )}
-
     </>
   );
 }

@@ -20,7 +20,6 @@ class ShippingDetailFactory extends Factory
             'zip' => $this->faker->postcode(),
             'country' => 'United Kingdom',
             'is_default' => false,
-            'delivery_instructions' => $this->faker->optional()->sentence(),
         ];
     }
 }

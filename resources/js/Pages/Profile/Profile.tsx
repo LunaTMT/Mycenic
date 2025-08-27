@@ -51,8 +51,11 @@ export default function Profile({ initialTab}: Props) {
 
   return (
 
-      <AuthenticatedLayout
-        header={isAdmin && <UserSelector />}
+      <AuthenticatedLayout 
+        header={isAdmin && 
+        <div className="p-2 w-full"> 
+          <UserSelector />
+        </div>}
       >
         <Head title="Profile" />
         <div className="relative z-10 w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex flex-col items-center font-Poppins">

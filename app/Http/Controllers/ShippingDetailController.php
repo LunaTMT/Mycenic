@@ -3,54 +3,63 @@
 namespace App\Http\Controllers;
 
 use App\Models\ShippingDetail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Log;
-
 
 class ShippingDetailController extends Controller
 {
     use AuthorizesRequests;
 
     /**
-     * Display a listing of the shipping details for the current user.
+     * Display a listing of the shipping details.
+     * - Admin: can view any user via query ?user_id=
+     * - Auth user: their own
+     * - Guest: must provide email
      */
     public function index(Request $request)
     {
         $currentUser = Auth::user();
-
         $userId = $request->query('user_id');
 
-        if ($userId && $currentUser->isAdmin()) {
-            // Admin can fetch shipping details of any user by user_id
-            \Log::info('Admin fetching shipping details', [
+        if ($currentUser && $userId && $currentUser->isAdmin()) {
+            Log::info('Admin fetching shipping details', [
                 'admin_id' => $currentUser->id,
                 'user_id' => $userId,
             ]);
 
             $shippingDetails = ShippingDetail::where('user_id', $userId)->get();
-
-            \Log::info('Number of shipping details fetched for user', [
-                'user_id' => $userId,
-                'count' => $shippingDetails->count(),
-            ]);
-        } else {
-            // Non-admin or no user_id: return current user's shipping details
-            \Log::info('Fetching shipping details for current user', [
+        } elseif ($currentUser) {
+            Log::info('Fetching shipping details for logged-in user', [
                 'user_id' => $currentUser->id,
             ]);
 
             $shippingDetails = ShippingDetail::where('user_id', $currentUser->id)->get();
+        } elseif ($request->filled('email')) {
+            $user = User::where('email', $request->query('email'))->first();
 
-            \Log::info('Number of shipping details fetched', [
-                'count' => $shippingDetails->count(),
+            if (!$user) {
+                return response()->json([], 200);
+            }
+
+            Log::info('Guest fetching shipping details by email', [
+                'email' => $request->query('email'),
+                'user_id' => $user->id,
             ]);
+
+            $shippingDetails = ShippingDetail::where('user_id', $user->id)->get();
+        } else {
+            return response()->json(['error' => 'Authentication or email required'], 422);
         }
+
+        Log::info('Number of shipping details fetched', [
+            'count' => $shippingDetails->count(),
+        ]);
 
         return response()->json($shippingDetails);
     }
-
 
     /**
      * Store a newly created shipping detail.
@@ -68,25 +77,42 @@ class ShippingDetailController extends Controller
             'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'nullable|string|max:255',
-            'is_default' => 'boolean',
-            'delivery_instructions' => 'nullable|string',
-            'user_id' => 'nullable|integer|exists:users,id', // allow user_id if admin
+            'user_id' => 'nullable|integer|exists:users,id',
+            'email' => 'nullable|email|max:255',
         ]);
 
-        // Determine which user_id to use
-        if ($currentUser->isAdmin() && !empty($validated['user_id'])) {
-            $userId = $validated['user_id'];
+        // Determine user
+        if ($currentUser) {
+            $userId = $currentUser->isAdmin() && !empty($validated['user_id'])
+                ? $validated['user_id']
+                : $currentUser->id;
+        } elseif (!empty($validated['email'])) {
+            $user = User::firstOrCreate(
+                ['email' => $validated['email']],
+                [
+                    'name' => $validated['full_name'],
+                    'phone' => $validated['phone'] ?? null,
+                    'password' => null, // soft registration
+                ]
+            );
+            $userId = $user->id;
         } else {
-            $userId = $currentUser->id;
+            return response()->json(['error' => 'User not authenticated and no email provided'], 422);
         }
 
-        // If this is default, reset others for that user
-        if (!empty($validated['is_default']) && $validated['is_default'] === true) {
-            ShippingDetail::where('user_id', $userId)->update(['is_default' => false]);
-        }
+        // Reset existing addresses for user
+        ShippingDetail::where('user_id', $userId)->update(['is_default' => false]);
 
-        // Create with user_id set accordingly
-        $shippingDetail = ShippingDetail::create(array_merge($validated, ['user_id' => $userId]));
+        // Always create as default
+        $shippingDetail = ShippingDetail::create(array_merge($validated, [
+            'user_id' => $userId,
+            'is_default' => true,
+        ]));
+
+        Log::info('Shipping detail created', [
+            'user_id' => $userId,
+            'shipping_detail_id' => $shippingDetail->id,
+        ]);
 
         return response()->json($shippingDetail, 201);
     }
@@ -94,16 +120,11 @@ class ShippingDetailController extends Controller
     /**
      * Show a specific shipping detail.
      */
-    public function show(ShippingDetail $shippingDetail)
+    public function show(Request $request, ShippingDetail $shippingDetail)
     {
         $this->authorize('view', $shippingDetail);
         return response()->json($shippingDetail);
     }
-
-    /**
-     * Update a shipping detail.
-     */
-    
 
     /**
      * Update a shipping detail.
@@ -113,9 +134,9 @@ class ShippingDetailController extends Controller
         $this->authorize('update', $shippingDetail);
 
         Log::info('ShippingDetail update request received.', [
-            'user_id' => auth()->id(),
+            'auth_user_id' => auth()->id(),
+            'request_email' => $request->input('email'),
             'shipping_detail_id' => $shippingDetail->id,
-            'request_data' => $request->all(),
         ]);
 
         $validated = $request->validate([
@@ -129,20 +150,11 @@ class ShippingDetailController extends Controller
             'state' => 'nullable|string|max:255',
             'is_default' => 'boolean',
             'delivery_instructions' => 'nullable|string',
-            'user_id' => 'nullable|integer|exists:users,id', // allow user_id if admin
+            'user_id' => 'nullable|integer|exists:users,id',
+            'email' => 'nullable|email|max:255',
         ]);
 
-        Log::info('ShippingDetail validated data.', [
-            'validated_data' => $validated,
-        ]);
-
-        // If is_default is true, reset others
-        if (!empty($validated['is_default']) && $validated['is_default'] === true) {
-            Log::info('Resetting other default shipping details for this user.', [
-                'user_id' => $shippingDetail->user_id,
-                'current_shipping_detail_id' => $shippingDetail->id,
-            ]);
-
+        if (!empty($validated['is_default'])) {
             ShippingDetail::where('user_id', $shippingDetail->user_id)
                 ->where('id', '!=', $shippingDetail->id)
                 ->update(['is_default' => false]);
@@ -152,19 +164,24 @@ class ShippingDetailController extends Controller
 
         Log::info('ShippingDetail updated successfully.', [
             'shipping_detail_id' => $shippingDetail->id,
-            'updated_data' => $shippingDetail->toArray(),
         ]);
 
         return response()->json($shippingDetail);
     }
 
-
     /**
      * Delete a shipping detail.
      */
-    public function destroy(ShippingDetail $shippingDetail)
+    public function destroy(Request $request, ShippingDetail $shippingDetail)
     {
         $this->authorize('delete', $shippingDetail);
+
+        Log::info('Deleting shipping detail', [
+            'auth_user_id' => auth()->id(),
+            'request_email' => $request->input('email'),
+            'shipping_detail_id' => $shippingDetail->id,
+        ]);
+
         $shippingDetail->delete();
 
         return response()->json(['message' => 'Deleted']);

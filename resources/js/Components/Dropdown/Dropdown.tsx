@@ -1,119 +1,96 @@
-import { Transition } from '@headlessui/react';
-import { InertiaLinkProps, Link } from '@inertiajs/react';
-import {
-  createContext,
-  Dispatch,
-  PropsWithChildren,
-  SetStateAction,
-  useContext,
-  useState,
-} from 'react';
+import React, { useState, useRef, useEffect, ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import ArrowIcon from '@/Components/Icon/ArrowIcon';
 
-const DropDownContext = createContext<{
-  open: boolean;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  toggleOpen: () => void;
-}>({
-  open: false,
-  setOpen: () => {},
-  toggleOpen: () => {},
-});
+interface DropdownItem {
+  id: number | string;
+  label: string;
+  extra?: ReactNode; // Optional extra info to render
+}
 
-const Dropdown = ({
-  children,
-  onOpenChange,
-}: PropsWithChildren<{ onOpenChange?: (open: boolean) => void }>) => {
-  const [open, setOpen] = useState(false);
+interface DropdownProps {
+  items: DropdownItem[];
+  selectedItemId?: number | string | null;
+  onSelect: (id: number | string) => void;
+  onCustomAction?: () => void;
+  customActionLabel?: string;
+  placeholder?: string;
+}
 
-  const toggleOpen = () => {
-    const newOpen = !open;
-    setOpen(newOpen);
-    if (onOpenChange) onOpenChange(newOpen);
-  };
+const Dropdown: React.FC<DropdownProps> = ({
+  items,
+  selectedItemId,
+  onSelect,
+  onCustomAction,
+  customActionLabel,
+  placeholder = 'Select an option',
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <DropDownContext.Provider value={{ open, setOpen, toggleOpen }}>
-      <div className="relative inline-block">{children}</div>
-    </DropDownContext.Provider>
-  );
-};
+  // Close dropdown if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-const Trigger = ({ children }: PropsWithChildren) => {
-  const { setOpen } = useContext(DropDownContext);
+  const selectedItem = items.find(item => item.id === selectedItemId);
+
   return (
     <div
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      // Absolute and inset-0 fills entire parent container (which must be relative and sized)
-      className="inset-0 w-full h-full cursor-pointer"
+      className="relative w-full"
+      ref={dropdownRef}
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
     >
-      {children}
+      <button
+        onClick={() => setIsOpen(prev => !prev)}
+        className="px-4 py-2 w-full border border-gray-300 dark:border-white/20 rounded-md flex bg-white dark:bg-[#1e2124]/60 justify-between items-center text-left text-gray-900 dark:text-white"
+      >
+        {selectedItem ? selectedItem.label : placeholder}
+        <ArrowIcon w="16" h="16" isOpen={isOpen} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.2 }}
+            className="absolute mt-1 w-full bg-white dark:bg-[#424549] shadow-lg rounded-md border border-gray-300 dark:border-gray-600 z-50"
+          >
+            {items.map((item, i) => (
+              <div
+                key={item.id}
+                onClick={() => { onSelect(item.id); setIsOpen(false); }}
+                className={`cursor-pointer px-4 py-2 text-sm dark:text-gray-200 text-gray-800 hover:bg-gray-400 dark:hover:bg-[#7289da]/70 ${
+                  selectedItemId === item.id ? 'font-semibold' : ''
+                } ${i === 0 ? 'rounded-t-md' : ''}`}
+              >
+                {item.label}
+                {item.extra && <span className="ml-2">{item.extra}</span>}
+              </div>
+            ))}
+
+            {onCustomAction && customActionLabel && (
+              <div
+                onClick={() => { onCustomAction(); setIsOpen(false); }}
+                className="cursor-pointer px-4 py-2 text-sm text-yellow-500 dark:text-[#7289da] font-semibold hover:underline"
+              >
+                {customActionLabel}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
-
-const Content = ({
-  align = 'right',
-  width = 'fit',  // default changed to 'fit'
-  contentClasses = '',
-  children,
-}: PropsWithChildren<{
-  align?: 'left' | 'right';
-  width?: '48' | 'fit';  // support for 'fit'
-  contentClasses?: string;
-}>) => {
-  const { open, setOpen } = useContext(DropDownContext);
-
-  let alignmentClasses = 'origin-top';
-  if (align === 'left') {
-    alignmentClasses = 'ltr:origin-top-left rtl:origin-top-right start-0';
-  } else if (align === 'right') {
-    alignmentClasses = 'ltr:origin-top-right rtl:origin-top-left end-0';
-  }
-
-  const widthClasses = width === '48' ? 'w-48' : width === 'fit' ? 'w-fit' : '';
-
-  return (
-    <Transition
-      show={open}
-      enter="transition ease-out duration-200"
-      enterFrom="opacity-0 scale-95"
-      enterTo="opacity-100 scale-100"
-      leave="transition ease-in duration-75"
-      leaveFrom="opacity-100 scale-100"
-      leaveTo="opacity-0 scale-95"
-    >
-      <div
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        className={`absolute mt-2 z-50 shadow-2xl  ${alignmentClasses} ${widthClasses}`}
-      >
-        <div className={`${contentClasses}`}>
-          {children}
-        </div>
-      </div>
-    </Transition>
-  );
-};
-
-const DropdownLink = ({
-  className = '',
-  children,
-  ...props
-}: InertiaLinkProps) => (
-  <Link
-    {...props}
-    className={
-      'block w-full text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out focus:bg-gray-100 focus:outline-none ' +
-      className
-    }
-  >
-    {children}
-  </Link>
-);
-
-Dropdown.Trigger = Trigger;
-Dropdown.Content = Content;
-Dropdown.Link = DropdownLink;
 
 export default Dropdown;
