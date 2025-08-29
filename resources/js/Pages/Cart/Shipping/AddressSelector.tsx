@@ -14,13 +14,21 @@ const AddressSelector: React.FC = () => {
     label: `${detail.full_name}, ${detail.address_line1}, ${detail.city}`,
   }));
 
+  const handleAddNew = () => {
+    setSelectedShippingDetail(null); // clear any selected address
+    toggleShowForm(); // now opens the form in "add" mode
+  };
+
+  const canAddNew = shippingDetails.length < 6;
+
   return (
     <Dropdown
       items={items}
       selectedItemId={selectedShippingDetail?.id || null}
-      onSelect={(id) => setSelectedShippingDetail(id)}
-      onCustomAction={toggleShowForm}
-      customActionLabel="+ Add New Address"
+      onSelect={(id: number) => setSelectedShippingDetail(id)}
+      // Only show the "+ Add New Address" option if fewer than 6 addresses exist
+      onCustomAction={canAddNew ? handleAddNew : undefined}
+      customActionLabel={canAddNew ? '+ Add New Address' : undefined}
       placeholder="Select Shipping Address"
     />
   );

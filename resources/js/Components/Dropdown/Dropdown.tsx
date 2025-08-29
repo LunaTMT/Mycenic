@@ -63,13 +63,13 @@ const Dropdown: React.FC<DropdownProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.2 }}
-            className="absolute mt-1 w-full bg-white dark:bg-[#424549] shadow-lg rounded-md border border-gray-300 dark:border-gray-600 z-50"
+            className="absolute mt-1 w-full bg-white dark:bg-[#424549] shadow-lg rounded-md border border-gray-300 dark:border-white/20 rounded z-50"
           >
             {items.map((item, i) => (
               <div
                 key={item.id}
                 onClick={() => { onSelect(item.id); setIsOpen(false); }}
-                className={`cursor-pointer px-4 py-2 text-sm dark:text-gray-200 text-gray-800 hover:bg-gray-400 dark:hover:bg-[#7289da]/70 ${
+                className={`cursor-pointer px-4 py-2 text-sm  dark:text-gray-200 text-gray-800 hover:bg-gray-400 dark:hover:bg-[#7289da]/70 ${
                   selectedItemId === item.id ? 'font-semibold' : ''
                 } ${i === 0 ? 'rounded-t-md' : ''}`}
               >

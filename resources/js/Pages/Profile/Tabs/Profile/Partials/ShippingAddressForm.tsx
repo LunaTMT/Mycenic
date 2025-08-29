@@ -1,16 +1,15 @@
 import React, { FormEventHandler, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { usePage } from '@inertiajs/react';
-import InputError from '@/Components/Login/InputError';
-import InputLabel from '@/Components/Login/InputLabel';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
-import TextInput from '@/Components/Login/TextInput';
+import SecondaryButton from '@/Components/Buttons/SecondaryButton';
+import FormField from '@/Components/Form/FormField';
+import InputLabel from '@/Components/Login/InputLabel';
+import InputError from '@/Components/Login/InputError';
 import { useShipping } from '@/Contexts/Profile/ShippingContext';
 import { countries, countriesWithStates } from '@/utils/countries';
-import SecondaryButton from '@/Components/Buttons/SecondaryButton';
 import { ShippingDetail } from '@/types/Shipping';
 
-// Type for form fields
 type FieldKey =
   | 'full_name'
   | 'email'
@@ -22,77 +21,49 @@ type FieldKey =
   | 'state'
   | 'zip';
 
-const FormInput = ({
-  id,
-  name,
-  type = 'text',
-  value,
-  onChange,
-  label,
-  error,
-  required = false,
-  autoComplete = '',
-}: {
-  id: string;
-  name: string;
-  type?: string;
-  value: string;
-  onChange: React.ChangeEventHandler<HTMLInputElement>;
-  label: string;
-  error?: string;
-  required?: boolean;
-  autoComplete?: string;
-}) => (
-  <div>
-    <InputLabel htmlFor={id} value={label} />
-    <TextInput
-      id={id}
-      name={name}
-      type={type}
-      value={value}
-      onChange={onChange}
-      className="mt-1 w-full"
-      required={required}
-      autoComplete={autoComplete}
-    />
-    <InputError message={error} className="mt-2" />
-  </div>
-);
+const defaultForm: Record<FieldKey, string> = {
+  full_name: '',
+  email: '',
+  phone: '',
+  country: 'United Kingdom',
+  address_line1: '',
+  address_line2: '',
+  city: '',
+  state: '',
+  zip: '',
+};
 
 export default function ShippingAddressForm() {
   const { auth } = usePage().props as { auth: { user: any } };
-  const { storeShippingDetail, updateShippingDetail, selectedShippingDetail, toggleShowForm } = useShipping();
+  const {
+    storeShippingDetail,
+    updateShippingDetail,
+    selectedShippingDetail,
+    toggleShowForm,
+  } = useShipping();
 
-  const { data, setData, processing, errors, reset } = useForm<Record<FieldKey, string>>({
-    full_name: '',
-    email: '',
-    phone: '',
-    country: 'United Kingdom',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    state: '',
-    zip: '',
-  });
+  const { data, setData, processing, errors, reset } = useForm(defaultForm);
 
+  // Populate form when editing
   useEffect(() => {
     if (selectedShippingDetail) {
       setData({
-        full_name: selectedShippingDetail.full_name || '',
-        phone: selectedShippingDetail.phone || '',
-        country: selectedShippingDetail.country || 'United Kingdom',
-        address_line1: selectedShippingDetail.address_line1 || '',
-        address_line2: selectedShippingDetail.address_line2 || '',
-        city: selectedShippingDetail.city || '',
-        state: selectedShippingDetail.state || '',
-        zip: selectedShippingDetail.zip || '',
+        full_name: selectedShippingDetail.full_name ?? '',
+        email: selectedShippingDetail.email ?? '',
+        phone: selectedShippingDetail.phone ?? '',
+        country: selectedShippingDetail.country ?? 'United Kingdom',
+        address_line1: selectedShippingDetail.address_line1 ?? '',
+        address_line2: selectedShippingDetail.address_line2 ?? '',
+        city: selectedShippingDetail.city ?? '',
+        state: selectedShippingDetail.state ?? '',
+        zip: selectedShippingDetail.zip ?? '',
       });
     } else {
-      reset(); // if adding new, clear form
+      reset();
     }
   }, [selectedShippingDetail, setData, reset]);
 
-  // Clear state if country doesn't have states
+  // Reset state if country doesn’t support states
   useEffect(() => {
     if (!countriesWithStates.includes(data.country)) {
       setData('state', '');
@@ -101,17 +72,18 @@ export default function ShippingAddressForm() {
 
   const submit: FormEventHandler = async (e) => {
     e.preventDefault();
+
     try {
       if (selectedShippingDetail) {
-        // Editing existing
+        // Pass a flag so updateShippingDetail knows to not reset on error
         await updateShippingDetail(selectedShippingDetail.id, data as ShippingDetail);
       } else {
-        // Adding new
         await storeShippingDetail(data as ShippingDetail);
+        reset(); // Only reset after creating a new address
       }
-      reset();
     } catch (err) {
-      console.error('Failed to save address:', err);
+      console.error('Error submitting shipping detail:', err);
+      // Do NOT reset here — form keeps the typed values
     }
   };
 
@@ -119,25 +91,22 @@ export default function ShippingAddressForm() {
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
-      <FormInput
+      <FormField
         id="full_name"
-        name="full_name"
+        label="Full Name"
         value={data.full_name}
         onChange={(e) => setData('full_name', e.target.value)}
-        label="Full Name"
         error={errors.full_name}
         required
       />
 
-      {/* Conditionally show Email field if user is not logged in */}
       {!auth.user && (
-        <FormInput
+        <FormField
           id="email"
-          name="email"
+          label="Email"
           type="email"
           value={data.email}
           onChange={(e) => setData('email', e.target.value)}
-          label="Email"
           error={errors.email}
           required
         />
@@ -162,71 +131,64 @@ export default function ShippingAddressForm() {
         <InputError message={errors.country} className="mt-2" />
       </div>
 
-      <FormInput
+      <FormField
         id="address_line1"
-        name="address_line1"
+        label="Address Line 1"
         value={data.address_line1}
         onChange={(e) => setData('address_line1', e.target.value)}
-        label="Address Line 1"
         error={errors.address_line1}
         required
         autoComplete="address-line1"
       />
 
-      <FormInput
+      <FormField
         id="address_line2"
-        name="address_line2"
+        label="Address Line 2 (Optional)"
         value={data.address_line2}
         onChange={(e) => setData('address_line2', e.target.value)}
-        label="Address Line 2 (Optional)"
         error={errors.address_line2}
         autoComplete="address-line2"
       />
 
-      <FormInput
+      <FormField
         id="city"
-        name="city"
+        label="City"
         value={data.city}
         onChange={(e) => setData('city', e.target.value)}
-        label="City"
         error={errors.city}
         required
         autoComplete="address-level2"
       />
 
       {showStateField && (
-        <FormInput
+        <FormField
           id="state"
-          name="state"
+          label="State / Province"
           value={data.state}
           onChange={(e) => setData('state', e.target.value)}
-          label="State / Province"
           error={errors.state}
-          required={showStateField}
+          required
           autoComplete="address-level1"
         />
       )}
 
-      <FormInput
+      <FormField
         id="zip"
-        name="zip"
+        label="Postal Code"
         value={data.zip}
         onChange={(e) => setData('zip', e.target.value)}
-        label="Postal Code"
         error={errors.zip}
         required
         autoComplete="postal-code"
       />
 
-      {/* Show Phone Number only if user is not logged in */}
       {!auth.user && (
-        <FormInput
+        <FormField
           id="phone"
-          name="phone"
+          label="Phone Number (Optional)"
           type="tel"
           value={data.phone}
           onChange={(e) => setData('phone', e.target.value)}
-          label="Phone Number (Optional)"
           error={errors.phone}
         />
       )}

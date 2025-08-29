@@ -26,7 +26,6 @@ const ShippingContext = createContext<ShippingContextType | undefined>(undefined
 
 export const ShippingProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
-  console.log(user);
 
   const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>([]);
   const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null);
@@ -38,21 +37,17 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
 
   const selectedShippingDetail = shippingDetails.find(d => d.id === selectedShippingId) || null;
 
-  const setSelectedShippingDetail = async (id: number | null, makeDefault = true) => {
+  const setSelectedShippingDetail = async (id: number | null) => {
     setSelectedShippingId(id);
 
-    // Persist selection in localStorage
-    if (id !== null) {
-      localStorage.setItem('selectedShippingDetailId', id.toString());
-    } else {
-      localStorage.removeItem('selectedShippingDetailId');
-    }
+    if (id !== null) localStorage.setItem('selectedShippingDetailId', id.toString());
+    else localStorage.removeItem('selectedShippingDetailId');
 
     const detail = shippingDetails.find(d => d.id === id);
-    if (detail && makeDefault && !detail.is_default) {
+    if (detail && !detail.is_default) {
       try {
-        console.log("making default");
-        await axios.put(`/profile/shipping-details/${id}`, { ...detail, is_default: true });
+        // Call the new endpoint to set default only
+        await axios.put(`/profile/shipping-details/${id}/default`);
         setShippingDetails(prev => prev.map(d => ({ ...d, is_default: d.id === id })));
         toast.success('Default shipping address updated');
       } catch {
@@ -61,71 +56,89 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-
   const fetchShippingDetails = async () => {
+    if (user.isGuest) return;
+    console.log(user);
     try {
-      if (user.isGuest) return;
       const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
       setShippingDetails(res.data);
 
-      if (res.data.length === 0) {
-        setSelectedShippingDetail(null, false);
+      if (!res.data.length) {
+        setSelectedShippingDetail(null);
         return;
       }
 
-      // Check localStorage for previously selected address
       const savedId = localStorage.getItem('selectedShippingDetailId');
-      if (savedId && res.data.some(d => d.id === parseInt(savedId, 10))) {
-        setSelectedShippingDetail(parseInt(savedId, 10), false);
-      } else {
-        // fallback: select the first one
-        setSelectedShippingDetail(res.data[0].id, false);
-      }
+      const selectedId = savedId && res.data.some(d => d.id === parseInt(savedId, 10))
+        ? parseInt(savedId, 10)
+        : res.data[0].id;
+
+      setSelectedShippingDetail(selectedId);
     } catch {
       toast.error('Failed to load shipping details');
     }
   };
 
-
-  const storeShippingDetail = async (detailData: ShippingDetail) => {
+  const storeShippingDetail = async (detail: ShippingDetail) => {
     try {
-      await axios.post(`/profile/shipping-details?user_id=${user.id}`, detailData);
+      await axios.post(`/profile/shipping-details?user_id=${user.id}`, detail);
       const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
       setShippingDetails(res.data);
 
-      // Automatically select the newly added address and set as default
-      if (res.data.length > 0) {
+      if (res.data.length) {
         const newItem = res.data[res.data.length - 1];
-        
-        await setSelectedShippingDetail(newItem.id); // selects and sets default
+        await setSelectedShippingDetail(newItem.id);
       }
 
       closeForm();
       toast.success('Shipping detail added successfully');
-    } catch (error: any) {
-      if (error.response?.data?.errors) {
-        Object.values(error.response.data.errors).flat().forEach(msg => toast.error(msg));
+    } catch (err: any) {
+      // Laravel validation errors
+      if (err.response?.status === 422) {
+        if (err.response.data?.errors) {
+          Object.values(err.response.data.errors).flat().forEach(msg => toast.error(msg));
+        } else if (err.response.data?.error) {
+          // Top-level error like "This shipping address already exists"
+          toast.error(err.response.data.error);
+        } else {
+          toast.error('Failed to add shipping detail');
+        }
       } else {
         toast.error('Failed to add shipping detail');
       }
+
+      throw err; // keep form values intact
     }
   };
 
-  const updateShippingDetail = async (id: number, updatedDetail: Partial<ShippingDetail>) => {
+  const updateShippingDetail = async (id: number, detail: Partial<ShippingDetail>) => {
     try {
-      await axios.put(`/profile/shipping-details/${id}`, updatedDetail);
+      await axios.put(`/profile/shipping-details/${id}`, detail);
       const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
       setShippingDetails(res.data);
 
-      // Keep the updated address selected
-      setSelectedShippingDetail(id, false);
+      await setSelectedShippingDetail(id);
 
-      toast.success('Shipping detail updated successfully');
       closeForm();
-    } catch {
-      toast.error('Failed to update shipping detail');
+      toast.success('Shipping detail updated successfully');
+    } catch (err: any) {
+      if (err.response?.status === 422) {
+        if (err.response.data?.errors) {
+          // Laravel validation errors
+          Object.values(err.response.data.errors).flat().forEach(msg => toast.error(msg));
+        } else if (err.response.data?.error) {
+          // Top-level error like duplicate
+          toast.error(err.response.data.error);
+        } else {
+          toast.error('Failed to update shipping detail');
+        }
+      } else {
+        toast.error('Failed to update shipping detail');
+      }
+      throw err; // keep form values intact
     }
   };
+
 
   const deleteShippingDetail = async (id: number) => {
     try {
@@ -133,7 +146,6 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
       const updatedList = shippingDetails.filter(d => d.id !== id);
       setShippingDetails(updatedList);
 
-      // Reset selection if deleted
       if (selectedShippingId === id) {
         setSelectedShippingDetail(updatedList.length ? updatedList[0].id : null, false);
       }
