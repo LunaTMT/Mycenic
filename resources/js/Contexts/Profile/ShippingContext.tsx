@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { ShippingDetail } from '@/types/Shipping';
 import { useUser } from '../UserContext';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 
 interface ShippingContextType {
   shippingDetails: ShippingDetail[];
@@ -27,33 +27,48 @@ const ShippingContext = createContext<ShippingContextType | undefined>(undefined
 export const ShippingProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
 
-  const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>([]);
-  const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null);
+  // Load initial state from localStorage for guests
+  const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>(() => {
+    if (!user || user.isGuest) {
+      const stored = localStorage.getItem('guestShippingDetails');
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
+
+  const [selectedShippingId, setSelectedShippingIdState] = useState<number | null>(() => {
+    const savedId = localStorage.getItem('selectedShippingDetailId');
+    return savedId ? parseInt(savedId, 10) : null;
+  });
+
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   const toggleShowForm = () => setShowForm(prev => !prev);
   const closeForm = () => setShowForm(false);
 
-  const selectedShippingDetail = shippingDetails.find(d => d.id === selectedShippingId) || null;
+  // Memoize selected shipping detail for performance
+  const selectedShippingDetail = useMemo(
+    () => shippingDetails.find(d => d.id === selectedShippingId) || null,
+    [shippingDetails, selectedShippingId]
+  );
 
-  // Guest helpers
-  const loadGuestShipping = (): ShippingDetail[] => {
-    const stored = localStorage.getItem('guestShippingDetails');
-    return stored ? JSON.parse(stored) as ShippingDetail[] : [];
-  };
+  // Persist guest shipping to localStorage whenever it changes
+  useEffect(() => {
+    if (!user || user.isGuest) {
+      localStorage.setItem('guestShippingDetails', JSON.stringify(shippingDetails));
+    }
+  }, [shippingDetails, user]);
 
-  const saveGuestShipping = (details: ShippingDetail[]) => {
-    localStorage.setItem('guestShippingDetails', JSON.stringify(details));
-  };
-
-  const setSelectedShippingDetail = async (id: number | null) => {
-    setSelectedShippingId(id);
+  const setSelectedShippingDetail = async (id: number | null, updatedList?: ShippingDetail[]) => {
+    setSelectedShippingIdState(id);
     if (id !== null) localStorage.setItem('selectedShippingDetailId', id.toString());
     else localStorage.removeItem('selectedShippingDetailId');
 
+    const list = updatedList || shippingDetails;
+
     if (user && !user.isGuest) {
-      const detail = shippingDetails.find(d => d.id === id);
+      const detail = list.find(d => d.id === id);
       if (detail && !detail.is_default) {
         try {
           await axios.put(`/profile/shipping-details/${id}/default`);
@@ -64,17 +79,15 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     } else {
-      // Guests: just update localStorage
-      setShippingDetails(prev => prev.map(d => ({ ...d, is_default: d.id === id })));
-      saveGuestShipping(shippingDetails.map(d => ({ ...d, is_default: d.id === id })));
+      // Guests: just update is_default
+      setShippingDetails(list.map(d => ({ ...d, is_default: d.id === id })));
     }
   };
 
   const fetchShippingDetails = async () => {
-
     if (user && !user.isGuest) {
-      console.log("fetching SHipping details");
       try {
+        console.log("fetching shipping");
         const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
         setShippingDetails(res.data);
 
@@ -93,12 +106,11 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
         toast.error('Failed to load shipping details');
       }
     } else {
-      const guestData = loadGuestShipping();
-      setShippingDetails(guestData);
+      // For guests, shippingDetails already loaded from localStorage
       const savedId = localStorage.getItem('selectedShippingDetailId');
-      const selectedId = savedId && guestData.some(d => d.id === parseInt(savedId, 10))
+      const selectedId = savedId && shippingDetails.some(d => d.id === parseInt(savedId, 10))
         ? parseInt(savedId, 10)
-        : guestData[0]?.id || null;
+        : shippingDetails[0]?.id || null;
       setSelectedShippingDetail(selectedId);
     }
   };
@@ -112,7 +124,7 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
 
         if (res.data.length) {
           const newItem = res.data[res.data.length - 1];
-          await setSelectedShippingDetail(newItem.id);
+          await setSelectedShippingDetail(newItem.id, res.data);
         }
 
         closeForm();
@@ -132,13 +144,11 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
         throw err;
       }
     } else {
-      const guestData = loadGuestShipping();
-      const newId = guestData.length ? Math.max(...guestData.map(d => d.id)) + 1 : 1;
+      const newId = shippingDetails.length ? Math.max(...shippingDetails.map(d => d.id)) + 1 : 1;
       const newDetail = { ...detail, id: newId, is_default: true };
-      const updated = guestData.map(d => ({ ...d, is_default: false })).concat(newDetail);
+      const updated = shippingDetails.map(d => ({ ...d, is_default: false })).concat(newDetail);
       setShippingDetails(updated);
-      saveGuestShipping(updated);
-      setSelectedShippingDetail(newId);
+      setSelectedShippingDetail(newId, updated);
       closeForm();
       toast.success('Shipping detail added successfully');
     }
@@ -150,9 +160,7 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
         await axios.put(`/profile/shipping-details/${id}`, detail);
         const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
         setShippingDetails(res.data);
-
-        await setSelectedShippingDetail(id);
-
+        await setSelectedShippingDetail(id, res.data);
         closeForm();
         toast.success('Shipping detail updated successfully');
       } catch (err: any) {
@@ -170,39 +178,31 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
         throw err;
       }
     } else {
-      const guestData = loadGuestShipping();
-      const updated = guestData.map(d => (d.id === id ? { ...d, ...detail } : d));
+      const updated = shippingDetails.map(d => (d.id === id ? { ...d, ...detail } : d));
       setShippingDetails(updated);
-      saveGuestShipping(updated);
-      setSelectedShippingDetail(id);
+      setSelectedShippingDetail(id, updated);
       closeForm();
       toast.success('Shipping detail updated successfully');
     }
   };
 
   const deleteShippingDetail = async (id: number) => {
+    const updated = shippingDetails.filter(d => d.id !== id);
+    setShippingDetails(updated);
+
+    if (selectedShippingId === id) {
+      setSelectedShippingDetail(updated[0]?.id || null, updated);
+    }
+
     if (user && !user.isGuest) {
       try {
         await axios.delete(`/profile/shipping-details/${id}`);
-        const updatedList = shippingDetails.filter(d => d.id !== id);
-        setShippingDetails(updatedList);
-
-        if (selectedShippingId === id) {
-          setSelectedShippingDetail(updatedList.length ? updatedList[0].id : null);
-        }
-
-        toast.success('Shipping detail deleted successfully');
       } catch {
         toast.error('Failed to delete shipping detail');
       }
-    } else {
-      const guestData = loadGuestShipping();
-      const updated = guestData.filter(d => d.id !== id);
-      setShippingDetails(updated);
-      saveGuestShipping(updated);
-      if (selectedShippingId === id) setSelectedShippingDetail(updated[0]?.id || null);
-      toast.success('Shipping detail deleted successfully');
     }
+
+    toast.success('Shipping detail deleted successfully');
   };
 
   useEffect(() => {
