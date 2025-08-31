@@ -30,11 +30,10 @@ const Welcome: React.FC<WelcomeProps> = () => {
   return (
     <Layout>
       <Head title="Welcome" />
-      
-      <VideoPlayer src="/assets/videos/time_lapse.mp4"  />
-      
-      <Products />
-      <CustomerReviews />
+        <div>
+        <VideoPlayer src="/assets/videos/time_lapse.mp4"  />
+        </div>
+
 
 
     </Layout>

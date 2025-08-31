@@ -37,6 +37,7 @@ type AuthenticatedProps = PropsWithChildren<{
 
 export default function Authenticated({ header, children }: AuthenticatedProps) {
   const { auth, flash } = usePage<PageProps>().props;
+  
   const { url } = usePage();
   const { scrollDirection } = useNav();
   const { darkMode } = useDarkMode();
@@ -75,7 +76,7 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
   return (
     <div className="relative w-full min-h-screen dark:bg-[#1e2124]">
       <motion.header
-        className="sticky top-0 z-20 w-full max-h-[11vh] shadow-xl bg-white dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
+        className="sticky top-0 z-20 w-full h-[6vh] shadow-xl bg-white dark:bg-[#424549] dark:text-white border-b border-black/20 dark:border-white/20"
         transition={{ duration: 0.5, ease: "easeOut" }}
         whileInView={{
           y: scrollDirection === "down" ? "-6vh" : "0",
@@ -84,7 +85,7 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
       >
         <Menu url={url} />
         {header && (
-          <div className="flex justify-end w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 ">
+          <div className="flex justify-end w-full  h-full max-w-7xl mx-auto sm:px-6 lg:px-8 ">
             {header}
           </div>
         )}

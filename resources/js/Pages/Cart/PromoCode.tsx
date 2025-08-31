@@ -74,7 +74,7 @@ const PromoCode: React.FC = () => {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.5, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
-            className="relative flex rounded-md"
+            className="relative flex  bg-white dark:bg-[#1e2124]/60 rounded-lg"
           >
             <motion.div
               initial={{ opacity: 0 }}
@@ -86,16 +86,16 @@ const PromoCode: React.FC = () => {
               <TextInput
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
-                className="w-full h-10 border-r-0 rounded-l-full pl-5 bg-transparent rounded-e-none focus:outline-none focus:ring-0"
+                className="w-full h-10 border-r-0 rounded-l-lg pl-4 bg-transparent rounded-e-none dark:border-white/20 border-black/20 focus:outline-none focus:ring-0"
               />
               <button
                 onClick={handlePromoCodeValidation}
-                className={`w-[30%] h-10 border border-gray-400 text-sm font-medium rounded-r-full transition-colors
+                className={`w-[30%] h-10 border dark:border-white/20 border-black/20 text-sm font-medium rounded-r-lg transition-colors
                   ${promoCode.trim().length > 0 ? "text-black dark:text-white" : "text-gray-400"}
                 `}
                 disabled={loading}
               >
-                {loading ? 'Validating...' : 'Apply'}
+                {loading ? 'Validating...' : 'APPLY'}
               </button>
             </motion.div>
           </motion.div>

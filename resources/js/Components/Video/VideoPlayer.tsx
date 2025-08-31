@@ -18,7 +18,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   };
 
   return (
-    <div className="w-full h-[96vh] relative">
+    <div className="w-full h-[94vh] relative">
       {/* Background Video */}
       <video
         ref={videoRef}

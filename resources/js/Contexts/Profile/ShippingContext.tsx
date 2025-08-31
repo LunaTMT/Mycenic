@@ -11,7 +11,7 @@ interface ShippingContextType {
   showForm: boolean;
 
   setShippingDetails: (shippingDetails: ShippingDetail[]) => void;
-  setSelectedShippingDetail: (id: number | null, makeDefault?: boolean) => void;
+  setSelectedShippingDetail: (id: number | null) => void;
   setHoveredId: (id: number | null) => void;
   setShowForm: (show: boolean) => void;
   toggleShowForm: () => void;
@@ -37,122 +37,171 @@ export const ShippingProvider = ({ children }: { children: ReactNode }) => {
 
   const selectedShippingDetail = shippingDetails.find(d => d.id === selectedShippingId) || null;
 
+  // Guest helpers
+  const loadGuestShipping = (): ShippingDetail[] => {
+    const stored = localStorage.getItem('guestShippingDetails');
+    return stored ? JSON.parse(stored) as ShippingDetail[] : [];
+  };
+
+  const saveGuestShipping = (details: ShippingDetail[]) => {
+    localStorage.setItem('guestShippingDetails', JSON.stringify(details));
+  };
+
   const setSelectedShippingDetail = async (id: number | null) => {
     setSelectedShippingId(id);
-
     if (id !== null) localStorage.setItem('selectedShippingDetailId', id.toString());
     else localStorage.removeItem('selectedShippingDetailId');
 
-    const detail = shippingDetails.find(d => d.id === id);
-    if (detail && !detail.is_default) {
-      try {
-        // Call the new endpoint to set default only
-        await axios.put(`/profile/shipping-details/${id}/default`);
-        setShippingDetails(prev => prev.map(d => ({ ...d, is_default: d.id === id })));
-        toast.success('Default shipping address updated');
-      } catch {
-        toast.error('Failed to update default shipping address');
+    if (user && !user.isGuest) {
+      const detail = shippingDetails.find(d => d.id === id);
+      if (detail && !detail.is_default) {
+        try {
+          await axios.put(`/profile/shipping-details/${id}/default`);
+          setShippingDetails(prev => prev.map(d => ({ ...d, is_default: d.id === id })));
+          toast.success('Default shipping address updated');
+        } catch {
+          toast.error('Failed to update default shipping address');
+        }
       }
+    } else {
+      // Guests: just update localStorage
+      setShippingDetails(prev => prev.map(d => ({ ...d, is_default: d.id === id })));
+      saveGuestShipping(shippingDetails.map(d => ({ ...d, is_default: d.id === id })));
     }
   };
 
   const fetchShippingDetails = async () => {
-    if (user.isGuest) return;
-    console.log(user);
-    try {
-      const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
-      setShippingDetails(res.data);
 
-      if (!res.data.length) {
-        setSelectedShippingDetail(null);
-        return;
+    if (user && !user.isGuest) {
+      console.log("fetching SHipping details");
+      try {
+        const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
+        setShippingDetails(res.data);
+
+        if (!res.data.length) {
+          setSelectedShippingDetail(null);
+          return;
+        }
+
+        const savedId = localStorage.getItem('selectedShippingDetailId');
+        const selectedId = savedId && res.data.some(d => d.id === parseInt(savedId, 10))
+          ? parseInt(savedId, 10)
+          : res.data[0].id;
+
+        setSelectedShippingDetail(selectedId);
+      } catch {
+        toast.error('Failed to load shipping details');
       }
-
+    } else {
+      const guestData = loadGuestShipping();
+      setShippingDetails(guestData);
       const savedId = localStorage.getItem('selectedShippingDetailId');
-      const selectedId = savedId && res.data.some(d => d.id === parseInt(savedId, 10))
+      const selectedId = savedId && guestData.some(d => d.id === parseInt(savedId, 10))
         ? parseInt(savedId, 10)
-        : res.data[0].id;
-
+        : guestData[0]?.id || null;
       setSelectedShippingDetail(selectedId);
-    } catch {
-      toast.error('Failed to load shipping details');
     }
   };
 
   const storeShippingDetail = async (detail: ShippingDetail) => {
-    try {
-      await axios.post(`/profile/shipping-details?user_id=${user.id}`, detail);
-      const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
-      setShippingDetails(res.data);
+    if (user && !user.isGuest) {
+      try {
+        await axios.post(`/profile/shipping-details?user_id=${user.id}`, detail);
+        const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
+        setShippingDetails(res.data);
 
-      if (res.data.length) {
-        const newItem = res.data[res.data.length - 1];
-        await setSelectedShippingDetail(newItem.id);
-      }
+        if (res.data.length) {
+          const newItem = res.data[res.data.length - 1];
+          await setSelectedShippingDetail(newItem.id);
+        }
 
-      closeForm();
-      toast.success('Shipping detail added successfully');
-    } catch (err: any) {
-      // Laravel validation errors
-      if (err.response?.status === 422) {
-        if (err.response.data?.errors) {
-          Object.values(err.response.data.errors).flat().forEach(msg => toast.error(msg));
-        } else if (err.response.data?.error) {
-          // Top-level error like "This shipping address already exists"
-          toast.error(err.response.data.error);
+        closeForm();
+        toast.success('Shipping detail added successfully');
+      } catch (err: any) {
+        if (err.response?.status === 422) {
+          if (err.response.data?.errors) {
+            Object.values(err.response.data.errors).flat().forEach(msg => toast.error(msg));
+          } else if (err.response.data?.error) {
+            toast.error(err.response.data.error);
+          } else {
+            toast.error('Failed to add shipping detail');
+          }
         } else {
           toast.error('Failed to add shipping detail');
         }
-      } else {
-        toast.error('Failed to add shipping detail');
+        throw err;
       }
-
-      throw err; // keep form values intact
+    } else {
+      const guestData = loadGuestShipping();
+      const newId = guestData.length ? Math.max(...guestData.map(d => d.id)) + 1 : 1;
+      const newDetail = { ...detail, id: newId, is_default: true };
+      const updated = guestData.map(d => ({ ...d, is_default: false })).concat(newDetail);
+      setShippingDetails(updated);
+      saveGuestShipping(updated);
+      setSelectedShippingDetail(newId);
+      closeForm();
+      toast.success('Shipping detail added successfully');
     }
   };
 
   const updateShippingDetail = async (id: number, detail: Partial<ShippingDetail>) => {
-    try {
-      await axios.put(`/profile/shipping-details/${id}`, detail);
-      const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
-      setShippingDetails(res.data);
+    if (user && !user.isGuest) {
+      try {
+        await axios.put(`/profile/shipping-details/${id}`, detail);
+        const res = await axios.get(`/profile/shipping-details?user_id=${user.id}`);
+        setShippingDetails(res.data);
 
-      await setSelectedShippingDetail(id);
+        await setSelectedShippingDetail(id);
 
-      closeForm();
-      toast.success('Shipping detail updated successfully');
-    } catch (err: any) {
-      if (err.response?.status === 422) {
-        if (err.response.data?.errors) {
-          // Laravel validation errors
-          Object.values(err.response.data.errors).flat().forEach(msg => toast.error(msg));
-        } else if (err.response.data?.error) {
-          // Top-level error like duplicate
-          toast.error(err.response.data.error);
+        closeForm();
+        toast.success('Shipping detail updated successfully');
+      } catch (err: any) {
+        if (err.response?.status === 422) {
+          if (err.response.data?.errors) {
+            Object.values(err.response.data.errors).flat().forEach(msg => toast.error(msg));
+          } else if (err.response.data?.error) {
+            toast.error(err.response.data.error);
+          } else {
+            toast.error('Failed to update shipping detail');
+          }
         } else {
           toast.error('Failed to update shipping detail');
         }
-      } else {
-        toast.error('Failed to update shipping detail');
+        throw err;
       }
-      throw err; // keep form values intact
+    } else {
+      const guestData = loadGuestShipping();
+      const updated = guestData.map(d => (d.id === id ? { ...d, ...detail } : d));
+      setShippingDetails(updated);
+      saveGuestShipping(updated);
+      setSelectedShippingDetail(id);
+      closeForm();
+      toast.success('Shipping detail updated successfully');
     }
   };
 
-
   const deleteShippingDetail = async (id: number) => {
-    try {
-      await axios.delete(`/profile/shipping-details/${id}`);
-      const updatedList = shippingDetails.filter(d => d.id !== id);
-      setShippingDetails(updatedList);
+    if (user && !user.isGuest) {
+      try {
+        await axios.delete(`/profile/shipping-details/${id}`);
+        const updatedList = shippingDetails.filter(d => d.id !== id);
+        setShippingDetails(updatedList);
 
-      if (selectedShippingId === id) {
-        setSelectedShippingDetail(updatedList.length ? updatedList[0].id : null, false);
+        if (selectedShippingId === id) {
+          setSelectedShippingDetail(updatedList.length ? updatedList[0].id : null);
+        }
+
+        toast.success('Shipping detail deleted successfully');
+      } catch {
+        toast.error('Failed to delete shipping detail');
       }
-
+    } else {
+      const guestData = loadGuestShipping();
+      const updated = guestData.filter(d => d.id !== id);
+      setShippingDetails(updated);
+      saveGuestShipping(updated);
+      if (selectedShippingId === id) setSelectedShippingDetail(updated[0]?.id || null);
       toast.success('Shipping detail deleted successfully');
-    } catch {
-      toast.error('Failed to delete shipping detail');
     }
   };
 

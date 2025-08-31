@@ -25,7 +25,6 @@ class AuthenticatedSessionController extends Controller
             'flash' => $request->session()->get('flash'),
         ]);
     }
-
     public function store(LoginRequest $request): RedirectResponse
     {
         // Recaptcha validation logic here (if you use it)
@@ -62,6 +61,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return Redirect::to('/')->with('flash.success', 'Logout successful.');
+
+        // Use the redirect parameter from the request, or fallback to home
+        $redirectUrl = $request->input('redirect', route('home'));
+
+        return redirect()->intended($redirectUrl)->with('flash.success', 'Logout successful.');
     }
 }

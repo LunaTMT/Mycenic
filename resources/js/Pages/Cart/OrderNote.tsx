@@ -55,20 +55,19 @@ const OrderNote: React.FC = () => {
                   rows={4}
                   className="
                     w-full
-                    bg-white dark:bg-[#1e2124]
+                    bg-white dark:bg-[#1e2124]/60
                     text-gray-900 dark:text-gray-100
-                    text-sm
-                    px-2 pt-2 pb-6
+                    px-4 py-2 text-md
                     rounded-md
-                    border border-gray-300 dark:border-gray-600
-                    min-h-[180px]
+                    border dark:border-white/20 border-black/20
+                    min-h-[250px]
                     focus:outline-none focus:ring-0
                     resize-none
                   "
                 />
                 <span
                   className="
-                    absolute bottom-6 right-3
+                    absolute bottom-5 right-3
                     text-xs text-gray-400 dark:text-gray-500
                     pointer-events-none
                     select-none

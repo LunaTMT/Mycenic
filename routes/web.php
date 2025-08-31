@@ -101,14 +101,15 @@ Route::middleware('auth')->group(function () {
 | Shipping Details (Public or Auth)
 |--------------------------------------------------------------------------
 */
-Route::prefix('profile')->group(function () {
-    Route::get('/shipping-details', [ShippingDetailController::class, 'index'])->name('profile.shipping-details.index');
-    Route::get('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'show'])->name('profile.shipping-details.show');
-    Route::post('/shipping-details', [ShippingDetailController::class, 'store'])->name('profile.shipping-details.store');
-    Route::put('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'update'])->name('profile.shipping-details.update');
-    Route::put('/shipping-details/{shippingDetail}/default', [ShippingDetailController::class, 'setDefault']);
-    Route::delete('/shipping-details/{shippingDetail}', [ShippingDetailController::class, 'destroy'])->name('profile.shipping-details.destroy');
+
+Route::prefix('profile/shipping-details')->middleware('auth')->group(function () {
+    Route::get('/', [ShippingDetailController::class, 'index']);
+    Route::post('/', [ShippingDetailController::class, 'store']);
+    Route::put('/{shippingDetail}', [ShippingDetailController::class, 'update']);
+    Route::put('/{shippingDetail}/default', [ShippingDetailController::class, 'setDefault']);
+    Route::delete('/{shippingDetail}', [ShippingDetailController::class, 'destroy']);
 });
+
 
 /*
 |--------------------------------------------------------------------------

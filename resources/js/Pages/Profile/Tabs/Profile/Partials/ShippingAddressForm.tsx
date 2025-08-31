@@ -12,8 +12,6 @@ import { ShippingDetail } from '@/types/Shipping';
 
 type FieldKey =
   | 'full_name'
-  | 'email'
-  | 'phone'
   | 'country'
   | 'address_line1'
   | 'address_line2'
@@ -23,8 +21,6 @@ type FieldKey =
 
 const defaultForm: Record<FieldKey, string> = {
   full_name: '',
-  email: '',
-  phone: '',
   country: 'United Kingdom',
   address_line1: '',
   address_line2: '',
@@ -35,12 +31,7 @@ const defaultForm: Record<FieldKey, string> = {
 
 export default function ShippingAddressForm() {
   const { auth } = usePage().props as { auth: { user: any } };
-  const {
-    storeShippingDetail,
-    updateShippingDetail,
-    selectedShippingDetail,
-    toggleShowForm,
-  } = useShipping();
+  const { storeShippingDetail, updateShippingDetail, selectedShippingDetail, toggleShowForm } = useShipping();
 
   const { data, setData, processing, errors, reset } = useForm(defaultForm);
 
@@ -49,8 +40,6 @@ export default function ShippingAddressForm() {
     if (selectedShippingDetail) {
       setData({
         full_name: selectedShippingDetail.full_name ?? '',
-        email: selectedShippingDetail.email ?? '',
-        phone: selectedShippingDetail.phone ?? '',
         country: selectedShippingDetail.country ?? 'United Kingdom',
         address_line1: selectedShippingDetail.address_line1 ?? '',
         address_line2: selectedShippingDetail.address_line2 ?? '',
@@ -75,17 +64,18 @@ export default function ShippingAddressForm() {
 
     try {
       if (selectedShippingDetail) {
-        // Pass a flag so updateShippingDetail knows to not reset on error
+        // Update existing address (guest or user)
         await updateShippingDetail(selectedShippingDetail.id, data as ShippingDetail);
       } else {
+        // Store new address (guest or user)
         await storeShippingDetail(data as ShippingDetail);
-        reset(); // Only reset after creating a new address
+        reset(); // Reset form after creating a new address
       }
     } catch (err) {
       console.error('Error submitting shipping detail:', err);
-      // Do NOT reset here — form keeps the typed values
     }
   };
+
 
   const showStateField = countriesWithStates.includes(data.country);
 
@@ -99,18 +89,6 @@ export default function ShippingAddressForm() {
         error={errors.full_name}
         required
       />
-
-      {!auth.user && (
-        <FormField
-          id="email"
-          label="Email"
-          type="email"
-          value={data.email}
-          onChange={(e) => setData('email', e.target.value)}
-          error={errors.email}
-          required
-        />
-      )}
 
       <div>
         <InputLabel htmlFor="country" value="Country" />
@@ -181,17 +159,6 @@ export default function ShippingAddressForm() {
         required
         autoComplete="postal-code"
       />
-
-      {!auth.user && (
-        <FormField
-          id="phone"
-          label="Phone Number (Optional)"
-          type="tel"
-          value={data.phone}
-          onChange={(e) => setData('phone', e.target.value)}
-          error={errors.phone}
-        />
-      )}
 
       <div className="flex gap-4 mt-4">
         <SecondaryButton onClick={toggleShowForm} className="w-1/2">

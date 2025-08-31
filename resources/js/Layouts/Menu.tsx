@@ -8,6 +8,7 @@ import {
   FaUserCircle,
   FaSignOutAlt,
 } from "react-icons/fa";
+import { MdPersonSearch } from "react-icons/md";
 
 import Modal from "@/Components/Modal/Modal";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
@@ -16,11 +17,14 @@ import { DarkModeSwitch } from "react-toggle-dark-mode";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { useUser } from "@/Contexts/UserContext";
+import UserSelector from "@/Pages/Profile/Components/UserSelector";
 
 interface User {
   id: number;
   name: string;
   email: string;
+  is_admin?: boolean;
 }
 
 interface MenuProps {
@@ -33,30 +37,24 @@ const leftItems = [
   { name: "About", routeName: "/about", icon: <FaInfoCircle size={35} /> },
 ];
 
-const rightItems = [
-  { name: "Cart", routeName: "/cart", icon: <FaShoppingCart size={35} /> },
-  { name: "Profile", routeName: "/profile", icon: <FaUserCircle size={35} /> },
-  { name: "Logout", routeName: "/logout", icon: <FaSignOutAlt size={35} /> },
-];
-
 export default function Menu({ url }: MenuProps) {
   const { auth } = usePage<{ auth?: { user?: User } }>().props;
   const user = auth?.user;
 
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { darkMode, toggleDarkMode } = useDarkMode();
-
-  // Get cart state
   const { cart } = useCart();
+  const { logout, guestUser, setUser } = useUser();
+
   const cartCount = cart.items.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Pop animation state
   const [pop, setPop] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showUserSelector, setShowUserSelector] = useState(false);
 
   useEffect(() => {
     if (cartCount > 0) {
       setPop(true);
-      const timeout = setTimeout(() => setPop(false), 300); // match animation duration
+      const timeout = setTimeout(() => setPop(false), 300);
       return () => clearTimeout(timeout);
     }
   }, [cartCount]);
@@ -75,23 +73,41 @@ export default function Menu({ url }: MenuProps) {
   };
 
   const handleLogoutClick = () => {
-    if (user) {
-      setShowLogoutModal(true);
-    } else {
-      router.visit("/login");
+    if (user) setShowLogoutModal(true);
+    else router.visit("/login");
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+
+    try {
+      await logout(); // Calls your UserContext logout
+      console.log("Logout successful");
+
+      // Do something after logout: e.g., redirect home
+      router.visit("/", { preserveState: false });
+
+      // Optional: show toast here
+      // toast.success("You have been logged out successfully");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      // Optional: show toast error
+      // toast.error("Logout failed. Please try again.");
     }
   };
 
-  const confirmLogout = () => {
-    setShowLogoutModal(false);
-    router.post("/logout");
-  };
+  const rightItems = [
+    { name: "Cart", routeName: "/cart", icon: <FaShoppingCart size={35} /> },
+    user ? { name: "Profile", routeName: "/profile", icon: <FaUserCircle size={35} /> } : null,
+    { name: "Logout", routeName: "/logout", icon: <FaSignOutAlt size={35} /> },
+    user?.is_admin
+      ? { name: "UserSearch", icon: <MdPersonSearch size={35} /> }
+      : null,
+  ].filter(Boolean);
 
   return (
     <>
-      {/* Top Nav */}
-      <nav className="relative bg-white dark:bg-[#424549] w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 flex items-center justify-between">
-        {/* Left Items */}
+      <nav className="relative dark:bg-[#424549] w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 flex items-center justify-between">
         <div className="flex h-full">
           {leftItems.map(({ name, routeName, icon }) => (
             <button
@@ -106,9 +122,7 @@ export default function Menu({ url }: MenuProps) {
           ))}
         </div>
 
-        {/* Right Items */}
         <div className="flex items-center h-full">
-          {/* Dark Mode Toggle */}
           <div className="flex items-center justify-center h-full px-2">
             <DarkModeSwitch
               checked={darkMode}
@@ -119,16 +133,43 @@ export default function Menu({ url }: MenuProps) {
             />
           </div>
 
-          {/* Other Right Items */}
           {rightItems.map(({ name, routeName, icon }) => {
-            if (name === "Profile" && !user) return null;
+            if (name === "Cart") {
+              return (
+                <button
+                  key={name}
+                  onClick={() => router.visit(routeName!)}
+                  className={getNavItemClass(routeName!)}
+                  type="button"
+                  title={name}
+                >
+                  <div className="relative">
+                    {icon}
+                    {cartCount > 0 && (
+                      <span
+                        className={`absolute -top-1 -right-2 
+                          bg-yellow-500 dark:bg-[#7289da] 
+                          text-white text-xs font-bold rounded-full 
+                          h-5 w-5 flex items-center justify-center 
+                          shadow-[0_0_6px_rgba(0,0,0,0.6)]
+                          transform transition-transform duration-300
+                          ${pop ? "scale-125" : "scale-100"}
+                        `}
+                      >
+                        {cartCount}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            }
 
             if (name === "Logout") {
               return (
                 <button
                   key={name}
                   onClick={handleLogoutClick}
-                  className={getNavItemClass(routeName)}
+                  className={getNavItemClass(routeName!)}
                   type="button"
                   title={name}
                 >
@@ -137,32 +178,16 @@ export default function Menu({ url }: MenuProps) {
               );
             }
 
-            if (name === "Cart") {
+            if (name === "UserSearch") {
               return (
                 <button
                   key={name}
-                  onClick={() => router.visit(routeName)}
-                  className={getNavItemClass(routeName)}
+                  onClick={() => setShowUserSelector(true)}
+                  className={getNavItemClass("")}
                   type="button"
-                  title={name}
+                  title="User Search"
                 >
-                  <div className="relative">
-                    {icon}
-                    {cartCount > 0 && (
-                        <span
-                          className={`absolute -top-1 -right-2 
-                            bg-yellow-500 dark:bg-[#7289da] 
-                            text-white text-xs font-bold rounded-full 
-                            h-5 w-5 flex items-center justify-center 
-                            shadow-[0_0_6px_rgba(0,0,0,0.6)]
-                            transform transition-transform duration-300
-                            ${pop ? "scale-125" : "scale-100"}
-                          `}
-                        >
-                          {cartCount}
-                        </span>
-                    )}
-                  </div>
+                  {icon}
                 </button>
               );
             }
@@ -170,8 +195,8 @@ export default function Menu({ url }: MenuProps) {
             return (
               <button
                 key={name}
-                onClick={() => router.visit(routeName)}
-                className={getNavItemClass(routeName)}
+                onClick={() => router.visit(routeName!)}
+                className={getNavItemClass(routeName!)}
                 type="button"
                 title={name}
               >
@@ -182,13 +207,11 @@ export default function Menu({ url }: MenuProps) {
         </div>
       </nav>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Modal */}
       <Modal show={showLogoutModal} onClose={() => setShowLogoutModal(false)}>
         <div className="p-4 space-y-4 text-center max-w-lg w-full mx-auto">
           <h2 className="text-2xl font-semibold">Confirm Logout</h2>
-          <p className="text-gray-700 dark:text-gray-300">
-            Are you sure you want to log out?
-          </p>
+          <p className="text-gray-700 dark:text-gray-300">Are you sure you want to log out?</p>
           <div className="flex justify-center gap-4 mt-6">
             <PrimaryButton className="p-2 px-6" onClick={confirmLogout}>
               Log out
@@ -198,6 +221,11 @@ export default function Menu({ url }: MenuProps) {
             </SecondaryButton>
           </div>
         </div>
+      </Modal>
+
+      {/* User Selector Modal */}
+      <Modal show={showUserSelector} onClose={() => setShowUserSelector(false)}>
+        <UserSelector onClose={() => setShowUserSelector(false)} />
       </Modal>
     </>
   );

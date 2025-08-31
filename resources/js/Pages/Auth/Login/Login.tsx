@@ -12,9 +12,8 @@ import { FormEventHandler, useEffect, useRef } from 'react';
 import { Inertia } from '@inertiajs/inertia';
 import { load } from 'recaptcha-v3';
 import SocialLoginComponent from '../SocialLoginComponent';
-
 import ItemDisplay from '@/Components/Swiper/ItemDisplay';
-import Breadcrumb from '@/Components/Nav/Breadcrumb';
+import { useUser } from '@/Contexts/UserContext';
 
 export default function Login({
   status,
@@ -24,8 +23,9 @@ export default function Login({
   canResetPassword: boolean;
 }) {
   const { flash } = usePage().props as { flash?: { error?: string } };
-
   const redirectParam = new URLSearchParams(window.location.search).get('redirect') || '/';
+  const { setUser } = useUser();
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data, setData, post, processing, errors } = useForm({
     email: '',
@@ -34,8 +34,6 @@ export default function Login({
     'g-recaptcha-response': '',
     redirect: redirectParam,
   });
-
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     load(import.meta.env.VITE_NOCAPTCHA_SITEKEY).then((recaptcha) => {
@@ -47,15 +45,26 @@ export default function Login({
 
   const submit: FormEventHandler = (e) => {
     e.preventDefault();
+
     post(route('login'), {
-      onError: (errors) => {
-        console.error('Login errors:', errors);
+      onError: (errs) => {
+        console.error('Login errors:', errs);
       },
-      onSuccess: () => {
-        console.log('Login successful');
+      onSuccess: (page) => {
+        console.log('Login successful, page props:', page.props);
+
+        const loggedInUser = page.props.auth?.user;
+        if (loggedInUser) {
+          setUser({ ...loggedInUser, isGuest: false });
+        } 
+        console.log(page);
+      
       },
     });
   };
+
+
+
 
   return (
     <GuestLayout>
@@ -86,16 +95,10 @@ export default function Login({
           {/* Login Form Right */}
           <div className="w-[45%] p-8 flex flex-col justify-center">
             <form onSubmit={submit} className="w-full flex flex-col gap-4">
-              {/* Breadcrumb at the very top */}
-
-
-
-              {/* Heading */}
               <h2 className="text-3xl font-bold font-Poppins text-left dark:text-white">
                 LOGIN
               </h2>
 
-              {/* Form fields */}
               <div className="space-y-4">
                 <div>
                   <InputLabel htmlFor="email" value="Email" />
@@ -145,7 +148,6 @@ export default function Login({
               </div>
             </form>
 
-            {/* Extra actions */}
             <div className="mt-6 space-y-2">
               {canResetPassword && (
                 <SecondaryButton
