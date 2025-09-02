@@ -1,4 +1,3 @@
-import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 interface CounterProps {
@@ -21,7 +20,7 @@ const Counter: React.FC<CounterProps> = ({
       if (onDelete) {
         onDelete(); // Call the onDelete if available
       } else {
-        toast.info("You can't go below 1 item");
+        
       }
       return;
     }
@@ -30,7 +29,7 @@ const Counter: React.FC<CounterProps> = ({
 
   const handleIncrement = () => {
     if (quantity >= maxStock) {
-      toast.error("You cannot go over the max stock");
+      
       return;
     }
     onChange(quantity + 1);
@@ -70,7 +69,7 @@ const Counter: React.FC<CounterProps> = ({
           +
         </button>
       </div>
-      <ToastContainer />
+      
     </>
   );
 };

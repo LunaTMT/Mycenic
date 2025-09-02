@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ShippingRatesController;
 
-// Route to get questions with their replies
-Route::get('/questions', [QuestionController::class, 'getQuestionsWithReplies']);
+
+
+Route::post('/shipping/rates', [ShippingRatesController::class, 'getRates']);

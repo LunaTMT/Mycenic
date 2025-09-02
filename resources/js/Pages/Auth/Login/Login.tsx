@@ -51,27 +51,21 @@ export default function Login({
         console.error('Login errors:', errs);
       },
       onSuccess: (page) => {
-        console.log('Login successful, page props:', page.props);
-
         const loggedInUser = page.props.auth?.user;
         if (loggedInUser) {
           setUser({ ...loggedInUser, isGuest: false });
-        } 
-        console.log(page);
-      
+        }
+        console.log('Login successful:', page);
       },
     });
   };
-
-
-
 
   return (
     <GuestLayout>
       <Head title="Log in" />
 
       {/* Background Video */}
-      <div className="absolute inset-0 w-full h-full">
+      <div className="w-full h-[94vh] relative">
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover z-0"
@@ -82,87 +76,91 @@ export default function Login({
           <source src="/assets/videos/time_lapse.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
-      </div>
 
-      {/* Main container */}
-      <div className="relative w-full min-h-[95vh] max-w-7xl flex justify-center items-center mx-auto sm:px-6 lg:px-8 p-5 font-Poppins">
-        <div className="relative z-10 flex w-full bg-white/80 dark:bg-[#424549]/80 border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
-          {/* Image Gallery Left */}
-          <div className="w-[55%] hidden md:block relative">
-            <ItemDisplay />
-          </div>
+        {/* Main container over video */}
+        <div className="relative z-10 w-full min-h-[94vh] max-w-7xl flex justify-center items-center mx-auto sm:px-6 lg:px-8 p-5 font-Poppins">
+          <div className="relative z-10 flex w-full bg-white/80 dark:bg-[#424549]/60 border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden ">
+            <div className="w-[55%] hidden md:block relative">
+              <ItemDisplay />
+            </div>
+            
 
-          {/* Login Form Right */}
-          <div className="w-[45%] p-8 flex flex-col justify-center">
-            <form onSubmit={submit} className="w-full flex flex-col gap-4">
-              <h2 className="text-3xl font-bold font-Poppins text-left dark:text-white">
-                LOGIN
-              </h2>
+            {/* Login Form Right */}
+            <div className="w-full p-8 flex flex-col justify-center">
+              <form onSubmit={submit} className="w-full flex flex-col gap-4">
+                <h2 className="text-3xl font-bold text-left dark:text-white">
+                  LOGIN
+                </h2>
 
-              <div className="space-y-4">
-                <div>
-                  <InputLabel htmlFor="email" value="Email" />
-                  <TextInput
-                    id="email"
-                    type="email"
-                    name="email"
-                    value={data.email}
-                    onChange={(e) => setData('email', e.target.value)}
-                    autoComplete="username"
-                    className="mt-1 w-full"
-                  />
-                  <InputError message={errors.email} className="mt-2" />
+                <div className="space-y-4">
+                  <div>
+                    <InputLabel htmlFor="email" value="Email" />
+                    <TextInput
+                      id="email"
+                      type="email"
+                      name="email"
+                      value={data.email}
+                      onChange={(e) => setData('email', e.target.value)}
+                      autoComplete="username"
+                      className="mt-1 w-full"
+                    />
+                    <InputError message={errors.email} className="mt-2" />
+                  </div>
+
+                  <div>
+                    <InputLabel htmlFor="password" value="Password" />
+                    <TextInput
+                      id="password"
+                      type="password"
+                      name="password"
+                      value={data.password}
+                      onChange={(e) => setData('password', e.target.value)}
+                      autoComplete="current-password"
+                      className="mt-1 w-full"
+                      isPasswordField
+                    />
+                    <InputError message={errors.password} className="mt-2" />
+                  </div>
+
+                  <div className="flex items-center">
+                    <Checkbox
+                      name="remember"
+                      checked={data.remember}
+                      onChange={(e) => setData('remember', e.target.checked)}
+                    />
+                    <span className="ml-2 text-sm text-black dark:text-white">
+                      Remember me
+                    </span>
+                  </div>
+
+                  <input type="hidden" name="redirect" value={data.redirect} />
+
+                  <PrimaryButton className="w-full p-3" disabled={processing}>
+                    Sign in
+                  </PrimaryButton>
+
+                  <SocialLoginComponent action="login" />
                 </div>
+              </form>
 
-                <div>
-                  <InputLabel htmlFor="password" value="Password" />
-                  <TextInput
-                    id="password"
-                    type="password"
-                    name="password"
-                    value={data.password}
-                    onChange={(e) => setData('password', e.target.value)}
-                    autoComplete="current-password"
-                    className="mt-1 w-full"
-                    isPasswordField
-                  />
-                  <InputError message={errors.password} className="mt-2" />
-                </div>
+              <div className="mt-6 flex gap-4">
 
-                <div className="flex items-center">
-                  <Checkbox
-                    name="remember"
-                    checked={data.remember}
-                    onChange={(e) => setData('remember', e.target.checked)}
-                  />
-                  <span className="ml-2 text-sm text-black dark:text-white">Remember me</span>
-                </div>
-
-                <input type="hidden" name="redirect" value={data.redirect} />
-
-                <PrimaryButton className="w-full p-3" disabled={processing}>
-                  Sign in
-                </PrimaryButton>
-
-                <SocialLoginComponent action="login" />
-              </div>
-            </form>
-
-            <div className="mt-6 space-y-2">
-              {canResetPassword && (
                 <SecondaryButton
-                  className="w-full p-3"
-                  onClick={() => Inertia.visit(route('password.request'))}
+                  className="w-1/2 p-3"
+                  onClick={() => Inertia.visit(route('register'))}
                 >
-                  Forgot your password?
+                  Create Account
                 </SecondaryButton>
-              )}
-              <SecondaryButton
-                className="w-full p-3"
-                onClick={() => Inertia.visit(route('register'))}
-              >
-                Create Account
-              </SecondaryButton>
+                {canResetPassword && (
+                  <SecondaryButton
+                    className="w-1/2 p-3"
+                    onClick={() => Inertia.visit(route('password.request'))}
+                  >
+                    Forgot your password?
+                  </SecondaryButton>
+                )}
+              </div>
+
             </div>
           </div>
         </div>

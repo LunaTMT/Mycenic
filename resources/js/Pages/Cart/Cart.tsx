@@ -1,5 +1,6 @@
 import React from "react";
 import { Head, usePage } from "@inertiajs/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import GuestLayout from "@/Layouts/GuestLayout";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -11,16 +12,27 @@ import Shipping from "./Shipping/Shipping";
 
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { User } from "@/types/User";
-import PrimaryButton from "@/Components/Buttons/PrimaryButton";  // Import the button
+import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 
 const Cart: React.FC = () => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth ? AuthenticatedLayout : GuestLayout;
 
-  const { cart, subtotal, shippingCost, tax } = useCart();
-  
-  // Calculate the estimated total
-  const estimatedTotal = subtotal + shippingCost + tax;
+  const { cart, subtotal, shippingCost, discount } = useCart();
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.2 } },
+  };
+
+  const discountAmount = subtotal * (discount / 100);
+  const total = subtotal - discountAmount + shippingCost;
 
   return (
     <Layout>
@@ -28,40 +40,73 @@ const Cart: React.FC = () => {
 
       <div className="relative min-h-[89vh] p-5 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto flex gap-10 justify-center items-start">
         {/* Left side: Items */}
-        <div className="w-[65%] space-y-3 flex flex-col justify-start items-center min-h-[80vh] rounded-lg p-4 bg-white/50 border border-black/20 dark:bg-[#424549]/80 dark:border-white/20 text-gray-800 dark:text-gray-200 backdrop-blur-sm">
-          {cart.items.map((item, index) => (
-            <Item key={index} cartItem={item} />
-          ))}
-        </div>
+        <motion.div
+          className="w-[65%] flex flex-col space-y-4 p-4 bg-white/50 dark:bg-[#424549]/80 border border-black/20 dark:border-white/20 rounded-lg text-gray-800 dark:text-gray-200 backdrop-blur-sm min-h-[80vh]"
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <AnimatePresence>
+            {cart.items.map((item) => (
+              <motion.div
+                key={item.id + JSON.stringify(item.selectedOptions)}
+                variants={itemVariants}
+                layout
+                className="w-full"
+              >
+                <Item cartItem={item} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
 
-        {/* Right side: PromoCode + OrderNote */}
-        <div className="w-[35%] relative">
-          <div className="rounded-lg font-Poppins border p-4 bg-white dark:bg-[#424549] border-black/20 dark:border-white/20 flex flex-col space-y-4">
+        {/* Right side: Summary */}
+        <div className="w-[35%] flex flex-col space-y-4">
+          <div className="flex flex-col space-y-4 p-4 border rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#424549] border-black/20 dark:border-white/20 font-Poppins">
+            
+            {/* Section 1 */}
             <PromoCode />
             <OrderNote />
             <Shipping />
+            
+            <div className="border-t border-black/20 dark:border-white/20" />
 
-            {/* Estimated Total */}
-            <div className="flex justify-between items-center font-semibold text-xl text-gray-900 dark:text-white mt-6">
-              <span>Estimated Total</span>
-              <span>£{estimatedTotal.toFixed(2)}</span>
+            {/* Section 2: Pricing */}
+            <div className="flex justify-between items-center font-semibold text-lg">
+              <span>Subtotal</span>
+              <span>£{subtotal.toFixed(2)}</span>
             </div>
 
-            {/* Tax and Shipping Details */}
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              <p>Tax included</p>
-              <p>Shipping calculated at checkout</p>
+            {shippingCost > 0 && (
+              <div className="flex justify-between items-center font-semibold text-lg">
+                <span>Shipping</span>
+                <span className="text-green-600">£{shippingCost.toFixed(2)}</span>
+              </div>
+            )}
+
+
+            {discount > 0 && (
+              <div className="flex justify-between items-center font-semibold text-lg">
+                <span>Discount ({discount}%)</span>
+                <span className="text-green-600">-£{discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+
+
+            <div className="flex justify-between items-center font-semibold text-xl">
+              <span>Total</span>
+              <span>£{total.toFixed(2)}</span>
             </div>
 
-            {/* Checkout Button */}
-            <div className="mt-6">
-              <PrimaryButton
-                onClick={() => window.location.href = "/checkout"}
-                className="w-full py-3 text-lg"
-              >
-                Proceed to Checkout
-              </PrimaryButton>
-            </div>
+            <div className="border-t border-black/20 dark:border-white/20" />
+
+            {/* Checkout button */}
+            <PrimaryButton
+              onClick={() => (window.location.href = "/checkout")}
+              className="w-full py-3 text-lg mt-4"
+            >
+              Proceed to Checkout
+            </PrimaryButton>
           </div>
         </div>
       </div>

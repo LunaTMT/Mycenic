@@ -44,7 +44,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
 
   return (
     <div
-      className="relative group  border-1 border-black/30 dark:border-white/20 shadow-md hover:shadow-lg rounded-xl overflow-hidden transition-all duration-300 w-full h-full flex flex-col"
+      className="relative group   border-1  border-black/30 dark:border-white/20 bg-white/50  dark:bg-[#424549]/80 shadow-md hover:shadow-lg rounded-xl overflow-hidden transition-all duration-300 w-full h-full flex flex-col"
     >
       {isAdmin && (
         <button
@@ -59,9 +59,9 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
       <Link
         href={route("item", { id: item.id })}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="block flex-grow"
+        className="block flex-grow "
       >
-        <div className="w-full aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800 ">
+        <div className="w-full aspect-square overflow-hidden ">
           <img
             src={resolveImageSrc(item.images[0].path)}
             alt={item.name}
@@ -72,7 +72,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
 
         <div className="p-3 flex flex-col justify-between font-Poppins text-center h-28">
           <div>
-            <h3 className="text-sm md:text-base font-semibold text-gray-900 dark:text-white truncate">
+            <h3 className="text-sm  font-semibold text-gray-900 dark:text-white truncate">
               {item.name}
             </h3>
             <p className="text-base font-bold text-black dark:text-gray-100">£{item.price}</p>

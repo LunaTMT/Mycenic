@@ -9,7 +9,7 @@ const ReviewsList = () => {
 
   if (reviews.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center  space-y-4">
+      <div className="flex flex-col items-center justify-center space-y-4">
         <div
           className={`
             flex items-center justify-center

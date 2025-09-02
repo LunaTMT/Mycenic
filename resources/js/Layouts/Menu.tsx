@@ -210,8 +210,7 @@ export default function Menu({ url }: MenuProps) {
       {/* Logout Modal */}
       <Modal show={showLogoutModal} onClose={() => setShowLogoutModal(false)}>
         <div className="p-4 space-y-4 text-center max-w-lg w-full mx-auto">
-          <h2 className="text-2xl font-semibold">Confirm Logout</h2>
-          <p className="text-gray-700 dark:text-gray-300">Are you sure you want to log out?</p>
+          <h2 className="text-2xl font-semibold">Are you sure you want to logout?</h2>
           <div className="flex justify-center gap-4 mt-6">
             <PrimaryButton className="p-2 px-6" onClick={confirmLogout}>
               Log out

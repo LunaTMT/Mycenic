@@ -43,8 +43,6 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
   const { darkMode } = useDarkMode();
   const { cartOpen, setCartOpen } = useCart(); // 👈 grab cart state
 
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);
     if (flash?.error) toast.error(flash.error);
@@ -68,10 +66,6 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
     return () => window.removeEventListener("inertia:error", handleInertiaError);
   }, []);
 
-  const handleLogout = () => {
-    router.post("/logout");
-    setShowLogoutModal(false);
-  };
 
   return (
     <div className="relative w-full min-h-screen dark:bg-[#1e2124]">
@@ -112,21 +106,8 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
         style={{ zIndex: 100 }}
       />
 
-      {showLogoutModal && (
-        <Modal show={showLogoutModal} onClose={() => setShowLogoutModal(false)}>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-              Confirm Logout
-            </h3>
-            <div className="flex justify-end space-x-4">
-              <SecondaryButton onClick={() => setShowLogoutModal(false)}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton onClick={handleLogout}>Logout</PrimaryButton>
-            </div>
-          </div>
-        </Modal>
-      )}
+
+    
     </div>
   );
 }

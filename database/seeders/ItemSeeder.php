@@ -12,7 +12,7 @@ class ItemSeeder extends Seeder
     public function run(): void
     {
         Item::factory()
-            ->count(1)
+            ->count(10)
             ->create()
             ->each(function (Item $item) {
                 // Generate between 1 and 8 images for each item
@@ -24,7 +24,7 @@ class ItemSeeder extends Seeder
                     ]);
 
                 // Create random number of reviews per item
-                $randomReviewCount = rand(1, 7);
+                $randomReviewCount = rand(1, 1);
 
                 $reviews = Review::factory()
                     ->count($randomReviewCount)
@@ -35,7 +35,7 @@ class ItemSeeder extends Seeder
                 $reviews->filter(fn ($review) => $review->parent_id === null)
                     ->each(function ($review) {
                         Image::factory()
-                            ->count(rand(1, 5))
+                            ->count(rand(1, 3))
                             ->make()  // Use make() so morph keys are set by relation save()
                             ->each(fn ($image) => $review->images()->save($image));
                     });

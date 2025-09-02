@@ -51,6 +51,8 @@ export default function PasswordForm({
         });
     };
 
+
+
     return (
         <section
             className={`rounded-lg shadow-md w-1/2 bg-white dark:bg-[#1e2124]/60 border dark:border-white/20 border-black/20 p-4 ${className}`}

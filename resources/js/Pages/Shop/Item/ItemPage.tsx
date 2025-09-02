@@ -1,6 +1,6 @@
 import React from "react";
 import { Head, usePage } from "@inertiajs/react";
-import { ToastContainer } from "react-toastify";
+
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import GuestLayout from "@/Layouts/GuestLayout";
@@ -37,7 +37,7 @@ const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
         </div>
       </ItemProvider>
 
-      <ToastContainer position="bottom-right" />
+      
     </Layout>
   );
 };

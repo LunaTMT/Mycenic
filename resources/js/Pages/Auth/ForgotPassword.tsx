@@ -50,7 +50,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
       {/* Main container */}
       <div className="relative w-full min-h-[95vh] max-w-7xl flex justify-center items-center mx-auto sm:px-6 lg:px-8 p-5 font-Poppins">
-        <div className="relative z-10 flex w-full bg-white/80 dark:bg-[#424549]/80 border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
+        <div className="relative z-10 flex w-full bg-white/80 dark:bg-[#424549]/60 border border-black/20 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden">
           {/* Image Gallery Left */}
           <div className="w-[55%] hidden md:block relative">
             <ItemDisplay />

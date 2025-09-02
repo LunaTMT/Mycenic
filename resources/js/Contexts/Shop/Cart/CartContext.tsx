@@ -5,16 +5,17 @@ import { v4 as uuidv4 } from "uuid";
 interface CartContextType {
   cart: Cart;
   setCart: React.Dispatch<React.SetStateAction<Cart>>;
-  addToCart: (item: Omit<CartItem, "id">) => void; // id will be generated internally
+  addToCart: (item: Omit<CartItem, "id">) => void;
   removeItem: (cartItemId: string) => void;
   clearCart: () => void;
   updateQuantity: (cartItemId: string, newQuantity: number) => void;
-  setShippingCost: (cost: number) => void; // New method to set shipping cost
+  setShippingCost: (cost: number) => void;
+  setDiscount: (discount: number) => void;
   cartOpen: boolean;
   setCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   subtotal: number;
   shippingCost: number;
-  tax: number;
+  discount: number;
   total: number;
 }
 
@@ -36,7 +37,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       const stored = localStorage.getItem("cart");
       if (stored) return JSON.parse(stored);
     }
-    return { id: 0, items: [], subtotal: 0, shippingCost: 0, tax: 0, total: 0 };
+    return { id: 0, items: [], subtotal: 0, total: 0, discount: 0, shipping_cost: 0 };
   });
 
   const [cartOpen, setCartOpen] = useState<boolean>(false);
@@ -50,18 +51,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     [cart.items]
   );
 
-  // Shipping cost can now be set dynamically
-  const shippingCost = useMemo(() => cart.shippingCost, [cart.shippingCost]);
+  const shippingCost = useMemo(() => cart.shipping_cost || 0, [cart.shipping_cost]);
+  const discount = useMemo(() => cart.discount || 0, [cart.discount]);
 
-  // Tax as a percentage of the subtotal
-  const tax = useMemo(() => subtotal * 0.1, [subtotal]);
-
-  // Total includes subtotal, shipping cost, and tax
-  const total = useMemo(() => subtotal + shippingCost + tax, [subtotal, shippingCost, tax]);
+  // Total without tax
+  const total = useMemo(() => Math.max(subtotal + shippingCost - discount, 0), [
+    subtotal,
+    shippingCost,
+    discount,
+  ]);
 
   const addToCart = (item: Omit<CartItem, "id">) => {
     setCart((prev) => {
-      // Check if the same product + options already exist
       const existingIndex = prev.items.findIndex(
         (cartItem) =>
           cartItem.item.id === item.item.id &&
@@ -71,14 +72,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       let updatedItems;
 
       if (existingIndex > -1) {
-        // Increment quantity, keep the same UUID
         updatedItems = [...prev.items];
         updatedItems[existingIndex] = {
           ...updatedItems[existingIndex],
           quantity: updatedItems[existingIndex].quantity + item.quantity,
         };
       } else {
-        // New item, assign UUID
         updatedItems = [...prev.items, { ...item, id: uuidv4() }];
       }
 
@@ -90,15 +89,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   const removeItem = (cartItemId: string) => {
     setCart((prev) => {
-      // Remove the item from the cart based on cartItemId
       const updatedItems = prev.items.filter((item) => item.id !== cartItemId);
-
       return { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
     });
   };
 
   const clearCart = () => {
-    setCart((prev) => ({ ...prev, items: [], updated_at: new Date().toISOString() }));
+    setCart((prev) => ({
+      ...prev,
+      items: [],
+      discount: 0,
+      updated_at: new Date().toISOString(),
+    }));
   };
 
   const updateQuantity = (cartItemId: string, newQuantity: number) => {
@@ -112,11 +114,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     });
   };
 
-  // Function to dynamically set the shipping cost
   const setShippingCost = (cost: number) => {
     setCart((prev) => ({
       ...prev,
-      shippingCost: cost,
+      shipping_cost: cost,
+      updated_at: new Date().toISOString(),
+    }));
+  };
+
+  const setDiscount = (discount: number) => {
+    setCart((prev) => ({
+      ...prev,
+      discount,
       updated_at: new Date().toISOString(),
     }));
   };
@@ -130,12 +139,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         removeItem,
         clearCart,
         updateQuantity,
-        setShippingCost, // Expose setShippingCost
+        setShippingCost,
+        setDiscount,
         cartOpen,
         setCartOpen,
         subtotal,
         shippingCost,
-        tax,
+        discount,
         total,
       }}
     >

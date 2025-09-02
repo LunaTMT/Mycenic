@@ -21,7 +21,8 @@ const ItemTab: React.FC = () => {
       {/* Right: Details & Cart */}
       <div className="w-1/2 h-full flex flex-col justify-between p-5 border rounded-lg shadow-2xl overflow-hidden bg-white dark:bg-[#424549] border-black/20 dark:border-white/20">
         {/* Header: Title + Stock */}
-        <div className="flex items-start justify-between">
+        <div className="flex-col items-start justify-between">
+          
           <div>
             <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
               {item.name}
@@ -30,29 +31,34 @@ const ItemTab: React.FC = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {reviewCount} review{reviewCount !== 1 ? "s" : ""}
             </p>
+            
           </div>
 
-          {/* ✅ Stock moved here */}
-          <p className="text-sm text-right text-gray-500 dark:text-gray-400 whitespace-nowrap">
-            {item.stock} {item.stock === 1 ? "item" : "items"} in stock
-          </p>
+        
+                    {/* Category + Description */}
+          <div className="overflow-y-auto pr-2 mt-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {item.category}
+            </p>
+            {descriptionParagraphs.map((paragraph, index) => (
+              <p key={index} className="whitespace-pre-line mb-2">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+
+
         </div>
 
-        {/* Category + Description */}
-        <div className="overflow-y-auto pr-2 mt-2">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            {item.category}
-          </p>
-          {descriptionParagraphs.map((paragraph, index) => (
-            <p key={index} className="whitespace-pre-line mb-2">
-              {paragraph}
-            </p>
-          ))}
-        </div>
+
         
 
         {/* Cart Section */}
         <div>
+            {/* ✅ Stock moved here */}
+          <p className="text-sm text-left text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            {item.stock} {item.stock === 1 ? "item" : "items"} in stock
+          </p>
           <OptionsSelector />
           <AddToCartSection />
         </div>
