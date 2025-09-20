@@ -1,0 +1,133 @@
+import React, { useEffect } from 'react';
+import InputError from '@/Components/Login/InputError';
+import InputLabel from '@/Components/Login/InputLabel';
+import PrimaryButton from '@/Components/Buttons/PrimaryButton';
+import TextInput from '@/Components/Login/TextInput';
+import { Transition } from '@headlessui/react';
+import { useForm } from '@inertiajs/react';
+import { FormEventHandler } from 'react';
+import { useUser } from '@/Contexts/UserContext';
+import { Link } from '@inertiajs/react';
+
+export default function ProfileInformationForm({
+  className = '',
+}: {
+  className?: string;
+}) {
+  const { user, fetchUser } = useUser();
+  console.log(user);
+
+  const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? '',
+  });
+
+  // Sync form data when user changes
+  useEffect(() => {
+    setData('name', user.name);
+    setData('email', user.email);
+    setData('phone', user.phone ?? '');
+  }, [user, setData]);
+
+  const mustVerifyEmail: boolean | null = null;
+  const status: string | null = null;
+
+  const submit: FormEventHandler = (e) => {
+    e.preventDefault();
+    patch(route('profile.update'), {
+      onSuccess: async () => {
+        // REFRESH the user in context so frontend gets latest data
+        await fetchUser(user.id);
+      },
+    });
+  };
+
+  return (
+    <section
+      className={`rounded-lg w-1/2 shadow-md bg-white dark:bg-[#1e2124]/60 dark:border-white/20 border border-black/20 p-4 ${className}`}
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <div>
+          <InputLabel htmlFor="name" value="Name" />
+          <TextInput
+            id="name"
+            className="mt-1 block w-full"
+            value={data.name}
+            onChange={(e) => setData('name', e.target.value)}
+            required
+            isFocused
+            autoComplete="name"
+          />
+          <InputError className="mt-2 dark:text-red-400" message={errors.name} />
+        </div>
+
+        <div>
+          <InputLabel htmlFor="email" value="Email" />
+          <TextInput
+            id="email"
+            type="email"
+            className="mt-1 block w-full"
+            value={data.email}
+            onChange={(e) => setData('email', e.target.value)}
+            required
+            autoComplete="username"
+          />
+          <InputError className="mt-2 dark:text-red-400" message={errors.email} />
+        </div>
+
+        <div>
+          <InputLabel htmlFor="phone" value="Phone Number" />
+          <TextInput
+            id="phone"
+            type="tel"
+            className="mt-1 block w-full"
+            value={data.phone}
+            onChange={(e) => setData('phone', e.target.value)}
+            autoComplete="tel"
+            placeholder="+44 7123 456789"
+          />
+          <InputError className="mt-2 dark:text-red-400" message={errors.phone} />
+        </div>
+
+        {mustVerifyEmail && user.email_verified_at === null && (
+          <div>
+            <p className="mt-2 text-sm text-gray-800 dark:text-slate-300">
+              Your email address is unverified.
+              <Link
+                href={route('verification.send')}
+                method="post"
+                as="button"
+                className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:text-slate-300 dark:hover:text-slate-200 dark:focus:ring-indigo-500 dark:focus:ring-offset-slate-800"
+              >
+                Click here to re-send the verification email.
+              </Link>
+            </p>
+
+            {status === 'verification-link-sent' && (
+              <div className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">
+                A new verification link has been sent to your email address.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center gap-4">
+          <PrimaryButton className="rounded-lg py-2 px-6" disabled={processing}>
+            UPDATE
+          </PrimaryButton>
+
+          <Transition
+            show={recentlySuccessful}
+            enter="transition ease-in-out"
+            enterFrom="opacity-0"
+            leave="transition ease-in-out"
+            leaveTo="opacity-0"
+          >
+            <p className="text-sm text-gray-600 dark:text-slate-300">Saved.</p>
+          </Transition>
+        </div>
+      </form>
+    </section>
+  );
+}

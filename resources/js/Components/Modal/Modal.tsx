@@ -1,0 +1,80 @@
+// Modal.tsx
+import {
+    Dialog,
+    DialogPanel,
+    Transition,
+    TransitionChild,
+} from '@headlessui/react';
+import { Fragment, PropsWithChildren } from 'react';
+
+export default function Modal({
+    children,
+    show = false,
+    maxWidth = '2xl',
+    closeable = true,
+    onClose = () => {},
+}: PropsWithChildren<{
+    show: boolean;
+    maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+    closeable?: boolean;
+    onClose: CallableFunction;
+}>) {
+    const close = () => {
+        if (closeable) {
+            onClose();
+        }
+    };
+
+    const maxWidthClass = {
+        sm: 'sm:max-w-sm',
+        md: 'sm:max-w-md',
+        lg: 'sm:max-w-lg',
+        xl: 'sm:max-w-xl',
+        '2xl': 'sm:max-w-2xl',
+    }[maxWidth];
+
+    return (
+        <Transition show={show} as={Fragment}>
+            <Dialog
+                as="div"
+                id="modal"
+                className="fixed inset-0 z-50  flex items-center justify-center overflow-y-auto "
+                onClose={close}
+            >
+                {/* Modal background */}
+                <div className="fixed inset-0" aria-hidden="true">
+                    <TransitionChild
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0 scale-90"
+                        enterTo="opacity-100 scale-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100 scale-100"
+                        leaveTo="opacity-0 scale-100"
+                    >
+                        <div className="absolute inset-0 bg-black/60 dark:bg-black/40 transition-opacity" />
+                    </TransitionChild>
+                </div>
+
+                {/* Modal content panel */}
+                <TransitionChild
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    enterTo="opacity-100 translate-y-0 sm:scale-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                    leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                >
+                    <DialogPanel
+                        className={`mb-6 transform overflow-visible rounded-lg shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}
+                            bg-white text-gray-900 dark:bg-[#2a2d31] dark:text-white border border-black/50 dark:border-white/50
+                            max-h-[90vh] flex flex-col`}
+                    >
+                        {children}
+                    </DialogPanel>
+                </TransitionChild>
+            </Dialog>
+        </Transition>
+    );
+}

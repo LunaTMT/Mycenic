@@ -1,0 +1,63 @@
+.swiper {
+  background: transparent !important;
+}
+
+
+.swiper-slide {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 120px !important;
+  height: 120px !important;
+  flex-shrink: 0;
+  overflow: visible; /* allow shadow to show outside */
+  border-radius: 0.5rem; /* rounded-lg */
+  background-color: transparent;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.swiper-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.5rem; /* match rounded-lg */ 
+  background-color: transparent;
+  pointer-events: none;
+  user-select: none;
+  position: relative;
+  z-index: 2;
+}
+
+.swiper-slide.swiper-slide-active {
+  border-color: #f59e0b;
+  box-shadow: 0 6px 12px #ffd700aa;
+  z-index: 10;
+}
+
+.swiper-slide:hover {
+  border-color: #f59e0b !important;
+  box-shadow: 0 6px 10px #ffd70088 !important;
+  cursor: pointer;
+  z-index: 20;
+}
+
+/* Dark mode */
+.dark .swiper-slide.swiper-slide-active {
+  border-color: #7289da;
+  box-shadow:
+    0 3px 5px #93c5fd,
+    0 6px 12px #60a5fa,
+    0 10px 20px #2563eb;
+}
+
+.dark .swiper-slide:hover {
+  border-color: #7289da !important;
+  box-shadow:
+    0 3px 5px #93c5fd,
+    0 6px 12px #60a5fa,
+    0 10px 20px #2563eb !important;
+}
