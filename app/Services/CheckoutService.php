@@ -24,7 +24,7 @@ class CheckoutService
 
     public function process(array $data)
     {
-        Log::info('Checkout process started', ['request' => $data]);
+        //Log::info('Checkout process started', ['request' => $data]);
 
         // 1️⃣ Validate required data
         if (!isset($data['cart'], $data['payment_intent_id'], $data['email'])) {

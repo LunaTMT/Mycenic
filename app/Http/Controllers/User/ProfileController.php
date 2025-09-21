@@ -3,32 +3,30 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Order;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\File;
-
-use Illuminate\Support\Facades\Storage;  
-
-use App\Models\ShippingDetail;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
-
 use App\Http\Controllers\Controller;
 
 class ProfileController extends Controller
 {
+    /**
+     * Show the user's profile.
+     */
     public function index(Request $request): Response
     {
         $currentUser = $request->user();
         $user = $currentUser;
 
+        // Admin can view other users
         if ($currentUser->isAdmin() && $request->has('user_id')) {
             $userToView = User::with(['shippingDetails', 'avatar'])->find($request->query('user_id'));
             if ($userToView) {
@@ -40,7 +38,10 @@ class ProfileController extends Controller
 
         $user = $user->fresh();
 
-
+        // Fetch user's orders
+        $orders = Order::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         $initialTab = $request->query('initialTab');
 
@@ -49,9 +50,9 @@ class ProfileController extends Controller
             'status' => session('status'),
             'user' => $user->toArray(),
             'initialTab' => $initialTab,
+            'orders' => $orders, // Pass orders for the profile tab
         ]);
     }
-
 
     /**
      * Update the user's profile information.
@@ -98,13 +99,6 @@ class ProfileController extends Controller
             $user->save();
             Log::info('User profile updated successfully', ['user_id' => $user->id]);
 
-            // Reload fresh user with relations
-            $fullUser = $user->fresh()->load('avatar', 'shippingDetails');
-
-            // Log full user object
-            Log::info('Full user object after save', $fullUser->toArray());
-
-            // Flash success message
             return back()->with('success', 'Profile updated successfully.');
         } catch (\Exception $e) {
             Log::error('Profile update failed', [
@@ -112,7 +106,6 @@ class ProfileController extends Controller
                 'user_id' => $request->user()->id ?? null,
             ]);
 
-            // Flash error message
             return back()->with('error', 'Failed to update profile. Please try again.');
         }
     }
@@ -158,6 +151,4 @@ class ProfileController extends Controller
 
         return response()->json($users);
     }
-
-
 }

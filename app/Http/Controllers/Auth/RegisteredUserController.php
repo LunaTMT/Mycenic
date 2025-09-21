@@ -20,10 +20,23 @@ class RegisteredUserController extends Controller
     /**
      * Show the registration form.
      */
-    public function create(): Response
+    public function create(Request $request)
     {
-        return Inertia::render('Auth/Register');
+        $order_id = $request->query('order_id'); // from query params
+        $email    = $request->query('email');    // from query params
+
+        Log::info('Rendering registration form', [
+            'order_id' => $order_id,
+            'email'    => $email,
+        ]);
+
+        return Inertia::render('Auth/Register', [
+            'order_id' => $order_id,
+            'email'    => $email,
+            'flash'    => $request->session()->get('flash'),
+        ]);
     }
+
 
     /**
      * Handle a registration request.

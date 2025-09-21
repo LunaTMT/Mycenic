@@ -27,7 +27,7 @@ class OrderService
             'discount' => $data['discount'] ?? 0,
         ]);
 
-        Log::info('Order created via OrderService', ['order_id' => $order->id]);
+        Log::info('Order created via OrderService', ['order ' => $order]);
 
         return $order;
     }

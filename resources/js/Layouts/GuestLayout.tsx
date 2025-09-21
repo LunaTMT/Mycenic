@@ -9,7 +9,6 @@ import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import Menu from "./Menu";
 import Modal from "@/Components/Modal/Modal";
 import CartSidebar from "./CartSidebar";
-import { ToastContainer, toast } from "react-toastify";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 
@@ -37,14 +36,18 @@ export default function GuestLayout({ header, children }: GuestProps) {
   const { auth, flash } = usePage<PageProps>().props;
   const { url } = usePage();
   const { scrollDirection } = useNav();
-  const { darkMode } = useDarkMode();
-  const { cartOpen, setCartOpen } = useCart();
+
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [flashModal, setFlashModal] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  // Show modal for flash messages
   useEffect(() => {
-    if (flash?.success) toast.success(flash.success);
-    if (flash?.error) toast.error(flash.error);
+    if (flash?.success) {
+      setFlashModal({ type: "success", message: flash.success });
+    } else if (flash?.error) {
+      setFlashModal({ type: "error", message: flash.error });
+    }
   }, [flash]);
 
   useEffect(() => {
@@ -52,12 +55,12 @@ export default function GuestLayout({ header, children }: GuestProps) {
       const status = event.detail?.response?.status;
 
       if (status === 401) {
-        toast.error("You must be logged in to view this page.");
+        setFlashModal({ type: "error", message: "You must be logged in to view this page." });
         router.visit("/login");
       }
 
       if (status === 403) {
-        toast.error("You are not authorized to access this resource.");
+        setFlashModal({ type: "error", message: "You are not authorized to access this resource." });
       }
     };
 
@@ -68,7 +71,7 @@ export default function GuestLayout({ header, children }: GuestProps) {
   const handleLogout = () => {
     router.post("/logout", {
       onSuccess: () => {
-        toast.success("Logged out successfully.");
+        setFlashModal({ type: "success", message: "Logged out successfully." });
         router.visit("/", { preserveState: false });
       },
     });
@@ -88,25 +91,12 @@ export default function GuestLayout({ header, children }: GuestProps) {
       </motion.header>
 
       {/* Cart Sidebar Modal */}
-     <CartSidebar />
+      <CartSidebar />
 
-     
       {/* Main + Sidebar Container */}
       <div className="flex w-full">
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
-
-      {/* Toast Notifications */}
-      <ToastContainer
-        position="bottom-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme={darkMode ? "dark" : "light"}
-        style={{ zIndex: 100 }}
-      />
 
       {/* Logout Modal */}
       {showLogoutModal && (
@@ -118,6 +108,21 @@ export default function GuestLayout({ header, children }: GuestProps) {
             <div className="flex justify-end space-x-4">
               <SecondaryButton onClick={() => setShowLogoutModal(false)}>Cancel</SecondaryButton>
               <PrimaryButton onClick={handleLogout}>Logout</PrimaryButton>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Flash Modal */}
+      {flashModal && (
+        <Modal show={!!flashModal} onClose={() => setFlashModal(null)}>
+          <div className="p-6">
+            <h3 className={`text-lg font-semibold mb-4 ${flashModal.type === "success" ? "text-green-600" : "text-red-600"}`}>
+              {flashModal.type === "success" ? "Success" : "Error"}
+            </h3>
+            <p className="mb-4 text-gray-900 dark:text-white">{flashModal.message}</p>
+            <div className="flex justify-end">
+              <PrimaryButton onClick={() => setFlashModal(null)}>Close</PrimaryButton>
             </div>
           </div>
         </Modal>

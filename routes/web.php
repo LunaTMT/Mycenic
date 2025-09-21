@@ -169,9 +169,8 @@ Route::middleware('auth')->group(function () {
 | Checkout & Payment Routes
 |--------------------------------------------------------------------------
 */
-Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
-Route::post('/checkout/process', [CheckoutController::class, 'process']);
-Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
 Route::middleware('auth')->group(function () {
@@ -283,3 +282,26 @@ Route::get('/welcome', function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->get('/customers/{id}', [CustomerController::class, 'show']);
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Guest Register / View Order
+|--------------------------------------------------------------------------
+|
+| This route allows a guest with an order to go to the register page
+| and sets a flash message that can be accessed via usePage().props.flash
+|
+*/
+Route::get('/guest/register-or-login/{order_id}/{email}', function ($order_id, $email) {
+    Log::info('Guest redirected to register with order', [
+        'order_id' => $order_id,
+        'email' => $email,
+    ]);
+
+    return redirect()->route('register', [
+        'order_id' => $order_id,
+        'email' => $email,
+    ])->with('flash.success', 'Registering with your email will allow you to track your order and view its details anytime.');
+})->name('guest.register-or-login');

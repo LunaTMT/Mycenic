@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Cart;
 use App\Http\Controllers\Controller;
 use App\Services\CheckoutService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+
 
 class CheckoutController extends Controller
 {
@@ -28,8 +31,6 @@ class CheckoutController extends Controller
             'promo_code' => 'nullable|string',
         ]);
 
-        Log::info('Checkout request validated', ['validated' => $validated]);
-
         try {
             $order = $this->checkoutService->process([
                 'cart' => $validated['cart'],
@@ -39,10 +40,16 @@ class CheckoutController extends Controller
                 'promo_code' => $validated['promo_code'] ?? null,
             ]);
 
-            Log::info('Checkout completed successfully', ['order_id' => $order->id]);
+            Log::info('Process Method: Checkout completed successfully', [
+                'order_id' => $order->id,
+                'email' => $order->email, // correctly log email
+            ]);
 
-            // Flash order_id for the next request
-            return redirect()->route('checkout.success')->with('order_id', $order->id);
+            return redirect()->route('checkout.success', [
+                'order' => $order->id,
+                'email' => $order->email, // will become query string ?email=...
+            ]);
+
         } catch (\Exception $e) {
             Log::error('Checkout failed', [
                 'error' => $e->getMessage(),
@@ -53,19 +60,23 @@ class CheckoutController extends Controller
         }
     }
 
-    public function success(Request $request)
+    public function success($order, Request $request)
     {
-        $orderId = $request->session()->get('order_id');
+        $email = $request->query('email'); // from URL query
 
-        if (!$orderId) {
-            Log::warning('No order_id in session on checkout success');
-            return redirect()->route('cart')->with('flash.error', 'No order found.');
+        Log::info('Checkout success', ['order_id' => $order, 'email' => $email]);
+
+        if (Auth::check()) {
+            return redirect()->route('orders.show', ['order' => $order]);
         }
 
-        Log::info('Checkout success', ['order_id' => $orderId]);
-
-        return redirect()->route('orders.show', ['order' => $orderId]);
+        return Inertia::render('Checkout/GuestSuccess', [
+            'order_id' => $order,
+            'email' => $email,
+        ]);
     }
+
+
 
     public function cancel(Request $request)
     {

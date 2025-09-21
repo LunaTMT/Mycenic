@@ -1,5 +1,5 @@
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 import SecondaryButton from '@/Components/Buttons/SecondaryButton';
@@ -11,19 +11,26 @@ import SocialLoginComponent from './SocialLoginComponent';
 import { Inertia } from '@inertiajs/inertia';
 import ItemDisplay from '@/Components/Swiper/ItemDisplay';
 
-export default function Register() {
+interface RegisterProps {
+  order_id?: number;
+  email?: string;
+}
+
+export default function Register({ order_id, email }: RegisterProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showPassword, setShowPassword] = useState(false);
-
+  console.log(order_id, email);
   const { data, setData, post, processing, errors, reset } = useForm({
-    email: '',
+    email: email || '',
     password: '',
     password_confirmation: '',
   });
 
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
+  useEffect(() => {
+    if (email) setData('email', email);
+  }, [email, setData]);
+
+  const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
   const submit: FormEventHandler = (e) => {
     e.preventDefault();
@@ -34,8 +41,6 @@ export default function Register() {
 
   return (
     <GuestLayout>
-      <Head title="Register" />
-
       {/* Background Video */}
       <div className="absolute inset-0 w-full h-full">
         <video

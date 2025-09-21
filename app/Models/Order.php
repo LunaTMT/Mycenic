@@ -11,6 +11,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'email', // add this
         'cart',
         'returnable_cart',
         'total',
@@ -18,7 +19,6 @@ class Order extends Model
         'weight',
         'discount',
         'shipping_cost',
-        'delivery_price',
         'payment_status',
         'shipping_details',
         'shipping_status',
@@ -33,6 +33,7 @@ class Order extends Model
         'returnable',
         'return_status',
     ];
+
 
     protected $casts = [
         'cart' => 'array',

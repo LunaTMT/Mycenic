@@ -6,11 +6,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import TabNavigation from "@/Components/Tabs/TabNavigation";
 import ProfileTabContent from "./Tabs/Profile/ProfileTabContent";
 import CustomerOrders from "./Tabs/Orders/CustomerOrders";
-import UserSelector from "./Components/UserSelector";
-import Modal from "@/Components/Modal/Modal";
-
-
-
+import { User } from "@/types/User";
 
 
 type TabKey = "profile" | "orders" | "returns";
@@ -30,11 +26,22 @@ function ReturnsTabContent() {
   );
 }
 
-interface Props {
-  initialTab?: TabKey | null;
+// Types for Inertia props
+interface Order {
+  id: number;
+  // add other fields from your Order model
 }
 
-export default function Profile({ initialTab }: Props) {
+
+interface Props {
+  mustVerifyEmail: boolean;
+  status?: string | null;
+  user: User;
+  initialTab?: TabKey | null;
+  orders: Order[];
+}
+
+export default function Profile({ mustVerifyEmail, status, user, initialTab, orders }: Props) {
   const validTabs: TabKey[] = ["profile", "orders", "returns"];
 
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
@@ -50,22 +57,11 @@ export default function Profile({ initialTab }: Props) {
   }, [activeTab]);
 
   const { auth } = usePage<PageProps>().props;
-
-  const isAdmin = true;
+  const isAdmin = auth?.user?.is_admin || false; // adjust based on your auth object
 
   return (
     <AuthenticatedLayout>
       <Head title="Profile" />
-
-      {/* User Selector Modal */}
-      <Modal
-        show={isUserSelectorOpen}
-        onClose={() => setUserSelectorOpen(false)}
-        maxWidth="2xl"
-        closeable
-      >
-        <UserSelector setOpen={setUserSelectorOpen} />
-      </Modal>
 
       <div className="relative z-10 w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex flex-col items-center font-Poppins">
         <div className="w-full h-full dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl overflow-hidden">
@@ -80,8 +76,9 @@ export default function Profile({ initialTab }: Props) {
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="p-8 h-full"
             >
-              {activeTab === "profile" && <ProfileTabContent />}
-              {activeTab === "orders" && <CustomerOrders />}
+              {activeTab === "profile" && <ProfileTabContent user={user} mustVerifyEmail={mustVerifyEmail} status={status} />}
+              {activeTab === "orders" && <CustomerOrders orders={orders} />}
+
               {activeTab === "returns" && <ReturnsTabContent />}
             </motion.div>
           </AnimatePresence>

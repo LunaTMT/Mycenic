@@ -18,6 +18,8 @@ return new class extends Migration
 
             $table->json('cart')->nullable();
             $table->json('returnable_cart')->nullable();
+            $table->string('email')->nullable(); // no 'after
+
 
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->default(0);

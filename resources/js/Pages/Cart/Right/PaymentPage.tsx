@@ -31,12 +31,13 @@ const PaymentPage = forwardRef<PaymentPageRef, PaymentPageProps>(({ total }, ref
     setLoading(true);
 
     try {
-      // 1️⃣ Create PaymentIntent on backend
+      // 1️⃣ Create PaymentIntent
       const intentRes = await axios.post("/payment/create-intent", {
-        amount: Math.round(total * 100), // Stripe expects amount in pence
+        amount: Math.round(total * 100), // Stripe expects pence
       });
 
       const clientSecret = intentRes.data.clientSecret;
+      if (!clientSecret) throw new Error("Missing clientSecret");
 
       // 2️⃣ Confirm card payment
       const cardElement = elements.getElement(CardElement);
@@ -51,7 +52,7 @@ const PaymentPage = forwardRef<PaymentPageRef, PaymentPageProps>(({ total }, ref
 
       if (error) throw error;
 
-      // 3️⃣ Call checkout process with backend
+      // 3️⃣ Process checkout
       const response = await axios.post("/checkout/process", {
         cart,
         payment_intent_id: paymentIntent!.id,
@@ -60,12 +61,11 @@ const PaymentPage = forwardRef<PaymentPageRef, PaymentPageProps>(({ total }, ref
         promo_code: promoCode,
       });
 
-      toast.success("Checkout successful!");
-      clearCart();
+      
 
-      router.visit("/checkout/success", {
-        data: { order_id: response.data.order_id },
-      });
+      // Instead of router.visit, just follow the redirect automatically
+      window.location.href = response.request.responseURL;
+
     } catch (err: any) {
       toast.error(err.message || "Payment failed");
       console.error(err);

@@ -1,5 +1,5 @@
-import { CartItem } from "./CartItem";
-import { ShippingDetails } from "./ShippingDetails";
+import { CartItem } from "./Cart";
+import Shipping
 import { TrackingInfo } from "./TrackingInfo";
 
 export type Order = {
