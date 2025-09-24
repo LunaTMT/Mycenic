@@ -1,36 +1,24 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useMemo, ReactNode } from "react";
 import { Cart, CartItem } from "@/types/Cart";
+import { useUser } from "@/Contexts/UserContext";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { toast } from "react-toastify";
-
-type CheckoutStep = "cart" | "shipping" | "order_notifications" | "checkout";
 
 interface CartContextType {
   cart: Cart;
-  setCart: React.Dispatch<React.SetStateAction<Cart>>;
-  addToCart: (item: Omit<CartItem, "id">) => void;
-  removeItem: (cartItemId: string) => void;
+  addToCart: (cartItem: CartItem) => void;
+  removeItem: (cartItem: CartItem) => void;
   clearCart: () => void;
-  updateQuantity: (cartItemId: string, newQuantity: number) => void;
-  setShippingCost: (cost: number) => void;
-  setDiscount: (discount: number) => void;
-  setOrderNote: (note: string) => void;
+  updateQuantity: (cartItem: CartItem, quantity: number) => void;
   cartOpen: boolean;
   setCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   subtotal: number;
-  shippingCost: number;
-  discount: number;
   total: number;
-  orderNote: string;
-  step: CheckoutStep;
-  setStep: React.Dispatch<React.SetStateAction<CheckoutStep>>;
-  nextStep: () => void;
-  prevStep: () => void;
+  totalWeight: number; // <-- Add totalWeight here
+}
 
-  promoCode: string;
-  setPromoCode: (code: string) => void;
-  validatePromoCode: () => Promise<void>;
+interface CartProviderProps {
+  children: ReactNode;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -41,181 +29,117 @@ export const useCart = (): CartContextType => {
   return context;
 };
 
-interface CartProviderProps {
-  children: React.ReactNode;
-}
-
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-  // CART STATE
+  const { user } = useUser();
+
   const [cart, setCart] = useState<Cart>(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return emptyCart();
+    if (!user || user.isGuest) {
       const stored = localStorage.getItem("cart");
-      if (stored) return JSON.parse(stored);
+      const parsed = stored ? JSON.parse(stored) : emptyCart();
+      parsed.items?.forEach((i: any) => { if (!i.tempId) i.tempId = uuidv4(); });
+      return parsed;
     }
-    return { id: 0, items: [], subtotal: 0, total: 0, discount: 0, shipping_cost: 0, orderNote: "" };
+    return emptyCart();
   });
 
-  // ORDER NOTE
-  const [orderNote, setOrderNote] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("cart");
-      if (stored) return JSON.parse(stored).orderNote || "";
-    }
-    return "";
-  });
-
-  // CART OPEN
   const [cartOpen, setCartOpen] = useState(false);
 
-  // CHECKOUT STEP
-  const steps: CheckoutStep[] = ["cart", "shipping", "order_notifications", "checkout"];
-  const [step, setStep] = useState<CheckoutStep>(() => {
-    if (typeof window !== "undefined") {
-      const storedStep = localStorage.getItem("cart_step");
-      if (storedStep && steps.includes(storedStep as CheckoutStep)) return storedStep as CheckoutStep;
-    }
-    return "cart";
-  });
+  // ---------- Total Weight Calculation ----------
+  const totalWeight = useMemo(() => {
+    return cart.items?.reduce((sum, item) => sum + (item.item.weight || 0) * item.quantity, 0) || 0;
+  }, [cart.items]);
 
-  const nextStep = () => {
-    setStep((prev) => {
-      const idx = steps.indexOf(prev);
-      const next = idx < steps.length - 1 ? steps[idx + 1] : prev;
-      localStorage.setItem("cart_step", next);
-      return next;
-    });
-  };
-
-  const prevStep = () => {
-    setStep((prev) => {
-      const idx = steps.indexOf(prev);
-      const next = idx > 0 ? steps[idx - 1] : prev;
-      localStorage.setItem("cart_step", next);
-      return next;
-    });
-  };
-
-  // PROMO CODE STATE
-  const [promoCode, setPromoCode] = useState("");
-
-  const validatePromoCode = async () => {
-    if (promoCode.trim().length === 0) return;
-
-    try {
-      const response = await axios.post("/promo-code/validate", { promoCode });
-      setDiscount(response.data.discount);
-      toast.success(response.data.message);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    }
-  };
-
-  // PERSIST CART AND ORDER NOTE
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify({ ...cart, orderNote }));
-  }, [cart, orderNote]);
-
-  useEffect(() => {
-    localStorage.setItem("cart_step", step);
-  }, [step]);
-
-  // CALCULATED VALUES
-  const subtotal = useMemo(() => cart.items.reduce((sum, item) => sum + item.item.price * item.quantity, 0), [cart.items]);
-  const shippingCost = useMemo(() => cart.shipping_cost || 0, [cart.shipping_cost]);
-  const discount = useMemo(() => cart.discount || 0, [cart.discount]);
-  const total = useMemo(() => Math.max(subtotal + shippingCost - discount, 0), [subtotal, shippingCost, discount]);
-
-  // CART OPERATIONS
-  const addToCart = (item: Omit<CartItem, "id">) => {
-    setCart((prev) => {
-      const existingIndex = prev.items.findIndex(
-        (cartItem) =>
-          cartItem.item.id === item.item.id &&
-          JSON.stringify(cartItem.selectedOptions) === JSON.stringify(item.selectedOptions)
-      );
-
-      let updatedItems;
-      if (existingIndex > -1) {
-        updatedItems = [...prev.items];
-        updatedItems[existingIndex] = {
-          ...updatedItems[existingIndex],
-          quantity: updatedItems[existingIndex].quantity + item.quantity,
-        };
+  // ---------- Cart Operations ----------
+  const addToCart = (cartItem: CartItem) => {
+    updateCartItems(items => {
+      const existing = items.find(i => isSameItem(i, cartItem));
+      if (existing) {
+        existing.quantity += cartItem.quantity;
       } else {
-        updatedItems = [...prev.items, { ...item, id: uuidv4() }];
+        const newItem = { ...cartItem, tempId: uuidv4() };
+        items.push(newItem);
       }
-
-      if (step !== "cart" && step !== "shipping") {
-        setStep("shipping");
-        setShippingCost(0);
-      }
-
-      return { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
+      return items;
     });
     setCartOpen(true);
   };
 
-  const removeItem = (cartItemId: string) => {
-    setCart((prev) => {
-      const updatedItems = prev.items.filter((item) => item.id !== cartItemId);
-      return { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
+  const updateQuantity = (cartItem: CartItem, quantity: number) => {
+    if (quantity < 1) return;
+    updateCartItems(items => {
+      const existing = items.find(i => isSameItem(i, cartItem));
+      if (existing) {
+        existing.quantity = quantity;
+      }
+      return items;
+    });
+  };
+
+  const removeItem = (cartItem: CartItem) => {
+    updateCartItems(items => {
+      const updated = items.filter(i => !isSameItem(i, cartItem));
+      return updated;
     });
   };
 
   const clearCart = () => {
-    setCart((prev) => ({
-      ...prev,
-      items: [],
-      discount: 0,
-      updated_at: new Date().toISOString(),
-    }));
+    updateCartItems(() => []);
   };
 
-  const updateQuantity = (cartItemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    setCart((prev) => {
-      const updatedItems = prev.items.map((i) => (i.id === cartItemId ? { ...i, quantity: newQuantity } : i));
+  // ---------- Helpers ----------
+  const isSameItem = (a: CartItem, b: CartItem) => {
+    if (!a.item || !b.item) return false;
+    return (
+      a.item.id === b.item.id &&
+      JSON.stringify(a.selected_options || {}) === JSON.stringify(b.selected_options || {})
+    );
+  };
+
+  const updateCartItems = (callback: (items: CartItem[]) => CartItem[]) => {
+    setCart(prev => {
+      const updatedItems = callback(prev.items || []);
       return { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
     });
   };
 
-  const setShippingCost = (cost: number) => {
-    setCart((prev) => ({ ...prev, shipping_cost: cost, updated_at: new Date().toISOString() }));
-  };
-
-  const setDiscount = (discount: number) => {
-    setCart((prev) => ({ ...prev, discount, updated_at: new Date().toISOString() }));
-  };
+  // ---------- Calculations ----------
+  const subtotal = useMemo(() => cart.items?.reduce((sum, i) => sum + (i.item.price || 0) * i.quantity, 0) || 0, [cart.items]);
+  const total = useMemo(() => subtotal, [subtotal]);
 
   return (
     <CartContext.Provider
       value={{
         cart,
-        setCart,
         addToCart,
         removeItem,
         clearCart,
         updateQuantity,
-        setShippingCost,
-        setDiscount,
         cartOpen,
         setCartOpen,
         subtotal,
-        shippingCost,
-        discount,
         total,
-        orderNote,
-        setOrderNote,
-        step,
-        setStep,
-        nextStep,
-        prevStep,
-        promoCode,
-        setPromoCode,
-        validatePromoCode,
+        totalWeight, // Provide total weight
       }}
     >
       {children}
     </CartContext.Provider>
   );
 };
+
+// Utility function to initialize an empty cart
+function emptyCart(): Cart {
+  const now = new Date().toISOString();
+  return {
+    id: 0,
+    items: [],
+    subtotal: 0,
+    total: 0,
+    discount: 0,
+    shipping_cost: 0,
+    status: "active",
+    created_at: now,
+    updated_at: now,
+    deleted_at: null,
+  };
+}

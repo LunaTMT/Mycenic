@@ -2,25 +2,27 @@ import { FaChevronRight } from "react-icons/fa";
 import { usePage } from "@inertiajs/react";
 import OrderRowDropdown from "./Dropdown/OrderRowDropdown";
 import { useOrderContext } from "@/Contexts/Orders/OrdersContext";
+import { Order } from "@/types/Order";
 
-export default function OrderRow({ orderId }: { orderId: number }) {
+interface OrderRowProps {
+  orderId: number;
+}
+
+export default function OrderRow({ orderId }: OrderRowProps) {
   const {
     orders,
-    hasReturnStatus,
     expandedOrderId,
     toggleExpandedOrder,
-    handleToggleCompleted,
   } = useOrderContext();
 
   const { props } = usePage();
   const auth = props.auth;
 
-  const order = orders.find((o: any) => o.id === orderId);
+  const order = orders.find((o: Order) => o.id === orderId);
   if (!order) return null;
 
   const isExpanded = expandedOrderId === order.id;
 
-  
   const orderDate = new Date(order.created_at).toLocaleString("en-GB", {
     day: "numeric",
     month: "numeric",
@@ -28,7 +30,6 @@ export default function OrderRow({ orderId }: { orderId: number }) {
     hour: "2-digit",
     minute: "2-digit",
   });
-  ;
 
   return (
     <div className="pb-2">
@@ -38,7 +39,7 @@ export default function OrderRow({ orderId }: { orderId: number }) {
         className={`w-full bg-white dark:bg-[#424549] 
           border border-black/20 dark:border-white/20 
           h-15 p-4 flex items-center 
-          transition  cursor-pointer
+          transition cursor-pointer
           ${isExpanded ? "rounded-t-xl border-b-0" : "rounded-xl"}
         `}
       >

@@ -6,51 +6,36 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')
-                    ->nullable() // allow guests
-                    ->constrained()
-                    ->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('cart_id')->constrained()->cascadeOnDelete();
 
-
-            $table->json('cart')->nullable();
-            $table->json('returnable_cart')->nullable();
-            $table->string('email')->nullable(); // no 'after
-
-
-            $table->decimal('total', 10, 2)->default(0);
-            $table->decimal('subtotal', 10, 2)->default(0);
-            $table->decimal('weight', 8, 2)->default(0);
-            $table->decimal('discount', 10, 2)->default(0);
-            $table->decimal('shipping_cost', 8, 2)->default(0);
-
-            $table->string('payment_status')->default('PENDING');
-
-            $table->json('shipping_details')->nullable();
-
+            // Shipping & tracking
             $table->string('shipping_status')->default('PRE-TRANSIT');
             $table->string('carrier')->nullable();
             $table->string('tracking_number')->nullable();
             $table->string('tracking_url')->nullable();
             $table->json('tracking_history')->nullable();
 
+            $table->text('orderNote')->nullable();
             $table->text('label_url')->nullable();
             $table->string('shipment_id')->nullable();
 
+            // Order lifecycle & legal
             $table->boolean('legal_agreement')->default(false);
             $table->boolean('is_completed')->default(false);
             $table->boolean('returnable')->default(true);
-
             $table->string('return_status')->default('UNKNOWN');
+            $table->string('payment_status')->default('PENDING');
 
             $table->timestamps();
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('orders');
     }

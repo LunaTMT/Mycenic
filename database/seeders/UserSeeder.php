@@ -12,6 +12,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // --- Admin user ---
         $admin = User::create([
             'name' => 'Mycenic',
             'email' => 'mycenic@gmail.com',
@@ -24,8 +25,7 @@ class UserSeeder extends Seeder
             'path' => $unsplashService->getRandomMushroomImage() ?? 'https://i.pravatar.cc/150?img=12',
         ]);
 
-
-        // Create 6 shipping details for admin with none default initially
+        // Create 3 shipping details for admin with none default initially
         $details = ShippingDetail::factory(3)->create([
             'user_id' => $admin->id,
             'is_default' => false,
@@ -34,8 +34,24 @@ class UserSeeder extends Seeder
         // Set the first shipping detail as default
         $details->first()->update(['is_default' => true]);
 
-        
-        // Create 5 other users with 1–3 shipping details each
+        // --- Non-admin user (Taylor) ---
+        $taylor = User::create([
+            'name' => 'Taylor Threader',
+            'email' => 'taylorthreader@gmail.com',
+            'password' => Hash::make('password'),
+            'role' => 'user', // assuming you have roles
+        ]);
+
+        $taylor->avatar()->create([
+            'path' => $unsplashService->getRandomMushroomImage() ?? 'https://i.pravatar.cc/150?img=15',
+        ]);
+
+        ShippingDetail::factory(rand(1, 2))->create([
+            'user_id' => $taylor->id,
+            'is_default' => true,
+        ]);
+
+        // --- 5 random other users ---
         User::factory(5)->create()->each(function ($user) {
             ShippingDetail::factory(rand(1, 3))->create([
                 'user_id' => $user->id,

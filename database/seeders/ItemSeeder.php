@@ -12,7 +12,7 @@ class ItemSeeder extends Seeder
     public function run(): void
     {
         Item::factory()
-            ->count(10)
+            ->count(3)
             ->create()
             ->each(function (Item $item) {
                 // Generate between 1 and 8 images for each item
@@ -24,7 +24,7 @@ class ItemSeeder extends Seeder
                     ]);
 
                 // Create random number of reviews per item
-                $randomReviewCount = rand(1, 1);
+                $randomReviewCount = rand(1, 2);
 
                 $reviews = Review::factory()
                     ->count($randomReviewCount)

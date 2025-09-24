@@ -2,6 +2,8 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Item from "./Item";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { useCheckout } from "@/Contexts/Shop/Cart/CheckoutContext";
+import { CartItem } from "@/types/Cart";
 
 const Left: React.FC = () => {
   const containerVariants = {
@@ -9,7 +11,9 @@ const Left: React.FC = () => {
     show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
-  const { cart, step } = useCart(); // <-- step now comes from context
+  const { cart } = useCart(); // Get cart from CartContext
+  const { step } = useCheckout(); // Get step from CheckoutContext
+  console.log(cart, step);
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -25,14 +29,14 @@ const Left: React.FC = () => {
       animate="show"
     >
       <AnimatePresence>
-        {cart.items.map((item: any) => (
+        {cart.items.map((cartItem: CartItem) => (
           <motion.div
-            key={item.id + JSON.stringify(item.selectedOptions)}
+            key={cartItem.id + JSON.stringify(cartItem.selected_options)} // Ensures a unique key using item id and selected options
             variants={itemVariants}
             layout
             className="w-full"
           >
-            <Item cartItem={item} canChange={step === "cart"} />
+            <Item cartItem={cartItem} canChange={step === "cart"} />
           </motion.div>
         ))}
       </AnimatePresence>

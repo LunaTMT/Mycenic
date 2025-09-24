@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Item extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -25,43 +26,44 @@ class Item extends Model
     protected $casts = [
         'options' => 'array',
         'isPsyilocybinSpores' => 'boolean',
-        'price' => 'decimal:2',
+        'price' => 'float',
         'weight' => 'float',
         'stock' => 'integer',
     ];
 
-    // Append only average_rating
-    protected $appends = ['average_rating'];
+    // Append computed attributes if needed
+    protected $appends = ['average_rating', 'reviews_count', 'thumbnail'];
 
-    /**
-     * All reviews (including replies).
-     */
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
 
-    /**
-     * Only top-level reviews (exclude replies).
-     */
     public function topLevelReviews()
     {
         return $this->hasMany(Review::class)->whereNull('parent_id');
     }
 
-    /**
-     * Images for the item.
-     */
     public function images()
     {
         return $this->morphMany(Image::class, 'imageable');
     }
 
-    /**
-     * Average rating calculated from top-level reviews only.
-     */
     public function getAverageRatingAttribute(): float
     {
         return round($this->topLevelReviews()->avg('rating') ?? 0, 2);
+    }
+
+    public function getReviewsCountAttribute(): int
+    {
+        if (array_key_exists('reviews_count', $this->attributes)) {
+            return (int) $this->attributes['reviews_count'];
+        }
+        return $this->topLevelReviews()->count();
+    }
+
+    public function getThumbnailAttribute(): ?string
+    {
+        return $this->images()->value('path');
     }
 }

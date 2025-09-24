@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ArrowIcon from "@/Components/Icon/ArrowIcon";
-import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { usePromo } from '@/Contexts/Shop/Cart/PromoContext';
 
 const PromoCode: React.FC = () => {
   const [isPromoCodeDropdownOpen, setIsPromoCodeDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  const { promoCode, setPromoCode, validatePromoCode } = useCart();
+
+  // Destructure from the PromoContext
+  const { promoCode, setPromoCode, applyPromoCode } = usePromo();  // Updated here to use applyPromoCode
 
   useEffect(() => {
     // Trigger opening animation on mount
@@ -23,7 +24,7 @@ const PromoCode: React.FC = () => {
 
   const handleApply = async () => {
     setLoading(true);
-    await validatePromoCode();
+    await applyPromoCode();  // Use applyPromoCode here
     setLoading(false);
   };
 

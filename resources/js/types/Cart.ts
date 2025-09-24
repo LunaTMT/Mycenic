@@ -1,30 +1,31 @@
 import { UserOrGuest } from "./User";
+import { Item } from "./Item";
 
-export type CartItem = {
-  id: string;
-  item: {
-    id: number;
-    name: string;
-    price: number;
-    weight: number;
-    image: string; 
-    isPsyilocybinSpores: boolean;
+export type CartStatus = "active" | "checked_out";
 
-  };
-  quantity: number;
-  selectedOptions?: Record<string, string>;
-
-};
-
-
-export type Cart = {
+export interface CartItem {
   id: number;
-  user?: UserOrGuest;       
-  items: CartItem[];
+  tempId?: string;
+  cart_id: number;
+  item_id: number;
+  quantity: number;
+  selected_options?: Record<string, any> | null;
+  created_at: string;
+  updated_at: string;
+  item: Item;
+}
+
+export interface Cart {
+  id: number;
+  user_id?: number | null;
   subtotal: number;
   total: number;
-  discount?: number;
-  shipping_cost?: number;
-  created_at?: string;
-  updated_at?: string;
-};
+  discount?: number | null;
+  shipping_cost?: number | null;
+  status: CartStatus;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+  items: CartItem[];
+  user?: UserOrGuest | null;
+}

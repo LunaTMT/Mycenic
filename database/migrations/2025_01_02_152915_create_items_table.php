@@ -6,35 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('items', function (Blueprint $table) {
-            $table->id(); // Primary key
-            $table->string('stripe_product_id')->nullable();
-            $table->string('stripe_price_id')->nullable();
-            
-            $table->string('name')->unique(); // Unique Item name
-            $table->text('description')->nullable(); // Nullable description
-            $table->decimal('price', 8, 2); // Item price gbp
-            $table->integer('stock')->default(0); // Default stock value
-            $table->json('images')->nullable(); // Store images as a JSON type, allowing null values
-           
-            $table->string('category'); // Category of the item
-            $table->float('weight')->default(0); // kg
-
+            $table->id();
+            $table->string('stripe_product_id')->nullable()->unique();
+            $table->string('stripe_price_id')->nullable()->unique();
+            $table->string('name')->unique();
+            $table->text('description')->nullable();
+            $table->decimal('price', 10, 2);
+            $table->integer('stock')->default(0);
+            $table->string('category')->index();
+            $table->decimal('weight', 8, 2)->default(0);
             $table->json('options')->nullable();
-            $table->boolean('isPsyilocybinSpores')->default(false); // Indicates if the item is psilocybin spores
-
-            $table->timestamps(); // Created_at and Updated_at
+            $table->boolean('isPsyilocybinSpores')->default(false)->index();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('items');

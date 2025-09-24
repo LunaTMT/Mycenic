@@ -41,7 +41,7 @@ export default function Authenticated({ header, children }: AuthenticatedProps) 
   const { url } = usePage();
   const { scrollDirection } = useNav();
   const { darkMode } = useDarkMode();
-  const { cartOpen, setCartOpen } = useCart(); // 👈 grab cart state
+
 
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);

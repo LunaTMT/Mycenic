@@ -2,18 +2,25 @@
 
 namespace Database\Seeders;
 
-use App\Models\Order;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Order;
+use App\Models\Cart;
 
 class OrderSeeder extends Seeder
 {
     public function run(): void
     {
-        User::all()->each(function ($user) {
-            Order::factory(rand(1, 2))->create([
-                'user_id' => $user->id,
-            ]);
-        });
+        $users = User::all();
+
+        foreach ($users as $user) {
+            $carts = Cart::where('user_id', $user->id)->get();
+
+            foreach ($carts as $cart) {
+                if ($cart->items()->count() > 0) {
+                    Order::factory()->forCart($cart)->create();
+                }
+            }
+        }
     }
 }

@@ -12,25 +12,22 @@ interface CartItemProps {
 }
 
 const Item: React.FC<CartItemProps> = ({ cartItem, canChange = true }) => {
-  const { updateQuantity, removeItem } = useCart();
-  const item = cartItem.item;
+  console.log("cartItem:", cartItem);
 
+  const { updateQuantity, removeItem } = useCart();
   const [isDeleted, setIsDeleted] = useState(false);
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity === 0) {
-      removeItem(cartItem.id);
-    } else {
-      updateQuantity(cartItem.id, newQuantity);
-    }
+    // Pass the full cartItem and new quantity
+    updateQuantity(cartItem, newQuantity);
   };
 
   const handleDelete = () => {
     setIsDeleted(true);
-    setTimeout(() => {
-      removeItem(cartItem.id);
-    }, 300);
+    setTimeout(() => removeItem(cartItem), 300); // Pass the full cartItem instead of just item.id
   };
+
+  const item = cartItem.item; // Get item from cartItem
 
   return (
     <motion.div
@@ -39,7 +36,6 @@ const Item: React.FC<CartItemProps> = ({ cartItem, canChange = true }) => {
       animate={{ opacity: isDeleted ? 0 : 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Delete button */}
       {canChange && (
         <button
           onClick={handleDelete}
@@ -50,47 +46,43 @@ const Item: React.FC<CartItemProps> = ({ cartItem, canChange = true }) => {
         </button>
       )}
 
-      {/* Image */}
       <div className="flex-shrink-0 w-28 h-28 relative">
-        <Link href={route("item", { id: item.id })} className="block h-full w-full">
+        <Link href={route("items.show", { item: item.id })} className="block h-full w-full">
           <img
-            src={item.image}
-            alt={item.name}
+            src={item.thumbnail || "/placeholder.png"}  // Use `item.thumbnail`
+            alt={item.name}  // Use `item.name`
             className="h-full w-full object-contain rounded-md border border-gray-400/40 dark:border-white/10"
           />
         </Link>
       </div>
 
-      {/* Details */}
       <div className="flex-1 flex flex-col justify-between min-h-[112px]">
         <div className="pr-8">
-          <Link href={route("item", { id: item.id })}>
+          <Link href={route("items.show", { item: item.id })}>
             <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 line-clamp-2">
-              {item.name.split("-")[0]}
+              {item.name.split("-")[0]}  {/* Use `item.name` */}
             </h2>
           </Link>
 
-          {/* Selected Options */}
-          {cartItem.selectedOptions && Object.keys(cartItem.selectedOptions).length > 0 && (
+          {cartItem.selected_options && Object.keys(cartItem.selected_options).length > 0 && (
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {Object.entries(cartItem.selectedOptions)
+              {Object.entries(cartItem.selected_options)
                 .map(([key, value]) => `${key}: ${value}`)
                 .join(", ")}
             </div>
           )}
         </div>
 
-        {/* Price and Counter */}
         <div className="flex justify-between items-center mt-4">
           <div className="text-base font-medium text-gray-900 dark:text-gray-100">
-            £{item.price.toFixed(2)}
+            £{item.price.toFixed(2)}  {/* Use `item.price` */}
           </div>
 
           <div className="flex items-center gap-2">
             {canChange ? (
               <Counter
                 quantity={cartItem.quantity}
-                maxStock={item.stock ?? Infinity}
+                maxStock={item.weight ? Infinity : Infinity} // You can adjust max stock as needed
                 onChange={handleQuantityChange}
                 onDelete={handleDelete}
                 className="w-24 h-9 p-1"
@@ -100,7 +92,7 @@ const Item: React.FC<CartItemProps> = ({ cartItem, canChange = true }) => {
             )}
 
             <div className="text-base font-medium text-gray-900 dark:text-gray-100">
-              £{(item.price * cartItem.quantity).toFixed(2)}
+              £{(item.price * cartItem.quantity).toFixed(2)}  {/* Use `item.price` * `cartItem.quantity` */}
             </div>
           </div>
         </div>

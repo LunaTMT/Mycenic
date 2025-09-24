@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ArrowIcon from "@/Components/Icon/ArrowIcon";
-import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { useCheckout } from "@/Contexts/Shop/Cart/CheckoutContext";
 
 const MAX_LENGTH = 250;
 
 const OrderNote: React.FC = () => {
-  const { orderNote, setOrderNote } = useCart();
+  const { orderNote, setOrderNote } = useCheckout(); // <-- useCheckout now
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsDropdownOpen(true);
-    }, 100);
+    const timer = setTimeout(() => setIsDropdownOpen(true), 100);
     return () => clearTimeout(timer);
   }, []);
 

@@ -104,35 +104,38 @@ Route::prefix('profile/shipping-details')->middleware('auth')->group(function ()
 | Shop & Item Routes
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| Shop & Item Routes (Resource)
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
-Route::get('/item/{id?}', [ItemController::class, 'index'])->name('item');
-Route::post('/item/{id}/update', [ItemController::class, 'update'])->name('item.update');
-Route::get('/item/{id}/stock', [ItemController::class, 'getStock'])->name('item.stock');
+
+Route::prefix('items')->name('items.')->group(function () {
+    Route::get('/', [ItemController::class, 'index'])->name('index');
+    Route::get('/create', [ItemController::class, 'create'])->name('create');
+    Route::post('/', [ItemController::class, 'store'])->name('store');
+    Route::get('/{item}', [ItemController::class, 'show'])->name('show');
+    Route::get('/{item}/edit', [ItemController::class, 'edit'])->name('edit');
+    Route::put('/{item}', [ItemController::class, 'update'])->name('update');
+    Route::delete('/{item}', [ItemController::class, 'destroy'])->name('destroy');
+});
 
 /*
 |--------------------------------------------------------------------------
 | Cart Routes
 |--------------------------------------------------------------------------
 */
+
 Route::prefix('cart')->group(function () {
-    Route::get('/', [CartController::class, 'index'])->name('cart');
-    Route::get('/data', [CartController::class, 'getCartData']);
-    Route::post('/add', [CartController::class, 'addToCart']);
-    Route::post('/remove', [CartController::class, 'removeFromCart']);
-    Route::post('/clear', [CartController::class, 'clearCart']);
+    Route::get('/', [CartController::class, 'show']);              // GET /cart - anyone
+    Route::post('/items', [CartController::class, 'store']);      // POST /cart/items - anyone
+    Route::get('/items/{itemId}', [CartController::class, 'showItem']); // GET /cart/items/{itemId} - anyone
+    Route::put('/items/{itemId}', [CartController::class, 'update']);   // PUT /cart/items/{itemId} - anyone
+    Route::delete('/items/{itemId}', [CartController::class, 'destroy']); // DELETE /cart/items/{itemId} - anyone
+    Route::delete('/', [CartController::class, 'clear']);         // DELETE /cart - anyone
 });
-
-Route::post('/item/update-stock/remove', function (Request $request) {
-    $item = Item::find($request->itemId);
-
-    if ($item && $item->stock >= $request->quantity) {
-        $item->stock -= $request->quantity;
-        $item->save();
-        return response()->json(['success' => true, 'stock' => $item->stock]);
-    }
-    return response()->json(['error' => 'Not enough stock or item not found'], 400);
-})->name('cart.updateStock.remove');
-
 /*
 |--------------------------------------------------------------------------
 | Questions Routes

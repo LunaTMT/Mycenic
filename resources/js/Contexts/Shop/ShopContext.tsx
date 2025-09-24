@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from "react";
-import { Item } from "@/types/types";
+import { Item } from "@/types/Item";
 
 interface ShopContextProps {
   sortOption: string;

@@ -3,199 +3,131 @@
 namespace App\Http\Controllers\Shop\Item;
 
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
 use App\Models\Item;
+use App\Services\ItemService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\File;
+use Inertia\Inertia;
 use Stripe\Stripe;
 use Stripe\Product;
 use Stripe\Price;
-use Stripe\Subscription;
-use App\Models\Review;
 
 class ItemController extends Controller
 {
+    protected ItemService $service;
 
-    public function index(Request $request, $id)
+    public function __construct(ItemService $service)
     {
-        Log::info("ItemController@index called with ID: {$id}");
-
-        try {
-            $item = Item::with([
-                'images',
-                'reviews' => function ($query) {
-                    $query->whereNull('parent_id')
-                        ->with([
-                            'user.avatar',           // <-- top-level user avatar
-                            'images',
-                            'replies.user.avatar',   // avatar for replies
-                            'replies.images',
-                            'replies.replies',       // recursive if needed
-                        ]);
-                },
-            ])->find($id);
-
-
-            if (!$item) {
-                Log::warning("Item with ID {$id} not found.");
-                return response()->json(['error' => 'Item not found'], 404);
-            }
-
-            return Inertia::render('Shop/Item/ItemPage', [
-                'item' => $item,
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error fetching item in ItemController@index', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json(['error' => 'Unable to fetch item'], 500);
-        }
+        $this->service = $service;
     }
 
+    public function index()
+    {
+        $this->authorize('viewAny', Item::class);
 
-    
+        $items = Item::with('images')->get();
+        return Inertia::render('Shop/Item/ItemIndex', compact('items'));
+    }
+
+    public function create()
+    {
+        $this->authorize('create', Item::class);
+        return Inertia::render('Shop/Item/ItemCreate');
+    }
+
     public function store(Request $request)
     {
+        $this->authorize('create', Item::class);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:items,name',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'category' => 'nullable|string|max:255',
+            'weight' => 'nullable|numeric|min:0',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|string',
+            'isPsyilocybinSpores' => 'nullable|boolean',
+        ]);
+
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'price' => 'required|numeric|min:0',
-                'stock' => 'required|integer|min:0',
-                'category' => 'nullable|string|max:255',
-                'images' => 'nullable|array',
-                'images.*' => 'nullable|string',
-            ]);
-
-            $item = new Item($validated);
-
-            if ($request->has('images')) {
-                $item->images = json_encode($request->input('images'));
-            }
-
-            $item->save();
-
-            return redirect()
-                ->route('shop.index')
-                ->with('flash.success', 'Item created successfully.');
-
+            $item = $this->service->create($validated);
+            return redirect()->route('shop.index')->with('message', 'Item created successfully.');
         } catch (\Exception $e) {
-            return redirect()
-                ->route('shop.add')
-                ->with('flash.error', 'Unable to store item');
+            Log::error('Error creating item: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Unable to create item.');
         }
     }
 
-    public function show($id)
+    public function show(Item $item)
     {
-        \Log::info("Fetching item with ID: {$id}");
+        $this->authorize('view', $item);
+
+        $item->load([
+            'images',
+            'reviews' => function ($query) {
+                $query->whereNull('parent_id')
+                      ->with(['user.avatar', 'images', 'replies.user.avatar', 'replies.images', 'replies.replies']);
+            },
+        ]);
+
+        return Inertia::render('Shop/Item/ItemPage', compact('item'));
+    }
+
+    public function edit(Item $item)
+    {
+        $this->authorize('update', $item);
+        return Inertia::render('Shop/Item/ItemEdit', compact('item'));
+    }
+
+    public function update(Request $request, Item $item)
+    {
+        $this->authorize('update', $item);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255|unique:items,name,' . $item->id,
+            'description' => 'nullable|string',
+            'price' => 'sometimes|numeric|min:0',
+            'stock' => 'sometimes|integer|min:0',
+            'weight' => 'sometimes|numeric|min:0',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|string',
+            'isPsyilocybinSpores' => 'nullable|boolean',
+        ]);
 
         try {
-            // Eager load relationships
-            $item = Item::with([
-                'reviews.user',
-                'reviews.images',
-                'reviews.replies.user',
-            ])->findOrFail($id);
-
-      
-
-            return Inertia::render('Shop/Item/ItemPage', [
-                'item' => $item
-            ]);
-
+            $this->service->update($item, $validated);
+            return redirect()->route('shop.index')->with('message', 'Item updated successfully.');
         } catch (\Exception $e) {
-            \Log::error('Error retrieving item or Stripe data', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json(['error' => 'Unable to retrieve item'], 500);
+            Log::error('Error updating item: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Unable to update item.');
         }
     }
 
-
-
-
-    public function update(Request $request, $id)
+    public function destroy(Item $item)
     {
-        try {
-            $item = Item::findOrFail($id);
-            $data = $request->validate([
-                'name' => 'sometimes|string|max:255',
-                'description' => 'nullable|string',
-                'price' => 'sometimes|numeric',
-                'stock' => 'sometimes|integer',
-                'weight' => 'sometimes|numeric', // Update weight if needed
-            ]);
-    
-            $item->update($data);
-    
-            if ($request->has('current_url')) {
-                $currentUrl = $request->input('current_url');
-                return redirect($currentUrl)->with('message', 'Stock updated successfully.');
-            }
-    
-            return redirect()->route('item', ['id' => $item->id]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Unable to update item'], 500);
-        }
-    }
+        $this->authorize('delete', $item);
 
-    public function destroy($id)
-    {
         try {
-            // Find the item to delete
-            $item = Item::findOrFail($id);
-    
-            // Delete associated images
-            if ($item->images) {
-                $imagePaths = json_decode($item->images);
-                foreach ($imagePaths as $path) {
-                    if (File::exists(public_path($path))) {
-                        File::delete(public_path($path));
-                    }
-                }
-            }
-    
-            // Deactivate the Stripe product and price
             Stripe::setApiKey(env('STRIPE_SECRET'));
-            $product = Product::retrieve($item->stripe_product_id);
-            $product->active = false;
-            $product->save();
-    
-            $price = Price::retrieve($item->stripe_price_id);
-            $price->active = false;
-            $price->save();
-    
-            // Delete the item
-            $item->delete();
-    
-            Log::info('Item deleted: ' . $id);
-    
-            // Retrieve the updated list of items
-            $items = Item::all();
+            if ($item->stripe_product_id) {
+                $product = Product::retrieve($item->stripe_product_id);
+                $product->active = false;
+                $product->save();
+            }
 
-            return redirect()->route('shop')->with('message', 'Item successfully deleted from Stripe and database.');
+            if ($item->stripe_price_id) {
+                $price = Price::retrieve($item->stripe_price_id);
+                $price->active = false;
+                $price->save();
+            }
+
+            $this->service->delete($item);
+            return redirect()->route('shop.index')->with('message', 'Item deleted successfully.');
         } catch (\Exception $e) {
             Log::error('Error deleting item: ' . $e->getMessage());
-            return response()->json(['error' => 'Unable to delete item'], 500);
-        }
-    }
-
-    public function getStock($id)
-    {
-        try {
-            $item = Item::findOrFail($id);
-            return response()->json(['stock' => $item->stock]);
-        } catch (\Exception $e) {
-            Log::error("Error fetching stock for item ID $id: " . $e->getMessage());
-            return response()->json(['error' => 'Unable to fetch stock'], 500);
+            return redirect()->back()->with('error', 'Unable to delete item.');
         }
     }
 }
-

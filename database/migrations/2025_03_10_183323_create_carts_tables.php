@@ -8,28 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // --- carts table ---
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade'); // registered user
-            $table->string('guest_id')->nullable()->index(); // for guests
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
+            $table->decimal('discount', 10, 2)->nullable();
+            $table->decimal('shipping_cost', 10, 2)->nullable();
+            $table->enum('status', ['active', 'checked_out'])->default('active');
             $table->timestamps();
-
-            $table->unique(['user_id', 'guest_id']);
+            $table->softDeletes();
         });
 
-        // --- cart_items table ---
         Schema::create('cart_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cart_id')->constrained()->onDelete('cascade');
-            $table->foreignId('item_id')->constrained()->onDelete('cascade');
-            
-            $table->string('thumbnail')->nullable();
+            $table->foreignId('cart_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('item_id')->constrained('items')->cascadeOnDelete();
             $table->integer('quantity')->default(1);
-            $table->decimal('price', 10, 2);
-            $table->json('options')->nullable();
+            $table->json('selected_options')->nullable();
             $table->timestamps();
         });
     }

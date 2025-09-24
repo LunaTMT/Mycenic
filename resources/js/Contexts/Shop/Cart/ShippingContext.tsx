@@ -6,36 +6,39 @@ import React, {
   ReactNode,
 } from "react";
 import axios from "axios";
-import { ShippingAddress, ShippingRate } from "@/types/Shipping";
-import { useCart } from "./CartContext";
+import { ShippingDetail, ShippingRate } from "@/types/Shipping";  // Assuming ShippingDetail type exists
+import { useCart } from "./CartContext"; // Importing useCart to get totalWeight
 
+// Define the shape of the ShippingContext
 interface ShippingContextType {
-  addresses: ShippingAddress[];
-  selectedAddress: ShippingAddress | null;
-  setSelectedAddress: React.Dispatch<React.SetStateAction<ShippingAddress | null>>;
+  addresses: ShippingDetail[];
+  selectedAddress: ShippingDetail | null;
+  setSelectedAddress: React.Dispatch<React.SetStateAction<ShippingDetail | null>>;
   rates: ShippingRate[];
   selectedRate: ShippingRate | null;
   setSelectedRate: React.Dispatch<React.SetStateAction<ShippingRate | null>>;
   loadingRates: boolean;
   errorRates: string | null;
-  fetchRates: () => Promise<void>; // Expose this
+  shippingCost: number; // <-- Added shipping cost
+  fetchRates: () => Promise<void>; // Expose this to fetch rates
 }
 
+// Create a context with a default value of undefined
 const ShippingContext = createContext<ShippingContextType | undefined>(undefined);
 
 interface ShippingProviderProps {
   children: ReactNode;
-  initialAddresses?: ShippingAddress[];
+  initialAddresses?: ShippingDetail[];  // Use ShippingDetail type for initial addresses
 }
 
 export const ShippingProvider: React.FC<ShippingProviderProps> = ({
   children,
   initialAddresses = [],
 }) => {
-  const { totalWeight } = useCart();
+  const { totalWeight } = useCart(); // Fetch total weight from CartContext
 
-  const [addresses] = useState<ShippingAddress[]>(initialAddresses);
-  const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(
+  const [addresses] = useState<ShippingDetail[]>(initialAddresses);
+  const [selectedAddress, setSelectedAddress] = useState<ShippingDetail | null>(
     initialAddresses.find((addr) => addr.is_default) || null
   );
 
@@ -43,11 +46,14 @@ export const ShippingProvider: React.FC<ShippingProviderProps> = ({
   const [selectedRate, setSelectedRate] = useState<ShippingRate | null>(null);
   const [loadingRates, setLoadingRates] = useState<boolean>(false);
   const [errorRates, setErrorRates] = useState<string | null>(null);
+  const [shippingCost, setShippingCost] = useState<number>(0); // <-- State for shipping cost
 
+  // Function to fetch shipping rates based on the selected address
   const fetchRates = async () => {
     if (!selectedAddress) {
       setRates([]);
       setSelectedRate(null);
+      setShippingCost(0); // Reset shipping cost if no address
       return;
     }
 
@@ -56,14 +62,15 @@ export const ShippingProvider: React.FC<ShippingProviderProps> = ({
 
     try {
       const response = await axios.post("/shipping/rates", {
-        address: selectedAddress.address,
+        address: selectedAddress.address_line1,
         city: selectedAddress.city,
         zip: selectedAddress.zip,
-        weight: totalWeight || 1,
+        weight: totalWeight || 1, // Assuming weight is fetched from CartContext
       });
 
       setRates(response.data.rates || []);
       setSelectedRate(null);
+      setShippingCost(0); // Reset shipping cost on new fetch
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
@@ -72,12 +79,20 @@ export const ShippingProvider: React.FC<ShippingProviderProps> = ({
       setErrorRates(message);
       setRates([]);
       setSelectedRate(null);
+      setShippingCost(0); // Reset on error
     } finally {
       setLoadingRates(false);
     }
   };
 
-  // 🔁 Refetch rates when address or weight changes
+  // Watch for changes to selected rate and update shipping cost
+  useEffect(() => {
+    if (selectedRate) {
+      setShippingCost(parseFloat(selectedRate.amount)); // Convert amount to number
+    }
+  }, [selectedRate]);
+
+  // Re-fetch rates whenever the address or weight changes
   useEffect(() => {
     fetchRates();
   }, [selectedAddress, totalWeight]);
@@ -93,7 +108,8 @@ export const ShippingProvider: React.FC<ShippingProviderProps> = ({
         setSelectedRate,
         loadingRates,
         errorRates,
-        fetchRates, // exposed
+        shippingCost, // Provide the shipping cost
+        fetchRates, // Expose the fetchRates method
       }}
     >
       {children}
@@ -101,6 +117,7 @@ export const ShippingProvider: React.FC<ShippingProviderProps> = ({
   );
 };
 
+// Custom hook to use the ShippingContext
 export const useShipping = () => {
   const context = useContext(ShippingContext);
   if (!context) {

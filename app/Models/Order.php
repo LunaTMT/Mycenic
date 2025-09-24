@@ -10,17 +10,8 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
+        'cart_id',
         'user_id',
-        'email', // add this
-        'cart',
-        'returnable_cart',
-        'total',
-        'subtotal',
-        'weight',
-        'discount',
-        'shipping_cost',
-        'payment_status',
-        'shipping_details',
         'shipping_status',
         'carrier',
         'tracking_number',
@@ -32,36 +23,16 @@ class Order extends Model
         'is_completed',
         'returnable',
         'return_status',
+        'payment_status',
     ];
 
-
-    protected $casts = [
-        'cart' => 'array',
-        'returnable_cart' => 'array',
-        'tracking_history' => 'array',
-        'shipping_details' => 'array',
-        'legal_agreement' => 'boolean',
-        'is_completed' => 'boolean',
-        'returnable' => 'boolean',
-        'return_finished_at' => 'datetime',
-    ];
+    public function cart()
+    {
+        return $this->belongsTo(Cart::class)->with('items.item');
+    }
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function isReturnable(): bool
-    {
-        return $this->returnable && strcasecmp($this->shipping_status, 'DELIVERED') === 0;
-    }
-
-    protected static function booted()
-    {
-        static::creating(function ($order) {
-            if (is_null($order->returnable_cart) && $order->cart) {
-                $order->returnable_cart = $order->cart;
-            }
-        });
     }
 }

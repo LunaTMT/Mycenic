@@ -58,7 +58,8 @@ export function UserProvider({ children }: UserProviderProps) {
         setLoading(false);
       }
     } else {
-      axios.get("/user")
+      axios
+        .get("/user")
         .then(res => {
           const loggedInUser: User | null = res.data.user;
           if (loggedInUser) {
@@ -68,24 +69,24 @@ export function UserProvider({ children }: UserProviderProps) {
             setUserState(guestUser);
           }
         })
-        .catch(() => setUserState(guestUser))
+        .catch(() => {
+          setUserState(guestUser);
+        })
         .finally(() => setLoading(false));
     }
   }, []);
 
   const setUser = (user: UserOrGuest) => {
-    console.log("setUser called:", user);
+    console.log("User is being set/updated:", user); // <-- Log here
     setUserState(user);
+
     if (!user.isGuest) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(user));
-      console.log("User saved to localStorage");
     } else {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
-      console.log("User removed from localStorage (guest)");
     }
   };
 
-  // NEW: update only email for user object
   const setUserEmail = (email: string) => {
     setUserState(prev => {
       const updated = { ...prev, email };
@@ -94,7 +95,6 @@ export function UserProvider({ children }: UserProviderProps) {
     });
   };
 
-  // NEW: update only phone for user object
   const setUserPhone = (phone: string) => {
     setUserState(prev => {
       const updated = { ...prev, phone };
@@ -105,7 +105,6 @@ export function UserProvider({ children }: UserProviderProps) {
 
   const fetchUser = async (userId: number) => {
     try {
-      console.log("fetching user");
       const res = await axios.get("/user", { params: { user_id: userId } });
       const fetchedUser: User = res.data.user;
       setUser(fetchedUser || guestUser);
@@ -133,20 +132,27 @@ export function UserProvider({ children }: UserProviderProps) {
   };
 
   const logout = async () => {
-    console.log("logout called");
     try {
       await axios.post("/logout");
       setUser(guestUser);
-      console.log("User logged out, guest user set");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    } catch {}
   };
 
   if (loading) return <div>Loading user...</div>;
 
   return (
-    <UserContext.Provider value={{ user, setUser, fetchUser, onSelectUser, updateAvatar, logout, setUserEmail, setUserPhone }}>
+    <UserContext.Provider
+      value={{
+        user,
+        setUser,
+        fetchUser,
+        onSelectUser,
+        updateAvatar,
+        logout,
+        setUserEmail,
+        setUserPhone,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

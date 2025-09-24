@@ -3,53 +3,68 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class OrderController extends Controller
 {
     use AuthorizesRequests;
 
     /**
-     * Display a listing of the user's orders in profile with orders tab active
+     * Return JSON list of orders.
+     * - Regular users: only their own orders
+     * - Admins: can fetch any user by passing ?user_id=...
      */
-    public function index(): Response
+    public function index(Request $request)
     {
         $this->authorize('viewAny', Order::class);
 
-        $orders = Order::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Order::with('cart.items')->orderBy('created_at', 'desc');
 
-        Log::info('Fetched orders', ['user_id' => Auth::id(), 'count' => $orders->count()]);
+        if ($request->user_id) {
+            // Only admins can fetch another user's orders
+            if (auth()->user()->role !== 'admin') {
+                abort(403, 'Unauthorized.');
+            }
+            Log::info('Admin trying to view another user', [
+                'admin_id' => auth()->id(),
+                'target_user_id' => $request->user_id,
+            ]);
 
-        return Inertia::render('Profile', [
-            'activeTab' => 'orders',   // for showing orders tab
-            'orders'    => $orders,
+            $query->where('user_id', $request->user_id);
+        } else {
+            // Regular users fetch only their own orders
+            $query->where('user_id', Auth::id());
+        }
+
+        $orders = $query->get();
+
+        Log::info('Fetched orders', [
+            'user_id' => auth()->id(),
+            'count' => $orders->count(),
         ]);
+
+        return response()->json($orders);
     }
 
     /**
-     * Display a single order in profile with orders tab active
+     * Return JSON for a single order
      */
-    public function show(Order $order): Response
+    public function show(Order $order)
     {
         $this->authorize('view', $order);
 
-        Log::info('Fetched single order', ['user_id' => Auth::id(), 'order_id' => $order->id]);
+        $order->load('cart.items');
 
-        return Inertia::render('Profile', [
-            'activeTab' => 'orders',
-            'orders'    => [$order], // pass as array so the tab can display a list
-            'selectedOrder' => $order, // optional if you want to highlight/show detail
-        ]);
+        return response()->json($order);
     }
 
+    /**
+     * Update an order
+     */
     public function update(Request $request, Order $order)
     {
         $this->authorize('update', $order);
@@ -61,19 +76,23 @@ class OrderController extends Controller
 
         $order->update($validated);
 
-        Log::info('Order updated', ['order_id' => $order->id, 'updates' => $validated]);
-
-        return redirect()->back()->with('flash.success', 'Order updated successfully.');
+        return response()->json([
+            'message' => 'Order updated successfully',
+            'order' => $order->load('cart.items'),
+        ]);
     }
 
+    /**
+     * Delete an order
+     */
     public function destroy(Order $order)
     {
         $this->authorize('delete', $order);
 
         $order->delete();
 
-        Log::info('Order deleted', ['order_id' => $order->id]);
-
-        return redirect()->back()->with('flash.success', 'Order deleted successfully.');
+        return response()->json([
+            'message' => 'Order deleted successfully',
+        ]);
     }
 }

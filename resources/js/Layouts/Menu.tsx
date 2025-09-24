@@ -16,7 +16,7 @@ import { DarkModeSwitch } from "react-toggle-dark-mode";
 
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
-import { useCart } from "@/Contexts/Shop/Cart/CartContext";
+import { useCart, CartProvider } from "@/Contexts/Shop/Cart/CartContext";
 import { useUser } from "@/Contexts/UserContext";
 import UserSelector from "@/Pages/Profile/Components/UserSelector";
 
@@ -37,7 +37,7 @@ const leftItems = [
   { name: "About", routeName: "/about", icon: <FaInfoCircle size={35} /> },
 ];
 
-export default function Menu({ url }: MenuProps) {
+function MenuComponent({ url }: MenuProps) {
   const { auth } = usePage<{ auth?: { user?: User } }>().props;
   const user = auth?.user;
 
@@ -81,18 +81,11 @@ export default function Menu({ url }: MenuProps) {
     setShowLogoutModal(false);
 
     try {
-      await logout(); // Calls your UserContext logout
+      await logout();
       console.log("Logout successful");
-
-      // Do something after logout: e.g., redirect home
       router.visit("/", { preserveState: false });
-
-      // Optional: show toast here
-      // toast.success("You have been logged out successfully");
     } catch (err) {
       console.error("Logout failed:", err);
-      // Optional: show toast error
-      // toast.error("Logout failed. Please try again.");
     }
   };
 
@@ -227,5 +220,14 @@ export default function Menu({ url }: MenuProps) {
         <UserSelector onClose={() => setShowUserSelector(false)} />
       </Modal>
     </>
+  );
+}
+
+// -------- Wrap Menu with CartProvider --------
+export default function Menu({ url }: MenuProps) {
+  return (
+    <CartProvider>
+      <MenuComponent url={url} />
+    </CartProvider>
   );
 }

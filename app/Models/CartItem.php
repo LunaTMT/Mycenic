@@ -13,12 +13,11 @@ class CartItem extends Model
         'cart_id',
         'item_id',
         'quantity',
-        'price',
-        'options',
+        'selected_options',
     ];
 
     protected $casts = [
-        'options' => 'array',
+        'selected_options' => 'array',
     ];
 
     public function cart()

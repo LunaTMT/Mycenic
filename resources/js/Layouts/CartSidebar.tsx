@@ -8,7 +8,7 @@ import { router } from "@inertiajs/react";
 
 export default function CartSidebar() {
   const { cart, setCartOpen, subtotal, cartOpen } = useCart();
-
+ 
   return (
     <AnimatePresence>
       {cartOpen && (
@@ -25,21 +25,14 @@ export default function CartSidebar() {
           />
 
           {/* Sidebar */}
-            <motion.div
-              key="sidebar"
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="
-                fixed top-0 right-0 h-full 
-                w-full sm:w-full md:w-2/3 lg:w-1/2 xl:w-[35%]
-                flex flex-col bg-white dark:bg-[#424549]
-                border-l border-black/20 dark:border-white/20
-                shadow-2xl overflow-hidden z-50
-              "
-            >
-
+          <motion.div
+            key="sidebar"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed top-0 right-0 h-full w-full sm:w-full md:w-2/3 lg:w-1/2 xl:w-[35%] flex flex-col bg-white dark:bg-[#424549] border-l border-black/20 dark:border-white/20 shadow-2xl overflow-hidden z-50"
+          >
             {/* Header */}
             <div className="sticky top-0 bg-white dark:bg-[#424549] p-5 border-b border-black/20 dark:border-white/20 flex justify-between items-center shadow-sm z-10">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -59,7 +52,7 @@ export default function CartSidebar() {
 
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-2 py-4 space-y-2">
-              {cart.items?.length === 0 ? (
+              {cart.items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center space-y-4">
                   <div className="flex items-center justify-center w-20 h-20 rounded-xl text-yellow-500 dark:text-[#7289da]">
                     <FiShoppingCart size={50} />
@@ -71,7 +64,7 @@ export default function CartSidebar() {
               ) : (
                 cart.items.map((cartItem) => (
                   <Item
-                    key={cartItem.id + JSON.stringify(cartItem.selectedOptions)}
+                    key={cartItem.id + JSON.stringify(cartItem.selected_options)}
                     cartItem={cartItem}
                   />
                 ))
@@ -86,10 +79,7 @@ export default function CartSidebar() {
               </div>
 
               <div className="flex gap-4">
-                <SecondaryButton
-                  onClick={() => setCartOpen(false)}
-                  className="w-1/2 p-3 text-md"
-                >
+                <SecondaryButton onClick={() => setCartOpen(false)} className="w-1/2 p-3 text-md">
                   Back
                 </SecondaryButton>
 

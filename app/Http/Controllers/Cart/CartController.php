@@ -1,99 +1,140 @@
 <?php
 
-
 namespace App\Http\Controllers\Cart;
 
 use App\Http\Controllers\Controller;
+use App\Services\CartService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-
 
 class CartController extends Controller
 {
-    // Show the cart page using Inertia
-    public function index(Request $request)
+    protected CartService $cartService;
+
+    public function __construct(CartService $cartService)
     {
-        $cart = session('cart', []);
+        $this->cartService = $cartService;
+        // Only apply middleware for authenticated users, guest users can access the 'show' route without authentication
+        $this->middleware('auth')->except(['show']);
+    }
+
+    /**
+     * Display the current user's cart if logged in, or return an empty cart if guest.
+     */
+    public function show()
+    {
+        $user = Auth::user();
+
+        if ($user) {
+            // Fetch cart from backend if user is logged in
+            $cart = $this->cartService->getCartForUser($user->id);
+        } else {
+            // Return an empty cart for guests (handled on the frontend with localStorage)
+            $cart = $this->cartService->getEmptyCart(); 
+        }
+
         return Inertia::render('Cart/Cart', [
-            'cart' => $cart,
+            'cart' => $cart,  // Cart is already eager-loaded in the model
         ]);
     }
 
-    // Return cart data as JSON (for frontend use)
-    public function getCartData(Request $request)
-    {
-        if (Auth::check()) {
-            $userId = Auth::id();
-            $cart = Cart::with(['cartItems.item.images', 'shippingAddresses'])->firstOrCreate(
-                ['user_id' => $userId, 'status' => 'active']
-            );
-        } else {
-            $guestToken = $request->session()->get('guest_cart_token');
-
-            if (!$guestToken) {
-                $guestToken = (string) \Str::uuid();
-                $request->session()->put('guest_cart_token', $guestToken);
-            }
-
-            $cart = Cart::with(['cartItems.item.images', 'shippingAddresses'])->firstOrCreate(
-                ['guest_token' => $guestToken, 'status' => 'active']
-            );
-        }
-
-        return response()->json($cart);
-    }
-
-    
-    // Add item to cart
-    public function addToCart(Request $request)
+    /**
+     * Add an item to the cart (for logged-in users).
+     */
+    public function store(Request $request)
     {
         $request->validate([
-            'id' => 'required|integer',
-            'name' => 'required|string',
-            'price' => 'required|numeric',
+            'item_id' => 'required|integer|exists:items,id',
             'quantity' => 'required|integer|min:1',
+            'selected_options' => 'nullable|array',
         ]);
 
-        $cart = session()->get('cart', []);
-
-        $id = $request->input('id');
-
-        if (isset($cart[$id])) {
-            $cart[$id]['quantity'] += $request->input('quantity');
+        $user = Auth::user();
+        if ($user) {
+            // For logged-in users, fetch and update the cart in the backend
+            $cart = $this->cartService->getCartForUser($user->id);
+            $this->authorize('addItem', $cart);
         } else {
-            $cart[$id] = [
-                'id' => $id,
-                'name' => $request->input('name'),
-                'price' => $request->input('price'),
-                'quantity' => $request->input('quantity'),
-            ];
+            // For guest users, cart can be handled differently (localStorage)
+            return response()->json(['message' => 'Guests cannot add items to cart.']);
         }
 
-        session()->put('cart', $cart);
+        // Add item to the cart
+        $cartItem = $this->cartService->addItem(
+            $cart,
+            $request->item_id,
+            $request->quantity,
+            $request->selected_options ?? []
+        );
 
-        return response()->json(['message' => 'Item added to cart', 'cart' => $cart]);
+        return response()->json(['cart_item' => $cartItem], 201);
     }
 
-    // Remove item from cart
-    public function removeFromCart(Request $request)
+    /**
+     * Update the quantity or options of a cart item (for logged-in users).
+     */
+    public function update(Request $request, $itemId)
     {
         $request->validate([
-            'id' => 'required|integer',
+            'quantity' => 'sometimes|integer|min:1',
+            'selected_options' => 'sometimes|array',
         ]);
 
-        $cart = session()->get('cart', []);
-        unset($cart[$request->input('id')]);
+        $user = Auth::user();
+        if ($user) {
+            // For logged-in users, fetch and update the cart in the backend
+            $cart = $this->cartService->getCartForUser($user->id);
+            $this->authorize('update', $cart);
+        } else {
+            return response()->json(['message' => 'Guests cannot update cart items.']);
+        }
 
-        session()->put('cart', $cart);
+        $cartItem = $this->cartService->updateItem(
+            $cart,
+            $itemId,
+            $request->quantity ?? 1,
+            $request->selected_options ?? []
+        );
 
-        return response()->json(['message' => 'Item removed from cart', 'cart' => $cart]);
+        return response()->json(['cart_item' => $cartItem]);
     }
 
-    // Clear the cart
-    public function clearCart()
+    /**
+     * Remove an item from the cart (for logged-in users).
+     */
+    public function destroy($itemId)
     {
-        session()->forget('cart');
+        $user = Auth::user();
+        if ($user) {
+            // For logged-in users, fetch and remove the item from the cart
+            $cart = $this->cartService->getCartForUser($user->id);
+            $this->authorize('removeItem', $cart);
+        } else {
+            return response()->json(['message' => 'Guests cannot remove cart items.']);
+        }
 
-        return response()->json(['message' => 'Cart cleared']);
+        $this->cartService->removeItem($cart, $itemId);
+
+        return response()->json(['message' => 'Item removed successfully.']);
+    }
+
+    /**
+     * Clear the entire cart (for logged-in users).
+     */
+    public function clear()
+    {
+        $user = Auth::user();
+        if ($user) {
+            // For logged-in users, fetch and clear the cart from the backend
+            $cart = $this->cartService->getCartForUser($user->id);
+            $this->authorize('clear', $cart);
+        } else {
+            return response()->json(['message' => 'Guests cannot clear the cart.']);
+        }
+
+        $this->cartService->clearCart($cart);
+
+        return response()->json(['message' => 'Cart cleared successfully.']);
     }
 }

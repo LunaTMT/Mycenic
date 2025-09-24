@@ -14,18 +14,23 @@ import { ShippingProvider, useShipping } from "@/Contexts/Profile/ShippingContex
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { useUser } from "@/Contexts/UserContext";
 
+// Importing `useCheckout` from the CheckoutContext file
+import { useCheckout } from "@/Contexts/Shop/Cart/CheckoutContext";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY!);
 
 const RightContent: React.FC = () => {
-  const { subtotal, shippingCost, discount, cart, step, nextStep, prevStep } = useCart();
+  // Destructuring from useCart and useCheckout
+  const { subtotal, shippingCost, discount, cart } = useCart();
   const { selectedShippingDetail } = useShipping();
   const { user } = useUser();
+  const { step, nextStep, prevStep } = useCheckout();
 
   const paymentRef = useRef<PaymentPageRef>(null);
 
+  // Calculate discount amount and total
   const discountAmount = subtotal * (discount / 100);
   const total = subtotal - discountAmount + shippingCost;
 

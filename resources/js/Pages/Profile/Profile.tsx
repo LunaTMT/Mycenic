@@ -8,8 +8,20 @@ import ProfileTabContent from "./Tabs/Profile/ProfileTabContent";
 import CustomerOrders from "./Tabs/Orders/CustomerOrders";
 import { User } from "@/types/User";
 
-
 type TabKey = "profile" | "orders" | "returns";
+
+interface Order {
+  id: number;
+  // extend with other fields from your Order model
+}
+
+interface Props {
+  mustVerifyEmail: boolean;
+  status?: string | null;
+  user: User;
+  initialTab?: TabKey | null;
+  orders: Order[];
+}
 
 const tabs = [
   { key: "profile" as const, label: "Profile" },
@@ -26,38 +38,26 @@ function ReturnsTabContent() {
   );
 }
 
-// Types for Inertia props
-interface Order {
-  id: number;
-  // add other fields from your Order model
-}
-
-
-interface Props {
-  mustVerifyEmail: boolean;
-  status?: string | null;
-  user: User;
-  initialTab?: TabKey | null;
-  orders: Order[];
-}
-
-export default function Profile({ mustVerifyEmail, status, user, initialTab, orders }: Props) {
+export default function Profile({
+  initialTab,
+  orders,
+}: Props) {
   const validTabs: TabKey[] = ["profile", "orders", "returns"];
 
-  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+  const getInitialTab = (): TabKey => {
     if (initialTab && validTabs.includes(initialTab)) return initialTab;
     const stored = localStorage.getItem("activeTab") as TabKey | null;
     return stored && validTabs.includes(stored) ? stored : "profile";
-  });
+  };
 
-  const [isUserSelectorOpen, setUserSelectorOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>(getInitialTab);
 
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
   }, [activeTab]);
 
   const { auth } = usePage<PageProps>().props;
-  const isAdmin = auth?.user?.is_admin || false; // adjust based on your auth object
+  const isAdmin = auth?.user?.is_admin || false; // keep if you'll use later
 
   return (
     <AuthenticatedLayout>
@@ -65,7 +65,11 @@ export default function Profile({ mustVerifyEmail, status, user, initialTab, ord
 
       <div className="relative z-10 w-full h-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex flex-col items-center font-Poppins">
         <div className="w-full h-full dark:bg-[#424549] dark:border-white/20 border border-black/20 rounded-xl shadow-2xl overflow-hidden">
-          <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} />
+          <TabNavigation
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            tabs={tabs}
+          />
 
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -74,11 +78,10 @@ export default function Profile({ mustVerifyEmail, status, user, initialTab, ord
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="p-8 h-full"
+              className="p-4 h-full"
             >
-              {activeTab === "profile" && <ProfileTabContent user={user} mustVerifyEmail={mustVerifyEmail} status={status} />}
-              {activeTab === "orders" && <CustomerOrders orders={orders} />}
-
+              {activeTab === "profile" && (<ProfileTabContent/>)}
+              {activeTab === "orders" && <CustomerOrders/>}
               {activeTab === "returns" && <ReturnsTabContent />}
             </motion.div>
           </AnimatePresence>
