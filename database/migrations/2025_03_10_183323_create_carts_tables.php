@@ -15,6 +15,7 @@ return new class extends Migration
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->nullable();
             $table->decimal('shipping_cost', 10, 2)->nullable();
+            $table->decimal('weight', 8, 2)->default(0);
             $table->enum('status', ['active', 'checked_out'])->default('active');
             $table->timestamps();
             $table->softDeletes();

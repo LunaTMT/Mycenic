@@ -128,14 +128,19 @@ Route::prefix('items')->name('items.')->group(function () {
 |--------------------------------------------------------------------------
 */
 
+
+
+// web.php
 Route::prefix('cart')->group(function () {
-    Route::get('/', [CartController::class, 'show']);              // GET /cart - anyone
-    Route::post('/items', [CartController::class, 'store']);      // POST /cart/items - anyone
-    Route::get('/items/{itemId}', [CartController::class, 'showItem']); // GET /cart/items/{itemId} - anyone
-    Route::put('/items/{itemId}', [CartController::class, 'update']);   // PUT /cart/items/{itemId} - anyone
-    Route::delete('/items/{itemId}', [CartController::class, 'destroy']); // DELETE /cart/items/{itemId} - anyone
-    Route::delete('/', [CartController::class, 'clear']);         // DELETE /cart - anyone
+    Route::get('/show', [CartController::class, 'show']);            // GET /cart - JSON cart
+    Route::get('/', [CartController::class, 'index']);       // GET /cart/page - Inertia page
+    Route::post('/items', [CartController::class, 'store']);
+    Route::get('/items/{itemId}', [CartController::class, 'showItem']);
+    Route::put('/items/{itemId}', [CartController::class, 'update']);
+    Route::delete('/items/{itemId}', [CartController::class, 'destroy']);
+    Route::delete('/', [CartController::class, 'clear']);
 });
+
 /*
 |--------------------------------------------------------------------------
 | Questions Routes

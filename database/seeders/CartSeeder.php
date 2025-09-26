@@ -12,41 +12,39 @@ class CartSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::all();
         $items = Item::all();
 
-        if ($users->isEmpty() || $items->isEmpty()) {
-            $this->command->warn('No users or items found. Skipping CartSeeder.');
+        if ($items->isEmpty()) {
+            $this->command->warn('No items found. Please seed items first.');
             return;
         }
 
-        foreach ($users as $user) {
-            // Create one active cart per user
-            $cart = Cart::factory()->create([
-                'user_id' => $user->id,
-                'status' => 'active',
-            ]);
+        User::all()->each(function ($user) use ($items) {
+            // Active Cart
+            $activeCart = Cart::factory()->for($user)->create(['status' => 'active']);
+            $this->fillCartWithItems($activeCart, $items);
 
-            // Pick 2–5 random items for this cart (but not more than exist)
-            $max = min(5, $items->count());
-            $chosenItems = $items->random(rand(2, $max));
-
-
-            foreach ($chosenItems as $item) {
-                $quantity = rand(1, 3);
-
-                CartItem::factory()->create([
-                    'cart_id' => $cart->id,
-                    'item_id' => $item->id,
-                    'quantity' => $quantity,
-                ]);
-
-                // Update totals
-                $cart->subtotal += $item->price * $quantity;
-                $cart->total = $cart->subtotal; // adjust later if shipping/discount needed
-            }
-
-            $cart->save();
-        }
+            // Checked-out Cart
+            $checkedOutCart = Cart::factory()->for($user)->checkedOut()->create();
+            $this->fillCartWithItems($checkedOutCart, $items);
+        });
     }
+
+    private function fillCartWithItems(Cart $cart, $items)
+    {
+        $randomItems = $items->shuffle()->take(rand(1, 4));
+
+        foreach ($randomItems as $item) {
+            CartItem::factory()->create([
+                'cart_id' => $cart->id,
+                'item_id' => $item->id,
+            ]);
+        }
+
+        // Update cart totals
+        $cart->subtotal = $cart->calculateSubtotal();
+        $cart->total = $cart->calculateTotal();
+        $cart->save();
+    }
+
 }

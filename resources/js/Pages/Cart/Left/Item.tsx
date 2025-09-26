@@ -12,7 +12,7 @@ interface CartItemProps {
 }
 
 const Item: React.FC<CartItemProps> = ({ cartItem, canChange = true }) => {
-  console.log("cartItem:", cartItem);
+  
 
   const { updateQuantity, removeItem } = useCart();
   const [isDeleted, setIsDeleted] = useState(false);

@@ -4,149 +4,149 @@ namespace App\Services;
 
 use App\Models\Cart;
 use App\Models\CartItem;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class CartService
 {
-    /**
-     * Get the active cart for a user or guest.
-     * If $userId is null, this returns a guest cart.
-     */
-    public function getCartForUser(?int $userId): Cart
+    public function getCartForRequest(Request $request, ?UserContext $userContext = null): Cart
     {
-        return Cart::with('items.item')->firstOrCreate(
-            ['user_id' => $userId, 'status' => 'active'],
-            ['subtotal' => 0, 'total' => 0]
-        );
+        $user = $userContext?->getAuthUser() ?? auth()->user();
+        $userId = $userContext?->getTargetUserId($request) ?? optional($user)->id;
+
+        return $user ? $this->getCartForUser($userId) : $this->getEmptyCart();
     }
 
-    /**
-     * Get an empty cart for guests (no user_id)
-     */
+    public function getCartForUser(int $userId): Cart
+    {
+        return Cart::firstOrCreate(
+            ['user_id' => $userId, 'status' => 'active'],
+            ['subtotal' => 0, 'total' => 0, 'discount' => 0, 'shipping_cost' => 0, 'weight' => 0]
+        )->load('items.item');
+    }
+
     public function getEmptyCart(): Cart
     {
         return new Cart([
-            'items' => [],
-            'subtotal' => 0,
-            'total' => 0,
-            'status' => 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'subtotal'      => 0,
+            'total'         => 0,
+            'discount'      => 0,
+            'shipping_cost' => 0,
+            'weight'        => 0,
+            'status'        => 'active',
         ]);
     }
 
-    /**
-     * Add an item to the cart.
-     */
-    public function addItem(Cart $cart, int $itemId, int $quantity = 1, array $options = []): CartItem
+    protected function normalizeOptions(array $options): array
     {
-        $quantity = max(1, $quantity);
+        ksort($options);
+        return $options;
+    }
 
-        // Check if the same item with the same options already exists
-        $cartItem = $cart->items()->where('item_id', $itemId)
-            ->where('selected_options', $options)
-            ->first();
+    protected function findCartItem(Cart $cart, int $itemId, array $options = []): ?CartItem
+    {
+        $options = $this->normalizeOptions($options);
+        foreach ($cart->items as $cartItem) {
+            if ($cartItem->item_id === $itemId &&
+                $this->normalizeOptions($cartItem->selected_options ?? []) === $options) {
+                return $cartItem;
+            }
+        }
+        return null;
+    }
 
+    public function addItem(Cart $cart, int $itemId, int $quantity = 1, array $options = []): void
+    {
+        $cartItem = $this->findCartItem($cart, $itemId, $options);
         if ($cartItem) {
             $cartItem->quantity += $quantity;
             $cartItem->save();
         } else {
-            $cartItem = $cart->items()->create([
-                'item_id' => $itemId,
-                'quantity' => $quantity,
-                'selected_options' => $options,
+            $cart->items()->create([
+                'item_id'          => $itemId,
+                'quantity'         => $quantity,
+                'selected_options' => $this->normalizeOptions($options),
             ]);
         }
-
-        $cart->load('items.item');
         $this->recalculateCart($cart);
-
-        return $cartItem;
     }
 
-    /**
-     * Update the quantity or options of a cart item
-     */
-    public function updateItem(Cart $cart, int $itemId, int $quantity, array $options = [])
+    public function updateItem(Cart $cart, int $itemId, int $quantity, array $options = []): void
     {
-        $quantity = max(1, $quantity);
-
-        $cartItem = $cart->items()->where('item_id', $itemId)
-            ->where('selected_options', $options)
-            ->first();
-
+        $cartItem = $this->findCartItem($cart, $itemId, $options);
         if ($cartItem) {
             $cartItem->quantity = $quantity;
+            $cartItem->selected_options = $this->normalizeOptions($options);
             $cartItem->save();
-            $cart->load('items.item');
-            $this->recalculateCart($cart);
         }
-
-        return $cartItem;
+        $this->recalculateCart($cart);
     }
 
-    /**
-     * Remove an item from the cart
-     */
-    public function removeItem(Cart $cart, int $itemId, array $options = [])
+    public function removeItem(Cart $cart, int $itemId, array $options = []): void
     {
-        $cartItem = $cart->items()->where('item_id', $itemId)
-            ->where('selected_options', $options)
-            ->first();
+        $cartItem = $this->findCartItem($cart, $itemId, $options);
+        $cartItem?->delete();
+        $this->recalculateCart($cart);
+    }
 
-        if ($cartItem) {
-            $cartItem->delete();
-            $cart->load('items.item');
-            $this->recalculateCart($cart);
+    public function recalculateCart(Cart $cart): void
+    {
+        $subtotal = 0;
+        $weight = 0;
+        foreach ($cart->items as $item) {
+            $subtotal += $item->item->price * $item->quantity;
+            $weight += $item->item->weight * $item->quantity;
         }
+        $cart->subtotal = $subtotal;
+        $cart->weight = $weight;
+        $cart->shipping_cost = $this->calculateShippingCost($weight);
+        $cart->discount = $cart->discount ?? 0;
+        $cart->total = $subtotal - $cart->discount + $cart->shipping_cost;
+        $cart->save();
     }
 
-    /**
-     * Clear all items from the cart
-     */
-    public function clearCart(Cart $cart)
+    private function calculateShippingCost(float $weight): float
     {
-        $cart->items()->delete();
-        $cart->update([
-            'subtotal' => 0,
-            'total' => 0,
-            'discount' => null,
-            'shipping_cost' => null,
-        ]);
+        return match (true) {
+            $weight <= 0 => 0,
+            $weight <= 1 => 5.00,
+            $weight <= 5 => 10.00,
+            default => 20.00,
+        };
     }
 
-    /**
-     * Recalculate subtotal and total for the cart
-     */
-    public function recalculateCart(Cart $cart)
+    private function performActionForRequest(Request $request, UserContext $userContext, string $method, ?int $itemId = null): Cart
     {
-        $subtotal = $cart->items->sum(fn($item) => $item->quantity * ($item->item->price ?? 0));
-        $total = $subtotal - ($cart->discount ?? 0) + ($cart->shipping_cost ?? 0);
+        $cart = $this->getCartForRequest($request, $userContext);
 
-        $cart->update([
-            'subtotal' => $subtotal,
-            'total' => max($total, 0),
-        ]);
+        match ($method) {
+            'add'    => $this->addItem($cart, $request->input('item_id'), $request->input('quantity', 1), $request->input('selected_options', [])),
+            'update' => $this->updateItem($cart, $itemId, $request->input('quantity', 1), $request->input('selected_options', [])),
+            'remove' => $this->removeItem($cart, $itemId, $request->input('selected_options', [])),
+            'clear'  => $cart->items->each->delete(),
+        };
+
+        $this->recalculateCart($cart);
+
+        return $cart->fresh('items.item');
     }
 
-    /**
-     * Checkout the cart
-     *
-     * Marks the current cart as checked_out and creates a new active cart
-     */
-    public function checkoutCart(Cart $cart): Cart
+    public function addItemForRequest(Request $request, UserContext $userContext, ?Cart $cart = null): Cart
     {
-        return DB::transaction(function () use ($cart) {
-            $this->recalculateCart($cart);
+        return $this->performActionForRequest($request, $userContext, 'add');
+    }
 
-            $cart->update(['status' => 'checked_out']);
+    public function updateItemForRequest(Request $request, int $itemId, UserContext $userContext, ?Cart $cart = null): Cart
+    {
+        return $this->performActionForRequest($request, $userContext, 'update', $itemId);
+    }
 
-            return Cart::create([
-                'user_id' => $cart->user_id,
-                'subtotal' => 0,
-                'total' => 0,
-                'status' => 'active',
-            ]);
-        });
+    public function removeItemForRequest(Request $request, int $itemId, UserContext $userContext, ?Cart $cart = null): Cart
+    {
+        return $this->performActionForRequest($request, $userContext, 'remove', $itemId);
+    }
+
+    public function clearCartForRequest(Request $request, UserContext $userContext, ?Cart $cart = null): Cart
+    {
+        return $this->performActionForRequest($request, $userContext, 'clear');
     }
 }

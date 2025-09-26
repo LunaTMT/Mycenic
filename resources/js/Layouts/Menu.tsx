@@ -16,9 +16,10 @@ import { DarkModeSwitch } from "react-toggle-dark-mode";
 
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
-import { useCart, CartProvider } from "@/Contexts/Shop/Cart/CartContext";
+import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { useUser } from "@/Contexts/UserContext";
 import UserSelector from "@/Pages/Profile/Components/UserSelector";
+import Login from "@/Pages/Auth/Login/Login";
 
 interface User {
   id: number;
@@ -43,12 +44,13 @@ function MenuComponent({ url }: MenuProps) {
 
   const { darkMode, toggleDarkMode } = useDarkMode();
   const { cart } = useCart();
-  const { logout, guestUser, setUser } = useUser();
+  const { logout } = useUser();
 
-  const cartCount = cart.items.reduce((acc, item) => acc + item.quantity, 0);
+  const cartCount = (cart?.items ?? []).reduce((acc, item) => acc + item.quantity, 0);
 
   const [pop, setPop] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUserSelector, setShowUserSelector] = useState(false);
 
   useEffect(() => {
@@ -72,17 +74,18 @@ function MenuComponent({ url }: MenuProps) {
     `;
   };
 
-  const handleLogoutClick = () => {
-    if (user) setShowLogoutModal(true);
-    else router.visit("/login");
+  const handleLoginLogoutClick = () => {
+    if (user) {
+      setShowLogoutModal(true);
+    } else {
+      setShowLoginModal(true);
+    }
   };
 
   const confirmLogout = async () => {
     setShowLogoutModal(false);
-
     try {
       await logout();
-      console.log("Logout successful");
       router.visit("/", { preserveState: false });
     } catch (err) {
       console.error("Logout failed:", err);
@@ -92,10 +95,8 @@ function MenuComponent({ url }: MenuProps) {
   const rightItems = [
     { name: "Cart", routeName: "/cart", icon: <FaShoppingCart size={35} /> },
     user ? { name: "Profile", routeName: "/profile", icon: <FaUserCircle size={35} /> } : null,
-    { name: "Logout", routeName: "/logout", icon: <FaSignOutAlt size={35} /> },
-    user?.is_admin
-      ? { name: "UserSearch", icon: <MdPersonSearch size={35} /> }
-      : null,
+    { name: "Login/Logout", routeName: "/logout", icon: <FaSignOutAlt size={35} /> },
+    user?.is_admin ? { name: "UserSearch", icon: <MdPersonSearch size={35} /> } : null,
   ].filter(Boolean);
 
   return (
@@ -157,11 +158,11 @@ function MenuComponent({ url }: MenuProps) {
               );
             }
 
-            if (name === "Logout") {
+            if (name === "Login/Logout") {
               return (
                 <button
                   key={name}
-                  onClick={handleLogoutClick}
+                  onClick={handleLoginLogoutClick}
                   className={getNavItemClass(routeName!)}
                   type="button"
                   title={name}
@@ -176,15 +177,22 @@ function MenuComponent({ url }: MenuProps) {
                 <button
                   key={name}
                   onClick={() => setShowUserSelector(true)}
-                  className={getNavItemClass("")}
+                  className="relative flex items-center gap-1 px-3 py-2 font-semibold
+                    text-gray-600 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-[#7289da]
+                    transition-colors duration-200
+                    h-full
+                    flex-col
+                    justify-center
+                  "
                   type="button"
-                  title="User Search"
+                  title={name}
                 >
                   {icon}
                 </button>
               );
             }
 
+            // Default for other items with routeName
             return (
               <button
                 key={name}
@@ -215,6 +223,11 @@ function MenuComponent({ url }: MenuProps) {
         </div>
       </Modal>
 
+      {/* Login Modal */}
+      <Modal show={showLoginModal} maxWidth="md" onClose={() => setShowLoginModal(false)}>
+        <Login />
+      </Modal>
+
       {/* User Selector Modal */}
       <Modal show={showUserSelector} onClose={() => setShowUserSelector(false)}>
         <UserSelector onClose={() => setShowUserSelector(false)} />
@@ -225,9 +238,5 @@ function MenuComponent({ url }: MenuProps) {
 
 // -------- Wrap Menu with CartProvider --------
 export default function Menu({ url }: MenuProps) {
-  return (
-    <CartProvider>
-      <MenuComponent url={url} />
-    </CartProvider>
-  );
+  return <MenuComponent url={url} />;
 }

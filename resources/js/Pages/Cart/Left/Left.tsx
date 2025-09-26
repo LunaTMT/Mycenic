@@ -13,7 +13,7 @@ const Left: React.FC = () => {
 
   const { cart } = useCart(); // Get cart from CartContext
   const { step } = useCheckout(); // Get step from CheckoutContext
-  console.log(cart, step);
+
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -29,9 +29,9 @@ const Left: React.FC = () => {
       animate="show"
     >
       <AnimatePresence>
-        {cart.items.map((cartItem: CartItem) => (
+        {(cart?.items ?? []).map((cartItem: CartItem) => (
           <motion.div
-            key={cartItem.id + JSON.stringify(cartItem.selected_options)} // Ensures a unique key using item id and selected options
+            key={cartItem.id + JSON.stringify(cartItem.selected_options)}
             variants={itemVariants}
             layout
             className="w-full"
@@ -40,6 +40,7 @@ const Left: React.FC = () => {
           </motion.div>
         ))}
       </AnimatePresence>
+
     </motion.div>
   );
 };

@@ -10,15 +10,23 @@ class CartFactory extends Factory
 {
     protected $model = Cart::class;
 
-    public function definition(): array
+    public function definition()
     {
         return [
-            'user_id' => User::factory(), // fallback if you just factory() it
+            'user_id' => User::inRandomOrder()->first()->id ?? null,
             'subtotal' => 0,
             'total' => 0,
-            'discount' => null,
-            'shipping_cost' => null,
-            'status' => 'active',
+            'discount' => 0,
+            'shipping_cost' => 0,
+            'status' => 'active', // default, can override in seeder
         ];
+    }
+
+    public function checkedOut()
+    {
+        return $this->state(fn () => [
+            'status' => 'checked_out',
+            'updated_at' => now(),
+        ]);
     }
 }

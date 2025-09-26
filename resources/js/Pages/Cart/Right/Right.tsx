@@ -34,7 +34,8 @@ const RightContent: React.FC = () => {
   const discountAmount = subtotal * (discount / 100);
   const total = subtotal - discountAmount + shippingCost;
 
-  const cartIsEmpty = cart.items.length === 0;
+  const cartIsEmpty = (cart?.items ?? []).length === 0;
+
 
   const handleProceed = () => {
     if (cartIsEmpty) return;

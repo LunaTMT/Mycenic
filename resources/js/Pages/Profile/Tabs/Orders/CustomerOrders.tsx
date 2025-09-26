@@ -4,7 +4,7 @@ import { OrderProvider, useOrders } from "@/Contexts/Orders/OrdersContext";
 
 function CustomerOrdersContent() {
 
-
+  
   const { orders, loading } = useOrders();
   console.log(orders);
 

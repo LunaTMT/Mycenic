@@ -6,3 +6,5 @@ use App\Http\Controllers\ShippingRatesController;
 
 
 Route::post('/shipping/rates', [ShippingRatesController::class, 'getRates']);
+
+

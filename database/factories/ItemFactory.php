@@ -34,7 +34,7 @@ class ItemFactory extends Factory
 
     private function generateOptions(string $category): array
     {
-        return match ($category) {
+        $options = match ($category) {
             'Apparel' => [
                 'Size' => ['S', 'M', 'L', 'XL'],
                 'Color' => ['Black', 'White', 'Brown'],
@@ -56,5 +56,14 @@ class ItemFactory extends Factory
             ],
             default => [],
         };
+
+        // Ensure at least one option exists
+        if (empty($options)) {
+            $options = [
+                'Default' => ['Standard']
+            ];
+        }
+
+        return $options;
     }
 }
