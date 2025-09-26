@@ -34,7 +34,7 @@ class ItemFactory extends Factory
 
     private function generateOptions(string $category): array
     {
-        $options = match ($category) {
+        return match ($category) {
             'Apparel' => [
                 'Size' => ['S', 'M', 'L', 'XL'],
                 'Color' => ['Black', 'White', 'Brown'],
@@ -54,16 +54,7 @@ class ItemFactory extends Factory
                 'Strain' => ['Golden Teacher', 'PE', 'Mazatapec'],
                 'Syringe Volume' => ['10ml', '20ml'],
             ],
-            default => [],
+            default => [], // no default options
         };
-
-        // Ensure at least one option exists
-        if (empty($options)) {
-            $options = [
-                'Default' => ['Standard']
-            ];
-        }
-
-        return $options;
     }
 }

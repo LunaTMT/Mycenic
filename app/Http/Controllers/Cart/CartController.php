@@ -24,19 +24,15 @@ class CartController extends Controller
 
     public function index()
     {
-        $userId = Auth::id() ?? 'guest';
-        Log::info('Cart index viewed', ['user' => $userId]);
-
+        Log::info('Cart index viewed', ['user' => Auth::id() ?? 'guest']);
         return Inertia::render('Cart/Cart');
     }
 
     public function show(Request $request)
     {
         $cart = $this->cartService->getCartForRequest($request, $this->userContext);
-        $userId = Auth::id() ?? 'guest';
-
         Log::info('Cart shown', [
-            'user' => $userId,
+            'user' => Auth::id() ?? 'guest',
             'cart_id' => $cart->id ?? null,
         ]);
 
@@ -46,16 +42,8 @@ class CartController extends Controller
     private function handleCartAction(Request $request, string $action, ?int $itemId = null)
     {
         $this->userContext->ensureAuthenticated();
-        $userId = Auth::id();
-
-        Log::info("Starting cart action: {$action}", [
-            'user' => $userId,
-            'item_id' => $itemId,
-            'request_data' => $request->all(),
-        ]);
 
         $cart = $this->cartService->getCartForRequest($request, $this->userContext);
-        $this->authorize($action, $cart);
 
         $cart = match ($action) {
             'addItem'    => $this->cartService->addItemForRequest($request, $this->userContext, $cart),
@@ -65,7 +53,7 @@ class CartController extends Controller
         };
 
         Log::info("Completed cart action: {$action}", [
-            'user' => $userId,
+            'user' => Auth::id(),
             'cart_id' => $cart->id ?? null,
             'item_id' => $itemId,
             'cart_subtotal' => $cart->subtotal ?? null,
@@ -78,23 +66,8 @@ class CartController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        return $this->handleCartAction($request, 'addItem');
-    }
-
-    public function update(Request $request, int $itemId)
-    {
-        return $this->handleCartAction($request, 'update', $itemId);
-    }
-
-    public function destroy(Request $request, int $itemId)
-    {
-        return $this->handleCartAction($request, 'removeItem', $itemId);
-    }
-
-    public function clear(Request $request)
-    {
-        return $this->handleCartAction($request, 'clear');
-    }
+    public function store(Request $request) { return $this->handleCartAction($request, 'addItem'); }
+    public function update(Request $request, int $itemId) { return $this->handleCartAction($request, 'update', $itemId); }
+    public function destroy(Request $request, int $itemId) { return $this->handleCartAction($request, 'removeItem', $itemId); }
+    public function clear(Request $request) { return $this->handleCartAction($request, 'clear'); }
 }

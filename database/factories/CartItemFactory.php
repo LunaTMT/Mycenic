@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\CartItem;
 use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Item;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -13,25 +13,22 @@ class CartItemFactory extends Factory
 
     public function definition()
     {
+        // Pick a random item
         $item = Item::inRandomOrder()->first();
-        
+
         $selectedOptions = [];
 
-        if ($item && !empty($item->options) && is_array($item->options)) {
-            foreach ($item->options as $key => $values) {
-                if (!empty($values) && is_array($values)) {
-                    // Pick one random value per option
-                    $selectedOptions[$key] = $this->faker->randomElement($values);
-                }
+        if ($item && is_array($item->options) && count($item->options) > 0) {
+            foreach ($item->options as $optionName => $values) {
+                $selectedOptions[$optionName] = $this->faker->randomElement($values);
             }
         }
 
-
         return [
             'cart_id' => Cart::factory(),
-            'item_id' => $item ? $item->id : null,
+            'item_id' => $item?->id,
             'quantity' => $this->faker->numberBetween(1, 5),
-            'selected_options' => $selectedOptions,
+            'selected_options' => $selectedOptions, // empty if no options
         ];
     }
 }

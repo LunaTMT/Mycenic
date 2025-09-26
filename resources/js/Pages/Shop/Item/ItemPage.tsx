@@ -20,11 +20,12 @@ interface ItemPageProps {
 const ItemPage: React.FC<ItemPageProps> = ({ item }) => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth?.user ? AuthenticatedLayout : GuestLayout;
+  console.log(item.options);
 
   return (
     <Layout>
       <Head title={`${item.category}/${item.name}`} />
-
+      
       <ItemProvider item={item}>
         <div className="relative w-full max-w-7xl mx-auto sm:px-6 lg:px-8 p-5 flex flex-col justify-center items-start font-Poppins space-y-6">
           <div className="w-full">

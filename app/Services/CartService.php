@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 
 class CartService
 {
-    public function getCartForRequest(Request $request, ?UserContext $userContext = null): Cart
+    public function getCartForRequest(Request $request, UserContext $userContext): Cart
     {
-        $user = $userContext?->getAuthUser() ?? auth()->user();
-        $userId = $userContext?->getTargetUserId($request) ?? optional($user)->id;
+        $targetUserId = $userContext->getTargetUserId($request);
 
-        return $user ? $this->getCartForUser($userId) : $this->getEmptyCart();
+        return $targetUserId
+            ? $this->getCartForUser($targetUserId)
+            : $this->getEmptyCart();
     }
 
     public function getCartForUser(int $userId): Cart
@@ -57,27 +58,31 @@ class CartService
     public function addItem(Cart $cart, int $itemId, int $quantity = 1, array $options = []): void
     {
         $cartItem = $this->findCartItem($cart, $itemId, $options);
+
         if ($cartItem) {
             $cartItem->quantity += $quantity;
             $cartItem->save();
         } else {
             $cart->items()->create([
-                'item_id'          => $itemId,
-                'quantity'         => $quantity,
+                'item_id' => $itemId,
+                'quantity' => $quantity,
                 'selected_options' => $this->normalizeOptions($options),
             ]);
         }
+
         $this->recalculateCart($cart);
     }
 
     public function updateItem(Cart $cart, int $itemId, int $quantity, array $options = []): void
     {
         $cartItem = $this->findCartItem($cart, $itemId, $options);
+
         if ($cartItem) {
             $cartItem->quantity = $quantity;
             $cartItem->selected_options = $this->normalizeOptions($options);
             $cartItem->save();
         }
+
         $this->recalculateCart($cart);
     }
 
@@ -90,12 +95,13 @@ class CartService
 
     public function recalculateCart(Cart $cart): void
     {
-        $subtotal = 0;
-        $weight = 0;
+        $subtotal = $weight = 0;
+
         foreach ($cart->items as $item) {
             $subtotal += $item->item->price * $item->quantity;
             $weight += $item->item->weight * $item->quantity;
         }
+
         $cart->subtotal = $subtotal;
         $cart->weight = $weight;
         $cart->shipping_cost = $this->calculateShippingCost($weight);

@@ -18,7 +18,7 @@ class CartFactory extends Factory
             'total' => 0,
             'discount' => 0,
             'shipping_cost' => 0,
-            'status' => 'active', // default, can override in seeder
+            'status' => 'active',
         ];
     }
 

@@ -35,16 +35,23 @@ class CartSeeder extends Seeder
         $randomItems = $items->shuffle()->take(rand(1, 4));
 
         foreach ($randomItems as $item) {
+            $selectedOptions = [];
+
+            if (is_array($item->options) && count($item->options) > 0) {
+                foreach ($item->options as $key => $values) {
+                    $selectedOptions[$key] = fake()->randomElement($values);
+                }
+            }
+
             CartItem::factory()->create([
                 'cart_id' => $cart->id,
                 'item_id' => $item->id,
+                'selected_options' => $selectedOptions,
             ]);
         }
 
-        // Update cart totals
-        $cart->subtotal = $cart->calculateSubtotal();
-        $cart->total = $cart->calculateTotal();
+        $cart->subtotal = $cart->items->sum(fn($i) => $i->item->price * $i->quantity);
+        $cart->total = $cart->subtotal + $cart->shipping_cost - $cart->discount;
         $cart->save();
     }
-
 }
