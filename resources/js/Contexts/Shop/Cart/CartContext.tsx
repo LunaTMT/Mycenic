@@ -73,8 +73,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   // ---------- Helpers ----------
   const isSameItem = (a: CartItem, b: CartItem) => {
-    if (a.tempId && b.tempId) return a.tempId === b.tempId; // Guest local cart
-    if (!a.item || !b.item) return false;
+    if (!a.item || !b.item) {
+      // fallback for items without real item id
+      return a.tempId && b.tempId ? a.tempId === b.tempId : false;
+    }
+
     if (a.item.id !== b.item.id) return false;
 
     const aOptions = normalizeOptions(a.selected_options ?? {});
@@ -97,8 +100,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     if (!user || user.isGuest) {
       updateCartItems(items => {
         const existing = items.find(i => isSameItem(i, cartItem));
-        if (existing) existing.quantity += cartItem.quantity;
-        else items.push({ ...cartItem, tempId: uuidv4() });
+        if (existing) {
+          existing.quantity += cartItem.quantity;
+        } else {
+          items.push({ ...cartItem, tempId: uuidv4() });
+        }
         return items;
       });
     } else {

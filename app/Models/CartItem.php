@@ -9,24 +9,15 @@ class CartItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'cart_id',
-        'item_id',
-        'quantity',
-        'selected_options',
-    ];
+    protected $fillable = ['cart_id', 'item_id', 'quantity', 'selected_options'];
+    protected $casts = ['selected_options' => 'array'];
 
-    protected $casts = [
-        'selected_options' => 'array',
-    ];
+    public function cart() { return $this->belongsTo(Cart::class); }
+    public function item() { return $this->belongsTo(Item::class); }
 
-    public function cart()
+    protected static function booted()
     {
-        return $this->belongsTo(Cart::class);
-    }
-
-    public function item()
-    {
-        return $this->belongsTo(Item::class);
+        static::saved(fn($cartItem) => $cartItem->cart->recalculateTotals());
+        static::deleted(fn($cartItem) => $cartItem->cart->recalculateTotals());
     }
 }

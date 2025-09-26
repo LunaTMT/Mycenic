@@ -10,59 +10,29 @@ class Cart extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = [
-        'user_id',
-        'subtotal',
-        'total',
-        'discount',
-        'shipping_cost',
-        'status',
-    ];
+    protected $fillable = ['user_id', 'subtotal', 'total', 'discount', 'shipping_cost', 'status', 'weight'];
 
-    // Eager load items and related products for frontend
     protected $with = ['items.item'];
 
-    /**
-     * Items in this cart
-     */
-    public function items()
+    public function items() { return $this->hasMany(CartItem::class); }
+    public function user() { return $this->belongsTo(User::class); }
+
+    public function recalculateTotals(): void
     {
-        return $this->hasMany(CartItem::class);
+        $this->subtotal = $this->items->sum(fn($i) => $i->quantity * $i->item->price);
+        $this->weight = $this->items->sum(fn($i) => $i->quantity * $i->item->weight);
+        $this->shipping_cost = $this->calculateShippingCost($this->weight);
+        $this->total = $this->subtotal - ($this->discount ?? 0) + $this->shipping_cost;
+        $this->save();
     }
 
-    /**
-     * User that owns this cart
-     */
-    public function user()
+    private function calculateShippingCost(float $weight): float
     {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Scope for only active cart
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'active');
-    }
-
-    /**
-     * Calculate subtotal from items
-     */
-    public function calculateSubtotal(): float
-    {
-        return $this->items->sum(fn($item) => $item->quantity * $item->item->price);
-    }
-
-    /**
-     * Calculate total including discount & shipping
-     */
-    public function calculateTotal(): float
-    {
-        $subtotal = $this->calculateSubtotal();
-        $discount = $this->discount ?? 0;
-        $shipping = $this->shipping_cost ?? 0;
-
-        return $subtotal - $discount + $shipping;
+        return match (true) {
+            $weight <= 0 => 0,
+            $weight <= 1 => 5.00,
+            $weight <= 5 => 10.00,
+            default => 20.00,
+        };
     }
 }
