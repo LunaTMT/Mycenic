@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Cart;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;          // <-- add this
+
 
 class Cart extends Model
 {
@@ -15,7 +17,7 @@ class Cart extends Model
     protected $with = ['items.item'];
 
     public function items() { return $this->hasMany(CartItem::class); }
-    public function user() { return $this->belongsTo(User::class); }
+    public function user() { return $this->belongsTo(User::class); } // now references App\Models\User
 
     public function recalculateTotals(): void
     {

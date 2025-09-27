@@ -224,7 +224,7 @@ function MenuComponent({ url }: MenuProps) {
       </Modal>
 
       {/* Login Modal */}
-      <Modal show={showLoginModal} maxWidth="md" onClose={() => setShowLoginModal(false)}>
+      <Modal show={showLoginModal} maxWidth="lg" onClose={() => setShowLoginModal(false)}>
         <Login />
       </Modal>
 

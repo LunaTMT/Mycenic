@@ -10,6 +10,7 @@ use Laravel\Cashier\Billable;
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, Billable;
+    
 
     protected $fillable = [
         'name',

@@ -1,20 +1,19 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Cart;
 
-use App\Models\Cart;
-use App\Models\CartItem;
+use App\Models\Cart\Cart;
+use App\Models\Cart\CartItem;
 use Illuminate\Http\Request;
+use App\Services\UserContext;
+
 
 class CartService
 {
     public function getCartForRequest(Request $request, UserContext $userContext): Cart
     {
-        $targetUserId = $userContext->getTargetUserId($request);
-
-        return $targetUserId
-            ? $this->getCartForUser($targetUserId)
-            : $this->getEmptyCart();
+        $userId = $userContext->getTargetUserId($request);
+        return $userId ? $this->getCartForUser($userId) : $this->getEmptyCart();
     }
 
     public function getCartForUser(int $userId): Cart
@@ -28,12 +27,12 @@ class CartService
     public function getEmptyCart(): Cart
     {
         return new Cart([
-            'subtotal'      => 0,
-            'total'         => 0,
-            'discount'      => 0,
+            'subtotal' => 0,
+            'total' => 0,
+            'discount' => 0,
             'shipping_cost' => 0,
-            'weight'        => 0,
-            'status'        => 'active',
+            'weight' => 0,
+            'status' => 'active',
         ]);
     }
 
@@ -46,13 +45,11 @@ class CartService
     protected function findCartItem(Cart $cart, int $itemId, array $options = []): ?CartItem
     {
         $options = $this->normalizeOptions($options);
-        foreach ($cart->items as $cartItem) {
-            if ($cartItem->item_id === $itemId &&
-                $this->normalizeOptions($cartItem->selected_options ?? []) === $options) {
-                return $cartItem;
-            }
-        }
-        return null;
+
+        return $cart->items->first(fn($ci) =>
+            $ci->item_id === $itemId &&
+            $this->normalizeOptions($ci->selected_options ?? []) === $options
+        );
     }
 
     public function addItem(Cart $cart, int $itemId, int $quantity = 1, array $options = []): void
@@ -60,8 +57,7 @@ class CartService
         $cartItem = $this->findCartItem($cart, $itemId, $options);
 
         if ($cartItem) {
-            $cartItem->quantity += $quantity;
-            $cartItem->save();
+            $cartItem->increment('quantity', $quantity);
         } else {
             $cart->items()->create([
                 'item_id' => $itemId,
@@ -75,12 +71,11 @@ class CartService
 
     public function updateItem(Cart $cart, int $itemId, int $quantity, array $options = []): void
     {
-        $cartItem = $this->findCartItem($cart, $itemId, $options);
-
-        if ($cartItem) {
-            $cartItem->quantity = $quantity;
-            $cartItem->selected_options = $this->normalizeOptions($options);
-            $cartItem->save();
+        if ($cartItem = $this->findCartItem($cart, $itemId, $options)) {
+            $cartItem->update([
+                'quantity' => $quantity,
+                'selected_options' => $this->normalizeOptions($options),
+            ]);
         }
 
         $this->recalculateCart($cart);
@@ -88,8 +83,7 @@ class CartService
 
     public function removeItem(Cart $cart, int $itemId, array $options = []): void
     {
-        $cartItem = $this->findCartItem($cart, $itemId, $options);
-        $cartItem?->delete();
+        $this->findCartItem($cart, $itemId, $options)?->delete();
         $this->recalculateCart($cart);
     }
 
@@ -102,12 +96,15 @@ class CartService
             $weight += $item->item->weight * $item->quantity;
         }
 
-        $cart->subtotal = $subtotal;
-        $cart->weight = $weight;
-        $cart->shipping_cost = $this->calculateShippingCost($weight);
-        $cart->discount = $cart->discount ?? 0;
-        $cart->total = $subtotal - $cart->discount + $cart->shipping_cost;
-        $cart->save();
+        $shipping = $this->calculateShippingCost($weight);
+        $discount = $cart->discount ?? 0;
+
+        $cart->update([
+            'subtotal' => $subtotal,
+            'weight' => $weight,
+            'shipping_cost' => $shipping,
+            'total' => $subtotal - $discount + $shipping,
+        ]);
     }
 
     private function calculateShippingCost(float $weight): float

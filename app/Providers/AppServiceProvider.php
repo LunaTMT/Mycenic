@@ -12,7 +12,9 @@ use App\Services\UnsplashService;
 use App\Services\OpenAIModerationService;
 use App\Services\UserService;
 use App\Services\OrderService;
-use App\Services\CheckoutService;
+use App\Services\Cart\CartService;
+use App\Services\Cart\CheckoutService;
+
 use App\Services\PromoCodeService;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,14 +33,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(OrderService::class);
         $this->app->singleton(PromoCodeService::class);
 
-        // CheckoutService depends on OrderService, PromoCodeService, UserService
-        $this->app->singleton(CheckoutService::class, function ($app) {
-            return new CheckoutService(
-                $app->make(OrderService::class),
-                $app->make(PromoCodeService::class),
-                $app->make(UserService::class) // if you add UserService as a dependency
-            );
-        });
+        $this->app->singleton(CheckoutService::class);
+        $this->app->singleton(CartService::class);
     }
 
     /**

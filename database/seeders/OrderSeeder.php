@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Order;
-use App\Models\Cart;
+use App\Models\Cart\Cart;
 
 class OrderSeeder extends Seeder
 {

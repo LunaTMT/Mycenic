@@ -13,7 +13,7 @@ const Left: React.FC = () => {
 
   const { cart } = useCart(); // Get cart from CartContext
   const { step } = useCheckout(); // Get step from CheckoutContext
-
+  
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },

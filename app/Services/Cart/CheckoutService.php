@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Cart;
 
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
