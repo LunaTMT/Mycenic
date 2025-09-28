@@ -1,8 +1,8 @@
 import React from 'react';
-import { useShipping } from '@/Contexts/Profile/ShippingContext';
-import ShippingAddressCard from './ShippingAddressCard';
+import { useShipping } from '@/Contexts/User/ShippingContext';
+import ShippingAddressCard from './AddressCard';
 import AddAddressCard from './AddAddressCard';
-import ShippingAddressForm from '../Partials/ShippingAddressForm';
+import AddressForm from '../Partials/AddressForm';
 import Modal from '@/Components/Modal/Modal';
 
 interface Props {
@@ -11,15 +11,15 @@ interface Props {
 
 export default function ShippingDetails({ className = '' }: Props) {
   const {
-    shippingDetails,
-    selectedShippingDetail,
+    addresses,
+    selectedAddress,
     showForm,
     toggleShowForm,
   } = useShipping();
-
+  console.log("shippingDetails :", addresses);
   const maxAddresses = 6;
-  const addressesToShow = shippingDetails.slice(0, maxAddresses);
-  const showAddCard = shippingDetails.length < maxAddresses;
+  const addressesToShow = addresses.slice(0, maxAddresses);
+  const showAddCard = addresses.length < maxAddresses;
   
   return (
     <section
@@ -27,10 +27,10 @@ export default function ShippingDetails({ className = '' }: Props) {
       style={{ minHeight: '200px' }}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {addressesToShow.map((detail) => (
+        {addressesToShow.map((address) => (
           <ShippingAddressCard
-            key={detail.id}
-            detail={detail}
+            key={address.id}
+            address={address}
           />
         ))}
 
@@ -40,9 +40,9 @@ export default function ShippingDetails({ className = '' }: Props) {
       <Modal show={showForm} onClose={toggleShowForm} maxWidth="lg" closeable>
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-4 dark:text-white">
-            {selectedShippingDetail ? 'Edit Shipping Address' : 'Add Shipping Address'}
+            {selectedAddress ? 'Edit Shipping Address' : 'Add Shipping Address'}
           </h2>
-          <ShippingAddressForm />
+          <AddressForm />
         </div>
       </Modal>
     </section>

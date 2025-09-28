@@ -40,7 +40,6 @@ function ReturnsTabContent() {
 
 export default function Profile({
   initialTab,
-  orders,
 }: Props) {
   const validTabs: TabKey[] = ["profile", "orders", "returns"];
 

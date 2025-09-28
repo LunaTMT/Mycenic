@@ -4,11 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateShippingDetailsTable extends Migration
+class CreateAddressesTable extends Migration
 {
     public function up()
     {
-        Schema::create('shipping_details', function (Blueprint $table) {
+        Schema::create('addresses', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('country')->default('United Kingdom')->index();
@@ -22,13 +22,13 @@ class CreateShippingDetailsTable extends Migration
             $table->boolean('is_default')->default(false);
             $table->timestamps();
 
+            // Foreign key constraint
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
-
     }
 
     public function down()
     {
-        Schema::dropIfExists('shipping_details');
+        Schema::dropIfExists('addresses');
     }
 }

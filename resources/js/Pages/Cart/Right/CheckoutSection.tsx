@@ -5,7 +5,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import PaymentPage, { PaymentPageRef } from "./PaymentPage";
 
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
-import { useUser } from "@/Contexts/UserContext";
+import { useUser } from "@/Contexts/User/UserContext";
 
 import InputLabel from "@/Components/Login/InputLabel";
 import TextInput from "@/Components/Login/TextInput";

@@ -4,17 +4,27 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\User\UserContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
+    protected UserContextService $userContextService;
+
+    public function __construct(UserContextService $userContextService)
+    {
+        $this->userContextService = $userContextService;
+    }
+
     /**
      * Return user data as JSON.
      */
     public function index(Request $request)
     {
-        $currentUser = $request->user();
+        Log::info("usercontr index");
+        // Ensure user is authenticated
+        $currentUser = $this->userContextService->ensureAuthenticated();
 
         Log::info('UserController@index called', [
             'current_user_id' => $currentUser->id,
@@ -22,34 +32,30 @@ class UserController extends Controller
             'requested_user_id' => $request->query('user_id'),
         ]);
 
-        $user = $currentUser;
+        // Determine which user data to fetch (current user or another user if admin)
+        $userId = $this->userContextService->getTargetUserId($request);
+        $user = User::with('addresses', 'avatar')->find($userId);
 
-        if ($currentUser->isAdmin() && $request->has('user_id')) {
-            Log::info('Admin trying to view another user', [
-                'admin_id' => $currentUser->id,
-                'target_user_id' => $request->query('user_id'),
-            ]);
-
-            $userToView = User::with('shippingDetails', 'avatar')->find($request->query('user_id'));
-            if ($userToView) {
-                Log::info('User found', ['target_user_id' => $userToView->id]);
-                $user = $userToView;
-            } else {
-                Log::warning('Requested user not found', ['target_user_id' => $request->query('user_id')]);
-            }
-        } else {
-            Log::info('Non-admin user or no user_id provided, loading own details', [
-                'user_id' => $currentUser->id,
-            ]);
-            $user->load('shippingDetails', 'avatar');
+        if (!$user) {
+            Log::warning('Requested user not found', ['user_id' => $userId]);
+            return response()->json(['message' => 'User not found'], 404);
         }
 
-        // Log the entire user object as array
-        Log::info('Full user object', $user->toArray());
+        // Check permissions using UserPolicy
+        if ($currentUser->can('view', $user)) {
+            Log::info('User details fetched successfully', ['user_id' => $user->id]);
 
-        return response()->json([
-            'user' => $user,
-            'isAdmin' => $currentUser->isAdmin(),
-        ]);
+            return response()->json([
+                'user' => $user,
+                'isAdmin' => $currentUser->isAdmin(),
+            ]);
+        } else {
+            Log::warning('Unauthorized access attempt', [
+                'current_user_id' => $currentUser->id,
+                'target_user_id' => $user->id,
+            ]);
+
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
     }
 }

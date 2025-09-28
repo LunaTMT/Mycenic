@@ -3,7 +3,7 @@ import { Link } from "@inertiajs/react";
 import { XIcon } from "lucide-react";
 import Counter from "@/Components/Buttons/Counter";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
-import { CartItem } from "@/types/Cart";
+import { CartItem } from "@/types/Cart/Cart";
 import { motion } from "framer-motion";
 
 interface CartItemProps {

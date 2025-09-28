@@ -8,7 +8,8 @@ import { router } from "@inertiajs/react";
 
 export default function CartSidebar() {
   const { cart, setCartOpen, subtotal, cartOpen } = useCart();
- 
+
+
   return (
     <AnimatePresence>
       {cartOpen && (
@@ -75,11 +76,14 @@ export default function CartSidebar() {
             <div className="sticky bottom-0 bg-white dark:bg-[#424549] p-5 border-t border-black/20 dark:border-white/20 shadow-sm space-y-4 z-10">
               <div className="flex justify-between text-lg font-semibold text-gray-900 dark:text-white">
                 <span>Total</span>
-                <span>£{subtotal.toFixed(2)}</span>
+                <span>£{(subtotal ?? 0).toFixed(2)}</span>
               </div>
 
               <div className="flex gap-4">
-                <SecondaryButton onClick={() => setCartOpen(false)} className="w-1/2 p-3 text-md">
+                <SecondaryButton
+                  onClick={() => setCartOpen(false)}
+                  className="w-1/2 p-3 text-md"
+                >
                   Back
                 </SecondaryButton>
 

@@ -3,8 +3,8 @@ import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { toast } from "react-toastify";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
-import { useUser } from "@/Contexts/UserContext";
-import { useShipping } from "@/Contexts/Profile/ShippingContext";
+import { useUser } from "@/Contexts/User/UserContext";
+import { useShipping } from "@/Contexts/User/ShippingContext";
 import axios from "axios";
 import { router } from "@inertiajs/react";
 

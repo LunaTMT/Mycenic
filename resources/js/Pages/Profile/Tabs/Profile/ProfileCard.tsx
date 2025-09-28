@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { FaUpload, FaUserShield } from "react-icons/fa";
-import { useUser } from "@/Contexts/UserContext";
+import { useUser } from "@/Contexts/User/UserContext";
 
 export default function ProfileCard() {
   const { user, updateAvatar } = useUser();

@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useShipping } from '@/Contexts/Profile/ShippingContext';
-import ShippingAddressCard from '@/Pages/Profile/Tabs/Profile/ShippingDetails/ShippingAddressCard';
-import AddAddressCard from '@/Pages/Profile/Tabs/Profile/ShippingDetails/AddAddressCard';
+import { useShipping } from '@/Contexts/User/ShippingContext';
+import ShippingAddressCard from '@/Pages/Profile/Tabs/Profile/Shipping/AddressCard';
+import AddAddressCard from '@/Pages/Profile/Tabs/Profile/Shipping/AddAddressCard';
 import AddressSelector from './AddressSelector';
 import Modal from '@/Components/Modal/Modal';
-import ShippingAddressForm from '@/Pages/Profile/Tabs/Profile/Partials/ShippingAddressForm';
+import AddressForm from '@/Pages/Profile/Tabs/Profile/Partials/AddressForm';
 import { motion, AnimatePresence } from 'framer-motion';
 import ArrowIcon from '@/Components/Icon/ArrowIcon';
 
 const ShippingAddress: React.FC = () => {
   const {
-    shippingDetails,
-    selectedShippingDetail,
+    addresses,
+    selectedAddress,
     showForm,
     toggleShowForm,
-    fetchShippingDetails,
   } = useShipping();
 
   const [topLevelDropdown, setTopLevelDropdown] = useState(false);
@@ -22,17 +21,18 @@ const ShippingAddress: React.FC = () => {
   // Ref to track if this is the first mount
   const firstMount = useRef(true);
 
+  // Open dropdown on first mount
   useEffect(() => {
-    fetchShippingDetails();
-
     if (firstMount.current) {
       const timer = setTimeout(() => {
         setTopLevelDropdown(true);
-      }, 100); // slight delay to trigger animation
+      }, 100); // 100ms delay before opening the dropdown
       firstMount.current = false;
-      return () => clearTimeout(timer);
+      return () => clearTimeout(timer); // Cleanup on unmount
     }
-  }, []);
+  }, []); // This runs only once on first mount
+
+  console.log(addresses);
 
   const handleToggleDropdown = () => {
     setTopLevelDropdown(prev => !prev);
@@ -56,13 +56,13 @@ const ShippingAddress: React.FC = () => {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.5, ease: 'easeInOut' }}
-            className="space-y-4"
+            className="space-y-4 "
           >
-            {shippingDetails.length > 0 ? <AddressSelector /> : <AddAddressCard />}
+            {addresses.length > 0 ? <AddressSelector /> : <AddAddressCard />}
 
-            {selectedShippingDetail && shippingDetails.length > 0 && (
+            {selectedAddress && addresses.length > 0 && (
               <ShippingAddressCard
-                detail={selectedShippingDetail}
+                address={selectedAddress}
                 disableSelectedStyles={true}
               />
             )}
@@ -73,9 +73,9 @@ const ShippingAddress: React.FC = () => {
       <Modal show={showForm} onClose={toggleShowForm} maxWidth="lg" closeable>
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-4 dark:text-white">
-            {selectedShippingDetail ? 'Edit Shipping Address' : 'Add Shipping Address'}
+            {selectedAddress ? 'Edit Shipping Address' : 'Add Shipping Address'}
           </h2>
-          <ShippingAddressForm />
+          <AddressForm />
         </div>
       </Modal>
     </div>

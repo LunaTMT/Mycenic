@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Item from "./Item";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { useCheckout } from "@/Contexts/Shop/Cart/CheckoutContext";
-import { CartItem } from "@/types/Cart";
+import { CartItem } from "@/types/Cart/Cart";
 
 const Left: React.FC = () => {
   const containerVariants = {

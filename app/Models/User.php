@@ -2,15 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Foundation\Auth\User as Authenticatable; // Add this line
 use Illuminate\Notifications\Notifiable;
 use Laravel\Cashier\Billable;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, Billable;
-    
 
     protected $fillable = [
         'name',
@@ -26,19 +24,20 @@ class User extends Authenticatable
         'google_id',
         'provider',
         'provider_id',
-        // removed 'avatar'
     ];
 
     protected $visible = [
         'id',
         'name',
         'email',
-        'phone',    
+        'phone',
         'avatar',
-        'shippingDetails',
-        'role'
+        'addresses',
+        'role',
+        'is_admin',  // Added here to ensure it's included in the response
     ];
 
+    protected $appends = ['is_admin'];  // Added this line to append the computed is_admin attribute
 
     protected $hidden = [
         'password',
@@ -51,7 +50,7 @@ class User extends Authenticatable
         'trial_ends_at' => 'datetime',
     ];
 
-
+    protected $with = ['addresses', 'avatar'];
 
     public function hasPassword(): bool
     {
@@ -68,10 +67,14 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-
-    public function shippingDetails()
+    public function getIsAdminAttribute()
     {
-        return $this->hasMany(ShippingDetail::class);
+        return $this->role === 'admin';
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
     }
 
     public function reviews()
@@ -83,6 +86,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
-
-
 }

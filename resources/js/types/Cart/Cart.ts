@@ -1,5 +1,6 @@
-import { UserOrGuest } from "./User";
-import { Item } from "./Item";
+import { UserOrGuest } from "../User";
+import { Item } from "../Item";
+import { PromoCode } from "./PromoCode";
 
 export type CartStatus = "active" | "checked_out";
 
@@ -15,12 +16,15 @@ export interface CartItem {
   item: Item;
 }
 
+
 export interface Cart {
   id: number;
   user_id?: number | null;
   subtotal: number;
   total: number;
   discount?: number | null;
+  promo_code_id?: number | null;
+  promoCode?: PromoCode | null; // <-- add relation
   shipping_cost?: number | null;
   status: CartStatus;
   created_at: string;

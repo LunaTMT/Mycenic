@@ -11,7 +11,7 @@ import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import TextInput from "@/Components/Login/TextInput";
 import SocialLoginComponent from "../SocialLoginComponent";
 import ItemDisplay from "@/Components/Swiper/ItemDisplay";
-import { useUser } from "@/Contexts/UserContext";
+import { useUser } from "@/Contexts/User/UserContext";
 import Modal from "@/Components/Modal/Modal";  // Ensure Modal is imported
 
 export default function Login({

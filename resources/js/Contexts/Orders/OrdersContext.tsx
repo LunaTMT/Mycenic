@@ -1,6 +1,6 @@
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useUser } from "../UserContext";
+import { useUser } from "../User/UserContext";
 import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
 import { Order } from "@/types/Order";
 

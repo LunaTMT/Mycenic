@@ -28,12 +28,12 @@ class ProfileController extends Controller
 
         // Admin can view other users
         if ($currentUser->isAdmin() && $request->has('user_id')) {
-            $userToView = User::with(['shippingDetails', 'avatar'])->find($request->query('user_id'));
+            $userToView = User::with(['addresses', 'avatar'])->find($request->query('user_id'));
             if ($userToView) {
                 $user = $userToView;
             }
         } else {
-            $user->load(['shippingDetails', 'avatar']);
+            $user->load(['addresses', 'avatar']);
         }
 
         $user = $user->fresh();

@@ -37,7 +37,7 @@ const guestUser: UserOrGuest = {
   provider: null,
   provider_id: null,
   avatar: null,
-  shippingDetails: [],
+  addresses: [],
 };
 
 const LOCAL_STORAGE_KEY = "app_user";
@@ -63,6 +63,7 @@ export function UserProvider({ children }: UserProviderProps) {
         .then(res => {
           const loggedInUser: User | null = res.data.user;
           if (loggedInUser) {
+            console.log("LIU :", loggedInUser);
             setUserState(loggedInUser);
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(loggedInUser));
           } else {

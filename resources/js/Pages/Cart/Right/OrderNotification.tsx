@@ -3,7 +3,7 @@ import InputLabel from "@/Components/Login/InputLabel";
 import TextInput from "@/Components/Login/TextInput";
 import InputError from "@/Components/Login/InputError";
 import ArrowIcon from "@/Components/Icon/ArrowIcon";
-import { useUser } from "@/Contexts/UserContext";
+import { useUser } from "@/Contexts/User/UserContext";
 import PhoneNumberDropdown from "@/Components/Dropdown/PhoneNumberDropdown";
 import { motion, AnimatePresence } from "framer-motion";
 

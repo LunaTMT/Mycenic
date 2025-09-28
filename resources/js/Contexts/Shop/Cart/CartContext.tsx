@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useMemo, useEffect, ReactNode } from "react";
-import { Cart, CartItem } from "@/types/Cart";
-import { useUser } from "@/Contexts/UserContext";
+import { Cart, CartItem } from "@/types/Cart/Cart";
+import { useUser } from "@/Contexts/User/UserContext";
+import { usePromo } from "@/Contexts/Shop/Cart/PromoContext";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 
@@ -13,6 +14,7 @@ interface CartContextType {
   cartOpen: boolean;
   setCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   subtotal: number;
+  discountAmount: number;
   total: number;
   totalWeight: number;
   fetchCart: () => void;
@@ -32,10 +34,10 @@ export const useCart = (): CartContextType => {
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const { user } = useUser();
+  const { discountPercentage } = usePromo();
   const [cart, setCart] = useState<Cart>(emptyCart());
   const [cartOpen, setCartOpen] = useState(false);
 
-  // ---------- Fetch Cart ----------
   const fetchCart = () => {
     if (!user || user.isGuest) {
       const stored = localStorage.getItem("cart");
@@ -53,11 +55,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    fetchCart();
-  }, [user]);
+  useEffect(() => { fetchCart(); }, [user]);
 
-  // ---------- Normalize options ----------
+
   const normalizeOptions = (options: Record<string, any> | undefined): Record<string, any> => {
     if (!options) return {};
     const sortedKeys = Object.keys(options).sort();
@@ -71,41 +71,29 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     return normalized;
   };
 
-  // ---------- Helpers ----------
   const isSameItem = (a: CartItem, b: CartItem) => {
-    if (!a.item || !b.item) {
-      // fallback for items without real item id
-      return a.tempId && b.tempId ? a.tempId === b.tempId : false;
-    }
-
+    if (!a.item || !b.item) return a.tempId && b.tempId ? a.tempId === b.tempId : false;
     if (a.item.id !== b.item.id) return false;
-
-    const aOptions = normalizeOptions(a.selected_options ?? {});
-    const bOptions = normalizeOptions(b.selected_options ?? {});
-
-    return JSON.stringify(aOptions) === JSON.stringify(bOptions);
+    return JSON.stringify(normalizeOptions(a.selected_options ?? {})) ===
+           JSON.stringify(normalizeOptions(b.selected_options ?? {}));
   };
 
   const updateCartItems = (callback: (items: CartItem[]) => CartItem[]) => {
     setCart(prev => {
-      const updatedItems = callback(prev.items || []);
+      const updatedItems = callback([...prev.items]); // Ensure new reference
       const updatedCart = { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
       if (!user || user.isGuest) localStorage.setItem("cart", JSON.stringify(updatedCart));
       return updatedCart;
     });
   };
 
-  // ---------- Cart Operations ----------
   const addToCart = (cartItem: CartItem) => {
     if (!user || user.isGuest) {
       updateCartItems(items => {
         const existing = items.find(i => isSameItem(i, cartItem));
-        if (existing) {
-          existing.quantity += cartItem.quantity;
-        } else {
-          items.push({ ...cartItem, tempId: uuidv4() });
-        }
-        return items;
+        if (existing) existing.quantity += cartItem.quantity;
+        else items.push({ ...cartItem, tempId: uuidv4() });
+        return [...items]; // Ensure new array reference
       });
     } else {
       axios.post("/cart/items", {
@@ -125,7 +113,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       updateCartItems(items => {
         const existing = items.find(i => isSameItem(i, cartItem));
         if (existing) existing.quantity = quantity;
-        return items;
+        return [...items]; // Ensure new array reference
       });
     } else {
       axios.put(`/cart/items/${cartItem.item.id}`, {
@@ -143,10 +131,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       updateCartItems(items => items.filter(i => !isSameItem(i, cartItem)));
     } else {
       axios.delete(`/cart/items/${cartItem.item.id}`, {
-        data: {
-          user_id: user.id,
-          selected_options: cartItem.selected_options || {},
-        }
+        data: { user_id: user.id, selected_options: cartItem.selected_options || {} }
       })
       .then(res => setCart(res.data.cart || emptyCart()))
       .catch(err => console.error("Failed to remove backend cart item", err));
@@ -164,10 +149,27 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   };
 
-  // ---------- Calculations ----------
-  const subtotal = useMemo(() => cart.items?.reduce((acc, i) => acc + (i.item.price || 0) * i.quantity, 0) || 0, [cart.items]);
-  const total = useMemo(() => subtotal, [subtotal]);
-  const totalWeight = useMemo(() => cart.items?.reduce((sum, i) => sum + (i.item.weight || 0) * i.quantity, 0) || 0, [cart.items]);
+  // --- Calculations ---
+  const subtotal = useMemo(
+    () => cart.items?.reduce((acc, i) => acc + (i.item.price || 0) * i.quantity, 0) || 0,
+    [cart.items]
+  );
+
+  const discountAmount = useMemo(() => {
+    return subtotal * (discountPercentage || 0) / 100;
+  }, [subtotal, discountPercentage]);
+
+  const total = useMemo(
+    () => Math.max(0, subtotal - discountAmount),
+    [subtotal, discountAmount]
+  );
+
+  const totalWeight = useMemo(
+    () => cart.items?.reduce((sum, i) => sum + (i.item.weight || 0) * i.quantity, 0) || 0,
+    [cart.items]
+  );
+
+
 
   return (
     <CartContext.Provider value={{
@@ -179,6 +181,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       cartOpen,
       setCartOpen,
       subtotal,
+      discountAmount,
       total,
       totalWeight,
       fetchCart
@@ -188,7 +191,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   );
 };
 
-// ---------- Utility ----------
 function emptyCart(): Cart {
   const now = new Date().toISOString();
   return {

@@ -17,16 +17,10 @@ import { DarkModeSwitch } from "react-toggle-dark-mode";
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
-import { useUser } from "@/Contexts/UserContext";
+import { useUser } from "@/Contexts/User/UserContext";
 import UserSelector from "@/Pages/Profile/Components/UserSelector";
 import Login from "@/Pages/Auth/Login/Login";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  is_admin?: boolean;
-}
+import { UserOrGuest } from "@/types/User";
 
 interface MenuProps {
   url: string;
@@ -39,7 +33,7 @@ const leftItems = [
 ];
 
 function MenuComponent({ url }: MenuProps) {
-  const { auth } = usePage<{ auth?: { user?: User } }>().props;
+  const { auth } = usePage<{ auth?: { user?: UserOrGuest } }>().props;
   const user = auth?.user;
 
   const { darkMode, toggleDarkMode } = useDarkMode();

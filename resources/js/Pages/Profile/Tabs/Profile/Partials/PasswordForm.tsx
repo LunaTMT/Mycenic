@@ -5,7 +5,7 @@ import TextInput from '@/Components/Login/TextInput';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
-import { useUser } from '@/Contexts/UserContext';
+import { useUser } from '@/Contexts/User/UserContext';
 
 export default function PasswordForm({
     className = '',

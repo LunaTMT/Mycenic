@@ -6,7 +6,7 @@ import TextInput from '@/Components/Login/TextInput';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-import { useUser } from '@/Contexts/UserContext';
+import { useUser } from '@/Contexts/User/UserContext';
 import { Link } from '@inertiajs/react';
 
 export default function ProfileInformationForm({

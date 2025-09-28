@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
-use App\Models\ShippingDetail;
+use App\Models\Address;  // Updated from ShippingDetail to Address
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -28,6 +28,7 @@ class UserFactory extends Factory
         ];
     }
 
+    // Unverified user state
     public function unverified(): static
     {
         return $this->state(fn(array $attributes) => [
@@ -35,11 +36,21 @@ class UserFactory extends Factory
         ]);
     }
 
+    // Custom role state
+    public function withRole(string $role): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => $role,
+        ]);
+    }
+
+    // Configure method to create addresses and avatar
     public function configure()
     {
         return $this->afterCreating(function (User $user) {
-            Log::info("Creating shipping details for User ID {$user->id} ({$user->email})");
+            Log::info("Creating addresses for User ID {$user->id} ({$user->email})");
 
+            // Create avatar for the user
             $unsplash = new UnsplashService();
             $avatarUrl = $unsplash->getRandomMushroomImage() ?? 'https://i.pravatar.cc/150?img=12';
 
@@ -48,13 +59,16 @@ class UserFactory extends Factory
                 'path' => $avatarUrl,
             ]);
 
-            $count = rand(1, 3);
-            ShippingDetail::factory()->count($count)->create([
+            // Create at least one address, with one being set as default
+            $addresses = Address::factory()->count(rand(1, 3))->create([
                 'user_id' => $user->id,
                 'country' => 'United Kingdom',
             ]);
 
-            Log::info("Created {$count} shipping details for User ID {$user->id}");
+            // Ensure the first address is set as default
+            $addresses->first()->update(['is_default' => true]);
+
+            Log::info("Created {$addresses->count()} addresses for User ID {$user->id}");
         });
     }
 }

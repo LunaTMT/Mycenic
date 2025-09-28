@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ArrowIcon from '@/Components/Icon/ArrowIcon';
 import countries from '@/utils/countries_phone';
-import { useUser } from '@/Contexts/UserContext';
+import { useUser } from '@/Contexts/User/UserContext';
 
 const PhoneNumberDropdown: React.FC = () => {
   const { user } = useUser();

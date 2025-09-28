@@ -52,7 +52,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     >
       <button
         onClick={() => !disabled && setIsOpen(prev => !prev)}
-        
+        disabled={disabled}
         className="px-4 py-2 w-full border border-gray-300 dark:border-white/20 rounded-md flex bg-white dark:bg-[#1e2124]/60 justify-between items-center text-left text-gray-900 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {selectedItem ? selectedItem.label : placeholder}
@@ -71,10 +71,15 @@ const Dropdown: React.FC<DropdownProps> = ({
             {items.map((item, i) => (
               <div
                 key={item.id}
-                onClick={() => { onSelect(item.id); setIsOpen(false); }}
+                onClick={() => {
+                  if (!disabled) {
+                    onSelect(item.id);
+                    setIsOpen(false); // Close the dropdown when an item is selected
+                  }
+                }}
                 className={`cursor-pointer px-4 py-2 text-sm dark:text-gray-200 text-gray-800 hover:bg-gray-400 dark:hover:bg-[#7289da]/70 ${
                   selectedItemId === item.id ? 'font-semibold' : ''
-                } ${i === 0 ? 'rounded-t-md' : ''}`}
+                } ${i === 0 ? 'rounded-t-md' : ''} ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
               >
                 {item.label}
                 {item.extra && <span className="ml-2">{item.extra}</span>}
@@ -83,7 +88,12 @@ const Dropdown: React.FC<DropdownProps> = ({
 
             {onCustomAction && customActionLabel && (
               <div
-                onClick={() => { onCustomAction(); setIsOpen(false); }}
+                onClick={() => {
+                  if (!disabled) {
+                    onCustomAction();
+                    setIsOpen(false); // Close the dropdown after custom action
+                  }
+                }}
                 className="cursor-pointer px-4 py-2 text-sm text-yellow-500 dark:text-[#7289da] font-semibold hover:underline"
               >
                 {customActionLabel}

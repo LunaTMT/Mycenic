@@ -1,73 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useCart } from '@/Contexts/Shop/Cart/CartContext';
-import { useShipping } from '@/Contexts/Profile/ShippingContext';
+import { useShipping } from '@/Contexts/User/ShippingContext';
 import Dropdown from '@/Components/Dropdown/Dropdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import ArrowIcon from '@/Components/Icon/ArrowIcon';
 import axios from 'axios';
 
 interface ShippingRate {
-  id: string;
+  id: string | number;
   provider?: string;
   servicelevel?: string;
   amount: number;
 }
 
 const ShippingOptions: React.FC = () => {
-  const { cart, setShippingCost } = useCart();
-  const { selectedShippingDetail } = useShipping();
+  const { cart } = useCart();
+  const { selectedAddress, setShippingCost, rates } = useShipping();
 
-  const [rates, setRates] = useState<ShippingRate[]>([]);
-  const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
+  
+  const [selectedRateId, setSelectedRateId] = useState<string | number | null>(null);
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const firstFetch = useRef(true); // Prevent first automatic fetch
   const firstMount = useRef(true); // For dropdown animation
 
-  // Fetch shipping rates whenever cart items or selected address changes
-  useEffect(() => {
-    const fetchShippingRates = async () => {
-      if (!cart.items.length || !selectedShippingDetail) return;
 
-      setLoading(true);
-      setShippingCost(0);
-
-      try {
-        const response = await axios.post('/api/shipping/rates', {
-          cart,
-          destination: selectedShippingDetail,
-        });
-
-        const formattedRates =
-          response.data.rates?.map((r: any) => ({
-            id: r.id,
-            provider: r.provider ?? '',
-            servicelevel: r.servicelevel ?? '',
-            amount: r.amount,
-          })) ?? [];
-
-        setRates(formattedRates);
-      } catch (error) {
-        console.error('Error fetching shipping rates:', error);
-        setRates([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Only fetch after first mount
-    if (!firstFetch.current) {
-      fetchShippingRates();
-    } else {
-      firstFetch.current = false;
-    }
-  }, [cart.items, selectedShippingDetail]);
-
-  // Open dropdown on first mount with a slight delay
+  // Open dropdown on first mount
   useEffect(() => {
     if (firstMount.current) {
-      console.log("mounting");
       const timer = setTimeout(() => {
         setDropdownOpen(true);
       }, 100);
@@ -76,10 +37,13 @@ const ShippingOptions: React.FC = () => {
     }
   }, []);
 
-  const handleSelect = (id: string) => {
+  const handleSelect = (id: string | number) => {
     setSelectedRateId(id);
     const rate = rates.find((r) => r.id === id);
-    if (rate) setShippingCost(rate.amount);
+    if (rate) {
+      setShippingCost(rate.amount);
+      console.log('Shipping rate selected:', rate);  // Log the rate selection
+    }
   };
 
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
@@ -106,7 +70,7 @@ const ShippingOptions: React.FC = () => {
           >
             <Dropdown
               items={
-                loading || !selectedShippingDetail
+                loading || !selectedAddress
                   ? []
                   : rates.map((r) => ({
                       id: r.id,
@@ -116,13 +80,13 @@ const ShippingOptions: React.FC = () => {
               selectedItemId={selectedRateId}
               onSelect={handleSelect}
               placeholder={
-                !selectedShippingDetail
+                !selectedAddress
                   ? 'Add a shipping address first'
                   : loading
                   ? 'Loading shipping options...'
                   : 'Select Shipping Option'
               }
-              disabled={loading || !selectedShippingDetail}
+              disabled={loading || !selectedAddress}
             />
           </motion.div>
         )}

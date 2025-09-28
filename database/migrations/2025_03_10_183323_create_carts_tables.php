@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('promo_code_id')->nullable()->constrained('promo_codes')->nullOnDelete();
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('discount', 10, 2)->nullable();

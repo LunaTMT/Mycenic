@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Cart;
 
-use App\Models\PromoCode;
+use App\Models\Cart\PromoCode;
 use Illuminate\Support\Facades\Log;
 
 class PromoCodeService

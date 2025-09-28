@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import ProfileInformationForm from "./Partials/ProfileInformationForm";
 import PasswordForm from "./Partials/PasswordForm";
-import ShippingDetails from "./ShippingDetails/ShippingDetails";
+import ShippingDetails from "./Shipping/ShippingDetails";
 import DeleteUserForm from "./Partials/DeleteUserForm";
 import ProfileCard from "./ProfileCard";
 import SubContent from "@/Components/Tabs/SubTab/SubContent";
 import SubNavigation from "@/Components/Tabs/SubTab/SubNavigation";
-import { ShippingProvider } from "@/Contexts/Profile/ShippingContext";
+import { ShippingProvider } from "@/Contexts/User/ShippingContext";
 import UserReviews from "./UserReviews";
-import { useUser } from "@/Contexts/UserContext";
+import { useUser } from "@/Contexts/User/UserContext";
 
 type TabKey = "credentials" | "shipping" | "reviews" | "delete";
 
@@ -24,7 +24,6 @@ const rightTabs: { key: TabKey; label: string }[] = [
 
 
 export default function ProfileTabContent() {
-
 
   const validTabs: TabKey[] = ["credentials", "shipping", "reviews", "delete"];
 
@@ -59,9 +58,7 @@ export default function ProfileTabContent() {
         </SubContent>
 
         <SubContent activeKey={activeTab} tabKey="shipping">
-          <ShippingProvider>
             <ShippingDetails />
-          </ShippingProvider>
         </SubContent>
 
         <SubContent activeKey={activeTab} tabKey="reviews">

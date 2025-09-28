@@ -1,15 +1,15 @@
 import React from 'react';
-import { useShipping } from '@/Contexts/Profile/ShippingContext';
+import { useShipping } from '@/Contexts/User/ShippingContext';
 
 interface Props {
   className?: string;
 }
 
 export default function AddAddressCard({ className = '' }: Props) {
-  const { setSelectedShippingDetail, toggleShowForm } = useShipping();
+  const { setSelectedAddress, toggleShowForm } = useShipping();
 
   const handleClick = () => {
-    setSelectedShippingDetail(null); // clear any selected address
+    setSelectedAddress(null); // clear any selected address
     toggleShowForm(); // open modal to add new address
   };
 

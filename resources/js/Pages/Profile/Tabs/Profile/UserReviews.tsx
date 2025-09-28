@@ -1,7 +1,7 @@
 import React from "react";
 import { ReviewsProvider, useReviews } from "@/Contexts/Shop/Items/Reviews/ReviewsContext";
 import ReviewCard from "@/Pages/Shop/Item/Feedback/Tabs/Reviews/Card/ReviewCard";
-import { useUser } from "@/Contexts/UserContext";
+import { useUser } from "@/Contexts/User/UserContext";
 import { MdOutlineReviews } from "react-icons/md";
 
 const ReviewsList = () => {

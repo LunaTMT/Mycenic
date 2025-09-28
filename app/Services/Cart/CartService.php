@@ -5,12 +5,12 @@ namespace App\Services\Cart;
 use App\Models\Cart\Cart;
 use App\Models\Cart\CartItem;
 use Illuminate\Http\Request;
-use App\Services\UserContext;
+use App\Services\User\UserContextService;
 
 
 class CartService
 {
-    public function getCartForRequest(Request $request, UserContext $userContext): Cart
+    public function getCartForRequest(Request $request, UserContextService $userContext): Cart
     {
         $userId = $userContext->getTargetUserId($request);
         return $userId ? $this->getCartForUser($userId) : $this->getEmptyCart();
@@ -117,7 +117,7 @@ class CartService
         };
     }
 
-    private function performActionForRequest(Request $request, UserContext $userContext, string $method, ?int $itemId = null): Cart
+    private function performActionForRequest(Request $request, UserContextService $userContext, string $method, ?int $itemId = null): Cart
     {
         $cart = $this->getCartForRequest($request, $userContext);
 
@@ -133,22 +133,22 @@ class CartService
         return $cart->fresh('items.item');
     }
 
-    public function addItemForRequest(Request $request, UserContext $userContext, ?Cart $cart = null): Cart
+    public function addItemForRequest(Request $request, UserContextService $userContext, ?Cart $cart = null): Cart
     {
         return $this->performActionForRequest($request, $userContext, 'add');
     }
 
-    public function updateItemForRequest(Request $request, int $itemId, UserContext $userContext, ?Cart $cart = null): Cart
+    public function updateItemForRequest(Request $request, int $itemId, UserContextService $userContext, ?Cart $cart = null): Cart
     {
         return $this->performActionForRequest($request, $userContext, 'update', $itemId);
     }
 
-    public function removeItemForRequest(Request $request, int $itemId, UserContext $userContext, ?Cart $cart = null): Cart
+    public function removeItemForRequest(Request $request, int $itemId, UserContextService $userContext, ?Cart $cart = null): Cart
     {
         return $this->performActionForRequest($request, $userContext, 'remove', $itemId);
     }
 
-    public function clearCartForRequest(Request $request, UserContext $userContext, ?Cart $cart = null): Cart
+    public function clearCartForRequest(Request $request, UserContextService $userContext, ?Cart $cart = null): Cart
     {
         return $this->performActionForRequest($request, $userContext, 'clear');
     }

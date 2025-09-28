@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         // Recaptcha validation logic here (if you use it)
-
+        Log::info("store");
         $recaptcha = $request->input('g-recaptcha-response');
         $secret = env('VITE_NOCAPTCHA_SECRET');
 

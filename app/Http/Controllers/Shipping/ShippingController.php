@@ -1,46 +1,41 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Shipping;
 
+use App\Http\Controllers\Controller; // <-- This line is important!
 use Illuminate\Http\Request;
 use App\Services\ShippoService;
 use Illuminate\Support\Facades\Log;
+use App\Models\Cart\Cart;
 
-class ShippingRatesController extends Controller
+class ShippingController extends Controller
 {
     protected ShippoService $shippo;
 
     public function __construct(ShippoService $shippo)
     {
         $this->shippo = $shippo;
-        Log::info('ShippingRatesController initialized');
+        Log::info('ShippingController initialized'); // <-- Log inside the constructor
     }
 
     public function getRates(Request $request)
-    {
-        
+    {   
+        Log::info("getting rates");
+
+        // Validate the incoming request
         $request->validate([
-            'cart' => 'required|array',
-            'cart.items' => 'required|array|min:1',
-            'cart.items.*.item.id' => 'required|integer',
-            'cart.items.*.quantity' => 'required|integer|min:1',
-            'cart.items.*.item.weight' => 'required|numeric|min:0.01',
-            'destination' => 'required|array',
-            'destination.full_name' => 'required|string',
-            'destination.address_line1' => 'required|string',
-            'destination.city' => 'required|string',
-            'destination.zip' => 'required|string',
-            'destination.country' => 'required|string',
+            'address' => 'required|string',
+            'city' => 'required|string',
+            'zip' => 'required|string',
+            'weight' => 'required|numeric|min:0.01', // Ensure weight is valid
         ]);
 
-        Log::info('Request validated successfully');
+        Log::info('Shipping rates request validated successfully');
 
-        // Calculate total weight
-        $totalWeight = collect($request->cart['items'])
-            ->sum(fn($item) => $item['item']['weight'] * $item['quantity']);
+        // Calculate the total weight, here using the weight passed from the frontend
+        $totalWeight = $request->weight; 
 
-        Log::info('Total parcel weight calculated', ['weight' => $totalWeight]);
-
+        // Define the 'from' address (warehouse or business address)
         $from = [
             'name' => 'Mycenic Warehouse',
             'street1' => '126 Henry Shuttlewood Drive',
@@ -51,8 +46,15 @@ class ShippingRatesController extends Controller
             'email' => 'support@mycenic.com',
         ];
 
-        $to = $request->destination;
+        // The 'to' address comes from the request
+        $to = [
+            'address_line1' => $request->address,
+            'city' => $request->city,
+            'zip' => $request->zip,
+            'country' => 'GB', // You can add the country in the frontend if needed
+        ];
 
+        // Define parcel dimensions (customize as per your needs)
         $parcel = [
             'length' => '10',
             'width' => '10',
@@ -63,19 +65,16 @@ class ShippingRatesController extends Controller
         ];
 
         try {
+            // Call the Shippo service to get the rates
             $rates = $this->shippo->getShippingRates($from, $to, $parcel);
 
-            //Log::info('Raw shipping rates fetched', ['rates' => $rates]);
-
-            // Only keep the necessary details
+            // Format the response to only include necessary details
             $formattedRates = collect($rates)->map(fn($r) => [
                 'id' => $r['object_id'] ?? '',
                 'provider' => $r['provider'] ?? '',
                 'servicelevel' => $r['servicelevel']['name'] ?? '',
                 'amount' => isset($r['amount']) ? floatval($r['amount']) : 0,
             ])->toArray();
-
-            //Log::info('Formatted shipping rates', ['formattedRates' => $formattedRates]);
 
             return response()->json(['rates' => $formattedRates]);
         } catch (\Exception $e) {

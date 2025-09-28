@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ShippingDetail extends Model
+class Address extends Model
 {
     use HasFactory;
 
@@ -24,7 +24,7 @@ class ShippingDetail extends Model
     ];
 
     /**
-     * The user this shipping detail belongs to (optional).
+     * The user this address belongs to (optional).
      */
     public function user()
     {

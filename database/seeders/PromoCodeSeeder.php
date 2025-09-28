@@ -5,7 +5,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\PromoCode;
+use App\Models\Cart\PromoCode;
 
 class PromoCodeSeeder extends Seeder
 {

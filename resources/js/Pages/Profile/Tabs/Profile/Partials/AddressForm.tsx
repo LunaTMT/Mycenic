@@ -6,9 +6,9 @@ import SecondaryButton from '@/Components/Buttons/SecondaryButton';
 import FormField from '@/Components/Form/FormField';
 import InputLabel from '@/Components/Login/InputLabel';
 import InputError from '@/Components/Login/InputError';
-import { useShipping } from '@/Contexts/Profile/ShippingContext';
+import { useShipping } from '@/Contexts/User/ShippingContext';
 import { countries, countriesWithStates } from '@/utils/countries';
-import { ShippingDetail } from '@/types/Shipping';
+import { Address } from '@/types/Shipping';
 
 type FieldKey =
   | 'full_name'
@@ -29,28 +29,28 @@ const defaultForm: Record<FieldKey, string> = {
   zip: '',
 };
 
-export default function ShippingAddressForm() {
+export default function AddressForm() { // Renamed component
   const { auth } = usePage().props as { auth: { user: any } };
-  const { storeShippingDetail, updateShippingDetail, selectedShippingDetail, toggleShowForm } = useShipping();
+  const { storeAddress, updateAddress, selectedAddress, toggleShowForm,  } = useShipping();
 
   const { data, setData, processing, errors, reset } = useForm(defaultForm);
 
   // Populate form when editing
   useEffect(() => {
-    if (selectedShippingDetail) {
+    if (selectedAddress) {
       setData({
-        full_name: selectedShippingDetail.full_name ?? '',
-        country: selectedShippingDetail.country ?? 'United Kingdom',
-        address_line1: selectedShippingDetail.address_line1 ?? '',
-        address_line2: selectedShippingDetail.address_line2 ?? '',
-        city: selectedShippingDetail.city ?? '',
-        state: selectedShippingDetail.state ?? '',
-        zip: selectedShippingDetail.zip ?? '',
+        full_name: selectedAddress.full_name ?? '',
+        country: selectedAddress.country ?? 'United Kingdom',
+        address_line1: selectedAddress.address_line1 ?? '',
+        address_line2: selectedAddress.address_line2 ?? '',
+        city: selectedAddress.city ?? '',
+        state: selectedAddress.state ?? '',
+        zip: selectedAddress.zip ?? '',
       });
     } else {
       reset();
     }
-  }, [selectedShippingDetail, setData, reset]);
+  }, [selectedAddress, setData, reset]);
 
   // Reset state if country doesn’t support states
   useEffect(() => {
@@ -63,19 +63,18 @@ export default function ShippingAddressForm() {
     e.preventDefault();
 
     try {
-      if (selectedShippingDetail) {
-        // Update existing address (guest or user)
-        await updateShippingDetail(selectedShippingDetail.id, data as ShippingDetail);
+      if (selectedAddress) {
+        // Update existing address
+        await updateAddress(selectedAddress.id, data as Address);
       } else {
-        // Store new address (guest or user)
-        await storeShippingDetail(data as ShippingDetail);
+        // Store new address
+        await storeAddress(data as Address);
         reset(); // Reset form after creating a new address
       }
     } catch (err) {
       console.error('Error submitting shipping detail:', err);
     }
   };
-
 
   const showStateField = countriesWithStates.includes(data.country);
 
@@ -170,7 +169,7 @@ export default function ShippingAddressForm() {
           className="w-1/2 rounded-lg"
           disabled={processing}
         >
-          {selectedShippingDetail ? 'Update Address' : 'Add Address'}
+          {selectedAddress ? 'Update Address' : 'Add Address'}
         </PrimaryButton>
       </div>
     </form>

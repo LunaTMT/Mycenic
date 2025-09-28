@@ -4,7 +4,7 @@ import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import { useItemContext } from "@/Contexts/Shop/Items/ItemContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { v4 as uuidv4 } from "uuid";
-import { CartItem } from "@/types/Cart";
+import { CartItem } from "@/types/Cart/Cart";
 
 const AddToCartSection: React.FC = () => {
   const { item, selectedOptions } = useItemContext();

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Cart;
 use App\Http\Controllers\Controller;
 use App\Services\Cart\CartService;
 
-use App\Services\UserContext;
+use App\Services\User\UserContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -15,7 +15,7 @@ class CartController extends Controller
 {
     public function __construct(
         protected CartService $cartService,
-        protected UserContext $userContext
+        protected UserContextService $userContext
     ) {
         $this->middleware('auth')->except(['show', 'index']);
     }

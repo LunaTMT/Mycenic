@@ -1,13 +1,12 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
-// Define the shape of the PromoContext
 interface PromoContextType {
   promoCode: string;
   setPromoCode: React.Dispatch<React.SetStateAction<string>>;
-  discountAmount: number;  // Amount of discount (could be percentage or fixed amount)
+  discountPercentage: number;
   isPromoValid: boolean;
-  applyPromoCode: () => Promise<void>;  // Function to validate and apply the promo code
+  applyPromoCode: (code?: string) => Promise<"success" | "error" | "same">;
 }
 
 const PromoContext = createContext<PromoContextType | undefined>(undefined);
@@ -24,25 +23,56 @@ interface PromoProviderProps {
 
 export const PromoProvider: React.FC<PromoProviderProps> = ({ children }) => {
   const [promoCode, setPromoCode] = useState<string>("");
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const [isPromoValid, setIsPromoValid] = useState<boolean>(false);
+  const [lastAppliedCode, setLastAppliedCode] = useState<string>("");
 
-  // Function to validate and apply promo code
-  const applyPromoCode = async () => {
+  // Load promo code and discount from localStorage on mount
+  useEffect(() => {
+    const savedCode = localStorage.getItem("promoCode");
+    const savedDiscount = localStorage.getItem("discountPercentage");
+
+    if (savedCode) setPromoCode(savedCode);
+    if (savedDiscount) setDiscountPercentage(Number(savedDiscount));
+    if (savedCode && savedDiscount) setIsPromoValid(true);
+
+    if (savedCode) setLastAppliedCode(savedCode);
+  }, []);
+
+  const applyPromoCode = async (code?: string): Promise<"success" | "error" | "same"> => {
+    const codeToApply = code?.trim() ?? promoCode.trim();
+    if (!codeToApply) return "error";
+
+    // Check if the same code is already applied
+    if (codeToApply === lastAppliedCode) return "same";
+
     try {
-      const response = await axios.post("/promo-code/validate", { promo_code: promoCode });
-      
-      if (response.data.valid) {
-        setDiscountAmount(response.data.discountAmount); // Set the discount amount (could be percentage or fixed)
+      const response = await axios.post("/promo-code/validate", { promo_code: codeToApply });
+
+      if (response.data.success) {
+        setDiscountPercentage(response.data.discount);
         setIsPromoValid(true);
-        console.log("Promo code applied successfully!");
+        setPromoCode(codeToApply);
+        setLastAppliedCode(codeToApply);
+
+        localStorage.setItem("promoCode", codeToApply);
+        localStorage.setItem("discountPercentage", String(response.data.discount));
+        return "success";
       } else {
+        setDiscountPercentage(0);
         setIsPromoValid(false);
-        console.log("Invalid promo code.");
+        localStorage.removeItem("promoCode");
+        localStorage.removeItem("discountPercentage");
+        return "error";
       }
-    } catch (error) {
-      console.error("Error applying promo code:", error);
+    } catch (err) {
+      
+      console.error("Error applying promo code:", err);
+      setDiscountPercentage(0);
       setIsPromoValid(false);
+      localStorage.removeItem("promoCode");
+      localStorage.removeItem("discountPercentage");
+      return "error";
     }
   };
 
@@ -51,9 +81,9 @@ export const PromoProvider: React.FC<PromoProviderProps> = ({ children }) => {
       value={{
         promoCode,
         setPromoCode,
-        discountAmount,
+        discountPercentage,
         isPromoValid,
-        applyPromoCode,  // Updated function name
+        applyPromoCode,
       }}
     >
       {children}

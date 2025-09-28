@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 use App\Models\{Item, Order, User};
@@ -12,14 +11,13 @@ use App\Http\Controllers\About\AboutController;
 use App\Http\Controllers\Auth\{AuthenticatedSessionController, SocialAuthController};
 use App\Http\Controllers\Cart\{CartController, CheckoutController, PromoCodeController};
 use App\Http\Controllers\Email\EmailController;
+
+use App\Http\Controllers\Shipping\ShippingController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ShippingDetailController;
 use App\Http\Controllers\Shop\ShopController;
-use App\Http\Controllers\Shop\Item\{ItemController, QuestionController, ReviewController};
+use App\Http\Controllers\Shop\Item\{ItemController, ReviewController};
 use App\Http\Controllers\User\{OrderController, ProfileController, ReturnController};
 use App\Http\Controllers\User\UserController;
-use App\Http\Controllers\Auth\GoogleController; // remove if unused
-
 use App\Http\Middleware\AdminMiddleware;
 use Stripe\{Stripe, Checkout\Session};
 use App\Mail\OrderConfirmation;
@@ -73,40 +71,9 @@ Route::middleware('auth')->prefix('user')->group(function () {
 
 Route::middleware(['auth', 'admin'])->get('/admin/all-users', [ProfileController::class, 'searchUsers'])->name('admin.all-users.search');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/user/shipping-address', function () {
-        return response()->json(auth()->user()?->only(['name', 'address', 'city', 'zip', 'email']));
-    })->name('user.shipping.address');
-
-    Route::get('/user/has-shipping-address', function () {
-        $user = auth()->user();
-        $requiredFields = ['name', 'address', 'city', 'zip'];
-        $hasCompleteAddress = $user && collect($requiredFields)->every(fn($field) => filled($user->$field));
-        return response()->json(['hasShippingAddress' => $hasCompleteAddress]);
-    })->name('user.has.shipping.address');
-});
-
-/*
-|--------------------------------------------------------------------------
-| Shipping Details (Authenticated)
-|--------------------------------------------------------------------------
-*/
-Route::prefix('profile/shipping-details')->middleware('auth')->group(function () {
-    Route::get('/', [ShippingDetailController::class, 'index']);
-    Route::post('/', [ShippingDetailController::class, 'store']);
-    Route::put('/{shippingDetail}', [ShippingDetailController::class, 'update']);
-    Route::put('/{shippingDetail}/default', [ShippingDetailController::class, 'setDefault']);
-    Route::delete('/{shippingDetail}', [ShippingDetailController::class, 'destroy']);
-});
-
 /*
 |--------------------------------------------------------------------------
 | Shop & Item Routes
-|--------------------------------------------------------------------------
-*/
-/*
-|--------------------------------------------------------------------------
-| Shop & Item Routes (Resource)
 |--------------------------------------------------------------------------
 */
 
@@ -127,10 +94,6 @@ Route::prefix('items')->name('items.')->group(function () {
 | Cart Routes
 |--------------------------------------------------------------------------
 */
-
-
-
-// web.php
 Route::prefix('cart')->group(function () {
     Route::get('/show', [CartController::class, 'show']);
     Route::get('/', [CartController::class, 'index']);
@@ -140,20 +103,6 @@ Route::prefix('cart')->group(function () {
     Route::delete('/items/{itemId}', [CartController::class, 'destroy']);
     Route::delete('/', [CartController::class, 'clear']);
 });
-
-
-/*
-|--------------------------------------------------------------------------
-| Questions Routes
-|--------------------------------------------------------------------------
-*/
-Route::get('/api/questions', [QuestionController::class, 'getQuestionsWithReplies']);
-Route::middleware('auth')->group(function () {
-    Route::post('/questions', [QuestionController::class, 'store']);
-    Route::post('/questions/{question}/update', [QuestionController::class, 'update']);
-});
-Route::post('/questions/{id}/reply', [QuestionController::class, 'storeReply']);
-Route::delete('/questions/{id}', [QuestionController::class, 'destroy']);
 
 /*
 |--------------------------------------------------------------------------
@@ -202,23 +151,11 @@ Route::middleware('auth')->prefix('orders')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Returns Routes (Authenticated)
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth')->group(function () {
-    Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
-    Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('returns.show');
-    Route::post('/returns', [ReturnController::class, 'store'])->name('returns.store');
-    Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('returns.update');
-    Route::get('/returns/{id}/details', [ReturnController::class, 'details'])->name('returns.details');
-});
-
-/*
-|--------------------------------------------------------------------------
 | Promo Code Routes
 |--------------------------------------------------------------------------
 */
 Route::post('/promo-code/validate', [PromoCodeController::class, 'validatePromoCode'])->name('promo.validate');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -226,11 +163,15 @@ Route::post('/promo-code/validate', [PromoCodeController::class, 'validatePromoC
 |--------------------------------------------------------------------------
 */
 Route::prefix('shipping')->group(function () {
-    Route::get('/rates/{orderId}', [ShippingController::class, 'getRates']);
-    Route::post('/purchase', [ShippingController::class, 'purchaseLabel']);
-    Route::get('/track/{carrier}/{trackingNumber}', [ShippingController::class, 'trackShipment']);
-    Route::post('/validate-address', [ShippingController::class, 'validateAddress'])->name('shipping.validate.address');
-    Route::post('/return-{orderId}-options', [ShippingController::class, 'getReturnOptions'])->name('shipping.return.options');
+    Route::post('/rates', [ShippingController::class, 'getRates']); // POST method
+});
+
+Route::middleware('auth')->prefix('addresses')->group(function () {
+    Route::get('/', [AddressController::class, 'index']); // Fetch all addresses
+    Route::post('/', [AddressController::class, 'store']); // Store a new address
+    Route::get('{address}', [AddressController::class, 'show']); // Show a specific address
+    Route::put('{address}', [AddressController::class, 'update']); // Update an existing address
+    Route::delete('{address}', [AddressController::class, 'destroy']); // Delete an address
 });
 
 /*
@@ -284,33 +225,3 @@ Route::get('/test-email', function () {
 Route::get('/welcome', function () {
     return view('emails.transactional');
 })->name('welcome');
-
-/*
-|--------------------------------------------------------------------------
-| Customer Routes (Authenticated)
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth')->get('/customers/{id}', [CustomerController::class, 'show']);
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Guest Register / View Order
-|--------------------------------------------------------------------------
-|
-| This route allows a guest with an order to go to the register page
-| and sets a flash message that can be accessed via usePage().props.flash
-|
-*/
-Route::get('/guest/register-or-login/{order_id}/{email}', function ($order_id, $email) {
-    Log::info('Guest redirected to register with order', [
-        'order_id' => $order_id,
-        'email' => $email,
-    ]);
-
-    return redirect()->route('register', [
-        'order_id' => $order_id,
-        'email' => $email,
-    ])->with('flash.success', 'Registering with your email will allow you to track your order and view its details anytime.');
-})->name('guest.register-or-login');

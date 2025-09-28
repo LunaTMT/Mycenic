@@ -6,6 +6,9 @@ use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Illuminate\Support\Facades\Log;
 
+use App\Services\Order\OrderService; 
+use App\Services\User\UserService; 
+
 class CheckoutService
 {
     protected OrderService $orderService;

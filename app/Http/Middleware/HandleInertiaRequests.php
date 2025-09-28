@@ -35,10 +35,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
 
             'auth' => [
-                'user' => $user ? array_merge(
-                    $user->only('id', 'name', 'email', 'avatar', 'phone'),
-                    ['is_admin' => $user->isAdmin()]
-                ) : null,
+                'user' => $user ? $user : null,  // Send the entire user object
             ],
 
             'flash' => [
@@ -48,9 +45,9 @@ class HandleInertiaRequests extends Middleware
             ],
 
             'reply' => fn () => $request->session()->get('reply'),
-
         ];
     }
+
 
 
 

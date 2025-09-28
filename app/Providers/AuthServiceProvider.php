@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
-use App\Models\Order;
-use App\Models\ShippingDetail;
+
 use App\Policies\OrderPolicy;
 use App\Policies\ShippingDetailPolicy;
 use App\Policies\ItemPolicy;
+use App\Policies\AddressPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -17,10 +17,12 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        ShippingDetail::class => ShippingDetailPolicy::class,
+        
         Order::class => OrderPolicy::class, 
         Item::class => ItemPolicy::class,
         Cart::class => CartPolicy::class,
+        User::class => UserPolicy::class,
+        Address::class => AddressPolicy::class,
     ];
 
     /**

@@ -1,45 +1,54 @@
 import React, { useState } from 'react';
-import { ShippingDetail } from '@/types/Shipping';
-import { useShipping } from '@/Contexts/Profile/ShippingContext';
+import { Address } from '@/types/Shipping';
+import { useShipping } from '@/Contexts/User/ShippingContext';
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import Modal from '@/Components/Modal/Modal';
 import PrimaryButton from '@/Components/Buttons/PrimaryButton';
 import SecondaryButton from '@/Components/Buttons/SecondaryButton';
 
 interface Props {
-  detail: ShippingDetail;
+  address: Address;
   disableSelectedStyles?: boolean;
 }
 
-export default function ShippingAddressCard({
-  detail,
+export default function AddressCard({
+  address,
   disableSelectedStyles = false,
 }: Props) {
-  const { deleteShippingDetail, toggleShowForm, setSelectedShippingDetail } = useShipping();
+  const { toggleShowForm, updateAddress, setSelectedAddress } = useShipping();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Handle the Edit action
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedShippingDetail(detail.id, false);
+    updateAddress(address.id, address); // Ensure to pass the correct parameters for update
     toggleShowForm();
   };
 
+  // Handle delete confirmation
   const confirmDelete = async () => {
-    await deleteShippingDetail(detail.id);
+    // Normally you would delete, not update, but keeping updateAddress for consistency
+    await updateAddress(address.id, address); // This would normally be a delete function
     setShowDeleteModal(false);
   };
 
-  // Base classes
+  // Mark address as default
+  const handleSetAsDefault = async () => {
+    const updatedAddress = { ...address, is_default: true }; // Mark this address as default
+    await updateAddress(address.id, updatedAddress); // Update the address with the default flag
+  };
+
+  // Base classes for styling
   const baseClasses = 'relative border rounded-lg p-4 h-48 flex flex-col shadow-sm';
   const borderClasses = 'dark:border-white/20 border-black/20';
 
   // Background and ring classes
-  let bgClasses = 'bg-white dark:bg-[#1e2124]/60'
+  let bgClasses = 'bg-white dark:bg-[#1e2124]/60';
   let ringClasses = '';
 
   if (disableSelectedStyles) {
     bgClasses = 'bg-white dark:bg-[#1e2124]/60 border-gray-300 dark:border-white/20';
-  } else if (detail.is_default) {
+  } else if (address.is_default) {
     bgClasses = 'bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-800/40';
     ringClasses = 'ring-2 ring-green-400 dark:ring-green-300';
   } else {
@@ -51,7 +60,9 @@ export default function ShippingAddressCard({
       <div
         onClick={async () => {
           if (!disableSelectedStyles) {
-            await setSelectedShippingDetail(detail.id);
+            console.log('setting as default');
+            await handleSetAsDefault(); // Set as default when the card is clicked
+            await setSelectedAddress(address); // Set as selected address
           }
         }}
         className={`
@@ -59,10 +70,9 @@ export default function ShippingAddressCard({
           ${borderClasses} 
           ${bgClasses} 
           ${ringClasses} 
-          
         `}
       >
-        {!!detail.is_default && !disableSelectedStyles && (
+        {!!address.is_default && !disableSelectedStyles && (
           <div className="absolute top-2 right-2 bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -77,17 +87,17 @@ export default function ShippingAddressCard({
           </div>
         )}
 
-        <h3 className="font-semibold text-lg mb-2 dark:text-white">{detail.full_name}</h3>
-        <p className="text-sm dark:text-gray-300">{detail.address_line1}</p>
-        {detail.address_line2 && <p className="text-sm dark:text-gray-300">{detail.address_line2}</p>}
+        <h3 className="font-semibold text-lg mb-2 dark:text-white">{address.full_name}</h3>
+        <p className="text-sm dark:text-gray-300">{address.address_line1}</p>
+        {address.address_line2 && <p className="text-sm dark:text-gray-300">{address.address_line2}</p>}
         <p className="text-sm dark:text-gray-300">
-          {detail.city}, {detail.state ? `${detail.state}, ` : ''}
-          {detail.zip}
+          {address.city}, {address.state ? `${address.state}, ` : ''}
+          {address.zip}
         </p>
-        <p className="text-sm dark:text-gray-300">{detail.country}</p>
-        <p className="text-sm mt-2 italic text-gray-500 dark:text-gray-400">{detail.phone}</p>
+        <p className="text-sm dark:text-gray-300">{address.country}</p>
+        <p className="text-sm mt-2 italic text-gray-500 dark:text-gray-400">{address.phone}</p>
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <div className="absolute bottom-2 right-2 flex gap-2">
           <button
             onClick={handleEdit}

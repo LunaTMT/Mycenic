@@ -10,12 +10,18 @@ use App\Observers\UserObserver;
 
 use App\Services\UnsplashService;
 use App\Services\OpenAIModerationService;
-use App\Services\UserService;
-use App\Services\OrderService;
+
+
+use App\Services\User\UserService;
+use App\Services\User\UserContextService;
+
+use App\Services\Order\OrderService;
+
 use App\Services\Cart\CartService;
 use App\Services\Cart\CheckoutService;
 
 use App\Services\PromoCodeService;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Your app services
         $this->app->singleton(UserService::class);
+        $this->app->singleton(UserContextService::class);
         $this->app->singleton(OrderService::class);
         $this->app->singleton(PromoCodeService::class);
 

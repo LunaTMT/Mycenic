@@ -10,37 +10,32 @@ import ShippingOptions from "./Shipping/ShippingOptions";
 import OrderNotification from "./OrderNotification";
 import PaymentPage, { PaymentPageRef } from "./PaymentPage";
 
-import { ShippingProvider, useShipping } from "@/Contexts/Profile/ShippingContext";
+import { ShippingProvider, useShipping } from "@/Contexts/User/ShippingContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
-import { useUser } from "@/Contexts/UserContext";
-
-// Importing `useCheckout` from the CheckoutContext file
+import { useUser } from "@/Contexts/User/UserContext";
 import { useCheckout } from "@/Contexts/Shop/Cart/CheckoutContext";
+
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
+import { usePromo } from "@/Contexts/Shop/Cart/PromoContext";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY!);
 
 const RightContent: React.FC = () => {
-  // Destructuring from useCart and useCheckout
-  const { subtotal, shippingCost, discount, cart } = useCart();
-  const { selectedShippingDetail } = useShipping();
+  const { subtotal, total, discountAmount, cart } = useCart();
+  const { discountPercentage } = usePromo();
+  const { selectedAddress, shippingCost } = useShipping();
   const { user } = useUser();
   const { step, nextStep, prevStep } = useCheckout();
 
   const paymentRef = useRef<PaymentPageRef>(null);
 
-  // Calculate discount amount and total
-  const discountAmount = subtotal * (discount / 100);
-  const total = subtotal - discountAmount + shippingCost;
-
   const cartIsEmpty = (cart?.items ?? []).length === 0;
-
 
   const handleProceed = () => {
     if (cartIsEmpty) return;
-
-    if (step === "shipping" && (!selectedShippingDetail || shippingCost <= 0)) {
+    console.log("SSD :", selectedAddress, shippingCost);
+    if (step === "shipping" && (!selectedAddress || shippingCost <= 0)) {
       toast.error("Please select a shipping option first.");
       return;
     }
@@ -63,18 +58,21 @@ const RightContent: React.FC = () => {
   return (
     <div className="w-[40%] flex flex-col space-y-4">
       <div className="flex flex-col space-y-4 p-4 border rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#424549] border-black/20 dark:border-white/20 font-Poppins">
+
         {step === "cart" && (
           <>
             <PromoCode />
             <OrderNote />
           </>
         )}
+
         {step === "shipping" && (
           <div className="space-y-6">
             <ShippingAddress />
             <ShippingOptions />
           </div>
         )}
+
         {step === "order_notifications" && <OrderNotification />}
 
         <div className="border-t border-black/20 dark:border-white/20" />
@@ -83,18 +81,21 @@ const RightContent: React.FC = () => {
           <span>Subtotal</span>
           <span>£{subtotal.toFixed(2)}</span>
         </div>
+
         {shippingCost > 0 && (
           <div className="flex justify-between items-center font-semibold text-lg">
             <span>Shipping</span>
             <span className="text-green-600">£{shippingCost.toFixed(2)}</span>
           </div>
         )}
-        {discount > 0 && (
+
+        {discountAmount > 0 && (
           <div className="flex justify-between items-center font-semibold text-lg">
-            <span>Discount ({discount}%)</span>
+            <span>Discount ({discountPercentage}%)</span>
             <span className="text-green-600">-£{discountAmount.toFixed(2)}</span>
           </div>
         )}
+
         <div className="flex justify-between items-center font-semibold text-xl">
           <span>Total</span>
           <span>£{total.toFixed(2)}</span>
@@ -132,9 +133,7 @@ const RightContent: React.FC = () => {
 };
 
 const Right: React.FC = () => (
-  <ShippingProvider>
     <RightContent />
-  </ShippingProvider>
 );
 
 export default Right;
