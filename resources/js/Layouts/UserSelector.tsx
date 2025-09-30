@@ -1,12 +1,9 @@
-// UserSelector.tsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Dropdown from "@/Components/Dropdown/Dropdown";
 import TextInput from "@/Components/Login/TextInput";
 import { useUser } from "@/Contexts/User/UserContext";
 import { User } from "@/types/User";
-import PrimaryButton from "@/Components/Buttons/PrimaryButton";
-import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import { motion } from "framer-motion";
 import { FiX } from "react-icons/fi";
 
@@ -22,21 +19,24 @@ export default function UserSelector({ onClose }: UserSelectorProps) {
 
   const { user: currentUser, fetchUserById } = useUser();
 
+  // Fetch all users
   useEffect(() => {
     setLoading(true);
     axios
-      .get("/admin/all-users")
+      .get("/users") // updated endpoint
       .then((res) => {
-        setUsers(res.data);
-        setFilteredUsers(res.data);
+        setUsers(res.data.users); // match API structure { users: [...] }
+        setFilteredUsers(res.data.users);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to fetch users:", err);
         setUsers([]);
         setFilteredUsers([]);
       })
       .finally(() => setLoading(false));
   }, []);
 
+  // Filter users by search term
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredUsers(users);
@@ -60,8 +60,9 @@ export default function UserSelector({ onClose }: UserSelectorProps) {
   }));
 
   const handleSelect = (id: number) => {
-    fetchUserById(id);   // update user in context
-    onClose();          // close the modal
+    console.log("Selected user ID:", id);
+    fetchUserById(id); // update user in context
+    onClose();         // close modal
   };
 
   return (
@@ -104,7 +105,7 @@ export default function UserSelector({ onClose }: UserSelectorProps) {
           <Dropdown
             items={dropdownItems}
             selectedItemId={selectedItemId}
-            onSelect={handleSelect}   // <-- use new handler
+            onSelect={handleSelect}
             placeholder="Select User"
             onCustomAction={() => setSearchTerm("")}
           />

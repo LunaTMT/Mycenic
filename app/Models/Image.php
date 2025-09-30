@@ -9,11 +9,10 @@ class Image extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'imageable_id',
-        'imageable_type',
-        'path',
-    ];
+    protected $fillable = ['imageable_id','imageable_type','path'];
+
+    // hide technical fields from JSON/API
+    protected $hidden = ['imageable_id', 'imageable_type', 'created_at', 'updated_at'];
 
     public function imageable()
     {

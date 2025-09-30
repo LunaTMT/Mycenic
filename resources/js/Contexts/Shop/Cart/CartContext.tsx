@@ -35,7 +35,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartOpen, setCartOpen] = useState(false);
 
   const fetchCart = () => {
-    if (!user || user.isGuest) {
+    if (!user || user.is_guest) {
+      // Guest user: load from localStorage
       const stored = localStorage.getItem("cart");
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -45,10 +46,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         setCart(emptyCart());
       }
     } else {
-      
-      axios.get("/cart/show", { params: { user_id: user.id } })
-        .then(res => setCart(res.data.cart || emptyCart()))
-        .catch(err => console.error("Failed to fetch backend cart", err));
+      // Logged-in user: get cart from user object
+      const userCart = user.active_cart || emptyCart();
+      userCart.items?.forEach((i: any) => { if (!i.tempId) i.tempId = uuidv4(); });
+      setCart(userCart);
     }
   };
 
@@ -78,13 +79,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setCart(prev => {
       const updatedItems = callback([...prev.items]);
       const updatedCart = { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
-      if (!user || user.isGuest) localStorage.setItem("cart", JSON.stringify(updatedCart));
+      if (!user || user.is_guest) localStorage.setItem("cart", JSON.stringify(updatedCart));
       return updatedCart;
     });
   };
 
   const addToCart = (cartItem: CartItem) => {
-    if (!user || user.isGuest) {
+    if (!user || user.is_guest) {
       updateCartItems(items => {
         const existing = items.find(i => isSameItem(i, cartItem));
         if (existing) existing.quantity += cartItem.quantity;
@@ -105,7 +106,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   const updateQuantity = (cartItem: CartItem, quantity: number) => {
-    if (!user || user.isGuest) {
+    if (!user || user.is_guest) {
       updateCartItems(items => {
         const existing = items.find(i => isSameItem(i, cartItem));
         if (existing) existing.quantity = quantity;
@@ -123,7 +124,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   const removeItem = (cartItem: CartItem) => {
-    if (!user || user.isGuest) {
+    if (!user || user.is_guest) {
       updateCartItems(items => items.filter(i => !isSameItem(i, cartItem)));
     } else {
       axios.delete(`/cart/items/${cartItem.item.id}`, {
@@ -135,7 +136,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   const clearCart = () => {
-    if (!user || user.isGuest) {
+    if (!user || user.is_guest) {
       setCart(emptyCart());
       localStorage.removeItem("cart");
     } else {

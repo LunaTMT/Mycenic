@@ -4,16 +4,18 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Auth;
 
 class AdminMiddleware
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
-        if (auth()->check() && auth()->user()->role === 'admin') {
-            return $next($request);
+        $user = Auth::user();
+
+        if (!$user || !$user->isAdmin()) {
+            return response()->json(['message' => 'Forbidden: Admins only'], 403);
         }
 
-        abort(403, 'Unauthorized');
+        return $next($request);
     }
 }

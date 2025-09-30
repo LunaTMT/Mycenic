@@ -16,7 +16,7 @@ export default function Reviews() {
     return <p className="text-gray-500 dark:text-gray-400">No reviews yet.</p>;
   }
 
-  // console.log(currentReviews);
+
   return (
     <section className="space-y-2 ">
       <header className="flex flex-wrap items-center justify-between gap-2">

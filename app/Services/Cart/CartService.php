@@ -6,12 +6,14 @@ use App\Models\Cart\Cart;
 use App\Models\Cart\CartItem;
 use Illuminate\Http\Request;
 use App\Services\User\UserContextService;
+use Illuminate\Support\Facades\Log;
 
 
 class CartService
 {
     public function getCartForRequest(Request $request, UserContextService $userContext): Cart
     {
+        Log::info("calling for cart");
         $userId = $userContext->getTargetUser($request)->id;
         return $userId ? $this->getCartForUser($userId) : $this->getEmptyCart();
     }

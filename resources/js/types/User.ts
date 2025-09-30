@@ -13,7 +13,10 @@ export interface User {
   role: 'user' | 'admin' | 'guest';
   avatar?: Image | null;
   addresses?: Address[];
-  carts?: Cart[];
+  active_cart?: Cart | null;
+  checked_out_carts?: Cart[];
   is_admin: boolean;
-  isGuest: boolean;
+  is_guest: boolean;
 }
+
+

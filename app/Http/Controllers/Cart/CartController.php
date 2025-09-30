@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Cart;
 
 use App\Http\Controllers\Controller;
 use App\Services\Cart\CartService;
-
 use App\Services\User\UserContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +27,7 @@ class CartController extends Controller
 
     public function show(Request $request)
     {
+        // Pass UserContextService, not User
         $cart = $this->cartService->getCartForRequest($request, $this->userContext);
 
         Log::info('Cart shown', [
@@ -40,8 +40,10 @@ class CartController extends Controller
 
     private function handleCartAction(Request $request, string $action, ?int $itemId = null)
     {
-        $this->userContext->ensureAuthenticated();
+        // Ensure user context handles guest/admin
+        $this->userContext->getUser();
 
+        // Pass UserContextService to CartService
         $cart = $this->cartService->getCartForRequest($request, $this->userContext);
 
         $cart = match ($action) {

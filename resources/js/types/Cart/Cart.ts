@@ -1,4 +1,3 @@
-import { UserOrGuest } from "../User";
 import { Item } from "../Item";
 import { PromoCode } from "./PromoCode";
 
@@ -19,17 +18,14 @@ export interface CartItem {
 
 export interface Cart {
   id: number;
-  user_id?: number | null;
   subtotal: number;
   total: number;
   discount?: number | null;
-  promo_code_id?: number | null;
-  promoCode?: PromoCode | null; // <-- add relation
+  promo_code?: PromoCode | null; // <-- add relation
   shipping_cost?: number | null;
   status: CartStatus;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
   items: CartItem[];
-  user?: UserOrGuest | null;
 }

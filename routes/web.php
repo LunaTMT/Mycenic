@@ -22,6 +22,8 @@ use App\Http\Middleware\AdminMiddleware;
 use Stripe\{Stripe, Checkout\Session};
 use App\Mail\OrderConfirmation;
 
+
+
 /*
 |--------------------------------------------------------------------------
 | Home & Static Pages
@@ -67,7 +69,9 @@ Route::middleware('auth')->prefix('profile')->group(function () {
 
 
 
-Route::middleware(['auth', 'admin'])->get('/admin/all-users', [ProfileController::class, 'searchUsers'])->name('admin.all-users.search');
+
+Route::middleware(['auth', 'admin'])->get('/users', [UserController::class, 'index'])->name('users.index');
+Route::get('/user', [UserController::class, 'show'])->name('user.show');
 
 /*
 |--------------------------------------------------------------------------

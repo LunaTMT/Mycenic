@@ -23,6 +23,10 @@ class Address extends Model
         'delivery_instructions',
     ];
 
+    protected $hidden = [
+        'user_id'
+    ];
+
     /**
      * The user this address belongs to (optional).
      */

@@ -13,7 +13,17 @@ class Cart extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = ['user_id', 'subtotal', 'total', 'discount', 'shipping_cost', 'status', 'weight'];
-    protected $with = ['items.item'];
+    protected $hidden = [ 'promo_code_id', 'user_id', ];
+    protected $with = ['items.item','promoCode'];
+    
+    protected $casts = [
+        'subtotal' => 'float',
+        'total' => 'float',
+        'discount' => 'float',
+        'shipping_cost' => 'float',
+        'weight' => 'float'
+    ];
+    
 
     public function items() { return $this->hasMany(CartItem::class); }
     public function user() { return $this->belongsTo(User::class); }

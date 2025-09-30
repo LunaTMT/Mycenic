@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PromoCode extends Model
 {
     use HasFactory;
-
+    
     protected $fillable = ['code', 'discount', 'expires_at'];
     protected $dates = ['expires_at'];
 

@@ -11,7 +11,7 @@ interface AvatarProps {
 }
 
 export default function Avatar({ review }: AvatarProps) {
-  console.log(review);
+
   const user = review.user;
   const isAdmin = user.role === "admin";
   const adminIconClasses = `
