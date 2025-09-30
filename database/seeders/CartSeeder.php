@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
+use App\Models\User\User;
 use App\Models\Cart\Cart;
 use App\Models\Cart\CartItem;
 use App\Models\Item;

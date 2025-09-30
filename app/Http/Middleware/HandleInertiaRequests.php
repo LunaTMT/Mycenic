@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\User\User;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -35,7 +36,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
 
             'auth' => [
-                'user' => $user ? $user : null,  // Send the entire user object
+                'user' => $user ?? User::guest(), // use guest user if not logged in
             ],
 
             'flash' => [
@@ -43,10 +44,9 @@ class HandleInertiaRequests extends Middleware
                 'error'   => session('flash.error'),
                 'message' => session('flash.message'),
             ],
-
-            'reply' => fn () => $request->session()->get('reply'),
         ];
     }
+
 
 
 

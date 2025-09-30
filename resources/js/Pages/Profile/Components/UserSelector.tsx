@@ -20,7 +20,7 @@ export default function UserSelector({ onClose }: UserSelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { user: currentUser, onSelectUser } = useUser();
+  const { user: currentUser, fetchUserById } = useUser();
 
   useEffect(() => {
     setLoading(true);
@@ -60,7 +60,7 @@ export default function UserSelector({ onClose }: UserSelectorProps) {
   }));
 
   const handleSelect = (id: number) => {
-    onSelectUser(id);   // update user in context
+    fetchUserById(id);   // update user in context
     onClose();          // close the modal
   };
 

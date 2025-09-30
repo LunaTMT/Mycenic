@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Vite;
 
-use App\Models\User;
+use App\Models\User\User;
 use App\Observers\UserObserver;
 
 use App\Services\UnsplashService;
@@ -19,8 +19,7 @@ use App\Services\Order\OrderService;
 
 use App\Services\Cart\CartService;
 use App\Services\Cart\CheckoutService;
-
-use App\Services\PromoCodeService;
+use App\Services\Cart\PromoCodeService;
 
 
 class AppServiceProvider extends ServiceProvider

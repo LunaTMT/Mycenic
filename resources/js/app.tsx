@@ -34,15 +34,15 @@ createInertiaApp({
         <NavProvider>
           <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
             <UserProvider>
-                <PromoProvider>           
-                  <CartProvider>          
-                    <ShippingProvider>
-                      <CheckoutProvider>
-                        <App {...props} />
-                      </CheckoutProvider>
-                    </ShippingProvider>
-                  </CartProvider>
+              <CartProvider>        
+                <PromoProvider>     
+                  <ShippingProvider>
+                    <CheckoutProvider>
+                      <App {...props} />
+                    </CheckoutProvider>
+                  </ShippingProvider>
                 </PromoProvider>
+              </CartProvider>
             </UserProvider>
           </GoogleOAuthProvider>
         </NavProvider>

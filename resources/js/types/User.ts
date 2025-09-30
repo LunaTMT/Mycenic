@@ -1,46 +1,19 @@
 import { Address } from "./Shipping";
 import { Image } from "./Image";
+import { Cart } from "./Cart/Cart";
 
-interface BaseUser {
+export interface User {
   id: number;
-  name?: string | null;
+  name: string;
   email: string;
-  role: string;
-  is_admin: boolean;
   phone?: string | null;
-  provider?: string | null;
-  provider_id?: string | null;
-  stripe_id?: string | null;
-  pm_type?: string | null;
-  pm_last_four?: string | null;
-  trial_ends_at?: string | null;
-  addresses?: Address[];
+  address?: string | null;
+  city?: string | null;
+  zip?: string | null;
+  role: 'user' | 'admin' | 'guest';
   avatar?: Image | null;
-  created_at?: string;
-  updated_at?: string;
-  isGuest?: boolean;
-}
-
-export interface AuthenticatedUser extends BaseUser {
-  isGuest: false;
-  is_admin: boolean;
-  avatar: Image;
-}
-
-export interface GuestUser extends BaseUser {
-  isGuest: true;
-  id: 0;
-  role: "guest";
-  is_admin: false;
-  phone: null;
-  provider: null;
-  provider_id: null;
   addresses?: Address[];
-  avatar?: null;
-  created_at?: undefined;
-  updated_at?: undefined;
+  carts?: Cart[];
+  is_admin: boolean;
+  isGuest: boolean;
 }
-
-export type UserOrGuest = AuthenticatedUser | GuestUser;
-
-export type User = UserOrGuest;

@@ -3,7 +3,7 @@
 namespace Database\Factories\Cart;
 
 use App\Models\Cart\Cart;
-use App\Models\User;
+use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CartFactory extends Factory

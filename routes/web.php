@@ -16,7 +16,7 @@ use App\Http\Controllers\Shipping\ShippingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Shop\ShopController;
 use App\Http\Controllers\Shop\Item\{ItemController, ReviewController};
-use App\Http\Controllers\User\{OrderController, ProfileController, ReturnController};
+use App\Http\Controllers\User\{OrderController, ProfileController, ReturnController, AddressController};
 use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\AdminMiddleware;
 use Stripe\{Stripe, Checkout\Session};
@@ -65,9 +65,7 @@ Route::middleware('auth')->prefix('profile')->group(function () {
     Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware('auth')->prefix('user')->group(function () {
-    Route::get('/', [UserController::class, 'index'])->name('profile.index');
-});
+
 
 Route::middleware(['auth', 'admin'])->get('/admin/all-users', [ProfileController::class, 'searchUsers'])->name('admin.all-users.search');
 

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Address;
+use App\Models\User\User;
+use App\Models\User\Address;
 use Illuminate\Support\Facades\Hash;
 use App\Services\UnsplashService;
 

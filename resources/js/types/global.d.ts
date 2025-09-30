@@ -15,11 +15,14 @@ declare global {
 }
 
 declare module '@inertiajs/react' {
-    interface Page {
-        props: {
-            flash: {
-                loggedIn?: boolean;
-            };
-        } & AppPageProps;
+    interface PageProps {
+        auth: {
+        user: User | null;
+        };
+        flash: {
+        success?: string;
+        error?: string;
+        message?: string;
+        };
     }
 }

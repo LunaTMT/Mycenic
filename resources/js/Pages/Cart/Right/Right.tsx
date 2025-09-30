@@ -10,19 +10,19 @@ import ShippingOptions from "./Shipping/ShippingOptions";
 import OrderNotification from "./OrderNotification";
 import PaymentPage, { PaymentPageRef } from "./PaymentPage";
 
-import { ShippingProvider, useShipping } from "@/Contexts/User/ShippingContext";
+import { useShipping } from "@/Contexts/User/ShippingContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { useUser } from "@/Contexts/User/UserContext";
 import { useCheckout } from "@/Contexts/Shop/Cart/CheckoutContext";
+import { usePromo } from "@/Contexts/Shop/Cart/PromoContext";
 
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
-import { usePromo } from "@/Contexts/Shop/Cart/PromoContext";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY!);
 
 const RightContent: React.FC = () => {
-  const { subtotal, total, discountAmount, cart } = useCart();
+  const { subtotal, cart } = useCart();
   const { discountPercentage } = usePromo();
   const { selectedAddress, shippingCost } = useShipping();
   const { user } = useUser();
@@ -32,9 +32,13 @@ const RightContent: React.FC = () => {
 
   const cartIsEmpty = (cart?.items ?? []).length === 0;
 
+  // --- CALCULATE DISCOUNT + TOTAL ---
+  const discountAmount = subtotal * (discountPercentage / 100);
+  const total = subtotal - discountAmount + (shippingCost || 0);
+
   const handleProceed = () => {
     if (cartIsEmpty) return;
-    console.log("SSD :", selectedAddress, shippingCost);
+
     if (step === "shipping" && (!selectedAddress || shippingCost <= 0)) {
       toast.error("Please select a shipping option first.");
       return;
@@ -132,8 +136,6 @@ const RightContent: React.FC = () => {
   );
 };
 
-const Right: React.FC = () => (
-    <RightContent />
-);
+const Right: React.FC = () => <RightContent />;
 
 export default Right;

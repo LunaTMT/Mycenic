@@ -2,7 +2,9 @@ import { Image, LocalImage } from "@/types/Image";
 
 export function resolveImageSrc(
   img: string | File | Image | LocalImage
-): string {
+  
+): 
+string {
   // Local file before uploading
   if (img instanceof File) {
     return URL.createObjectURL(img);

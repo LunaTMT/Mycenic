@@ -13,7 +13,7 @@ const Cart: React.FC = () => {
   const { auth } = usePage().props as { auth?: { user?: User } };
   const Layout = auth ? AuthenticatedLayout : GuestLayout;
 
-  
+  console.log("mounting cart");
   return (
     <Layout>
       <Head title="Cart" />

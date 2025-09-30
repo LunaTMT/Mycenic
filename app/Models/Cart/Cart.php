@@ -5,7 +5,7 @@ namespace App\Models\Cart;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\User;
+use App\Models\User\User;
 
 
 class Cart extends Model
@@ -17,11 +17,7 @@ class Cart extends Model
 
     public function items() { return $this->hasMany(CartItem::class); }
     public function user() { return $this->belongsTo(User::class); }
-
-    public function promoCode()
-    {
-        return $this->belongsTo(PromoCode::class);
-    }
+    public function promoCode() { return $this->belongsTo(PromoCode::class); }
 
     public function recalculateTotals(): void
     {

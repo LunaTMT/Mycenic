@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User;
+use App\Models\User\User;
 use App\Http\Controllers\Controller;
 
 class ProfileController extends Controller

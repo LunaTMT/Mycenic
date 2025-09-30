@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useMemo, useEffect, ReactNode } from "react";
 import { Cart, CartItem } from "@/types/Cart/Cart";
 import { useUser } from "@/Contexts/User/UserContext";
-import { usePromo } from "@/Contexts/Shop/Cart/PromoContext";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 
@@ -14,8 +13,6 @@ interface CartContextType {
   cartOpen: boolean;
   setCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   subtotal: number;
-  discountAmount: number;
-  total: number;
   totalWeight: number;
   fetchCart: () => void;
 }
@@ -34,7 +31,6 @@ export const useCart = (): CartContextType => {
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const { user } = useUser();
-  const { discountPercentage } = usePromo();
   const [cart, setCart] = useState<Cart>(emptyCart());
   const [cartOpen, setCartOpen] = useState(false);
 
@@ -49,6 +45,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         setCart(emptyCart());
       }
     } else {
+      
       axios.get("/cart/show", { params: { user_id: user.id } })
         .then(res => setCart(res.data.cart || emptyCart()))
         .catch(err => console.error("Failed to fetch backend cart", err));
@@ -56,7 +53,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   useEffect(() => { fetchCart(); }, [user]);
-
 
   const normalizeOptions = (options: Record<string, any> | undefined): Record<string, any> => {
     if (!options) return {};
@@ -80,7 +76,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   const updateCartItems = (callback: (items: CartItem[]) => CartItem[]) => {
     setCart(prev => {
-      const updatedItems = callback([...prev.items]); // Ensure new reference
+      const updatedItems = callback([...prev.items]);
       const updatedCart = { ...prev, items: updatedItems, updated_at: new Date().toISOString() };
       if (!user || user.isGuest) localStorage.setItem("cart", JSON.stringify(updatedCart));
       return updatedCart;
@@ -93,7 +89,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         const existing = items.find(i => isSameItem(i, cartItem));
         if (existing) existing.quantity += cartItem.quantity;
         else items.push({ ...cartItem, tempId: uuidv4() });
-        return [...items]; // Ensure new array reference
+        return [...items];
       });
     } else {
       axios.post("/cart/items", {
@@ -113,7 +109,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       updateCartItems(items => {
         const existing = items.find(i => isSameItem(i, cartItem));
         if (existing) existing.quantity = quantity;
-        return [...items]; // Ensure new array reference
+        return [...items];
       });
     } else {
       axios.put(`/cart/items/${cartItem.item.id}`, {
@@ -155,21 +151,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     [cart.items]
   );
 
-  const discountAmount = useMemo(() => {
-    return subtotal * (discountPercentage || 0) / 100;
-  }, [subtotal, discountPercentage]);
-
-  const total = useMemo(
-    () => Math.max(0, subtotal - discountAmount),
-    [subtotal, discountAmount]
-  );
-
   const totalWeight = useMemo(
     () => cart.items?.reduce((sum, i) => sum + (i.item.weight || 0) * i.quantity, 0) || 0,
     [cart.items]
   );
-
-
 
   return (
     <CartContext.Provider value={{
@@ -181,8 +166,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       cartOpen,
       setCartOpen,
       subtotal,
-      discountAmount,
-      total,
       totalWeight,
       fetchCart
     }}>

@@ -6,9 +6,9 @@ import DeleteUserForm from "./Partials/DeleteUserForm";
 import ProfileCard from "./ProfileCard";
 import SubContent from "@/Components/Tabs/SubTab/SubContent";
 import SubNavigation from "@/Components/Tabs/SubTab/SubNavigation";
-import { ShippingProvider } from "@/Contexts/User/ShippingContext";
+
 import UserReviews from "./UserReviews";
-import { useUser } from "@/Contexts/User/UserContext";
+
 
 type TabKey = "credentials" | "shipping" | "reviews" | "delete";
 

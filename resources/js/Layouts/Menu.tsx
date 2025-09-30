@@ -10,17 +10,16 @@ import {
 } from "react-icons/fa";
 import { MdPersonSearch } from "react-icons/md";
 
-import Modal from "@/Components/Modal/Modal";
 import { useDarkMode } from "@/Contexts/Layout/DarkModeContext";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 
-import PrimaryButton from "@/Components/Buttons/PrimaryButton";
-import SecondaryButton from "@/Components/Buttons/SecondaryButton";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { useUser } from "@/Contexts/User/UserContext";
 import UserSelector from "@/Pages/Profile/Components/UserSelector";
-import Login from "@/Pages/Auth/Login/Login";
-import { UserOrGuest } from "@/types/User";
+import Login from "@/Pages/Auth/Login";
+import Logout from "@/Pages/Auth/Logout"; // <-- import the component
+import { User } from "@/types/User";
+import Modal from "@/Components/Modal/Modal";
 
 interface MenuProps {
   url: string;
@@ -33,12 +32,11 @@ const leftItems = [
 ];
 
 function MenuComponent({ url }: MenuProps) {
-  const { auth } = usePage<{ auth?: { user?: UserOrGuest } }>().props;
+  const { auth } = usePage<{ auth?: { user?: User } }>().props;
   const user = auth?.user;
 
   const { darkMode, toggleDarkMode } = useDarkMode();
   const { cart } = useCart();
-  const { logout } = useUser();
 
   const cartCount = (cart?.items ?? []).reduce((acc, item) => acc + item.quantity, 0);
 
@@ -69,26 +67,16 @@ function MenuComponent({ url }: MenuProps) {
   };
 
   const handleLoginLogoutClick = () => {
-    if (user) {
-      setShowLogoutModal(true);
+    if (!user.is_guest) {
+      setShowLogoutModal(true); // <-- open Logout component
     } else {
       setShowLoginModal(true);
     }
   };
 
-  const confirmLogout = async () => {
-    setShowLogoutModal(false);
-    try {
-      await logout();
-      router.visit("/", { preserveState: false });
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-  };
-
   const rightItems = [
     { name: "Cart", routeName: "/cart", icon: <FaShoppingCart size={35} /> },
-    user ? { name: "Profile", routeName: "/profile", icon: <FaUserCircle size={35} /> } : null,
+    !user.is_guest ? { name: "Profile", routeName: "/profile", icon: <FaUserCircle size={35} /> } : null,
     { name: "Login/Logout", routeName: "/logout", icon: <FaSignOutAlt size={35} /> },
     user?.is_admin ? { name: "UserSearch", icon: <MdPersonSearch size={35} /> } : null,
   ].filter(Boolean);
@@ -202,24 +190,12 @@ function MenuComponent({ url }: MenuProps) {
         </div>
       </nav>
 
-      {/* Logout Modal */}
-      <Modal show={showLogoutModal} onClose={() => setShowLogoutModal(false)}>
-        <div className="p-4 space-y-4 text-center max-w-lg w-full mx-auto">
-          <h2 className="text-2xl font-semibold">Are you sure you want to logout?</h2>
-          <div className="flex justify-center gap-4 mt-6">
-            <PrimaryButton className="p-2 px-6" onClick={confirmLogout}>
-              Log out
-            </PrimaryButton>
-            <SecondaryButton className="p-2 px-6" onClick={() => setShowLogoutModal(false)}>
-              Cancel
-            </SecondaryButton>
-          </div>
-        </div>
-      </Modal>
+      {/* Logout Component */}
+      <Logout show={showLogoutModal} onClose={() => setShowLogoutModal(false)} />
 
       {/* Login Modal */}
       <Modal show={showLoginModal} maxWidth="lg" onClose={() => setShowLoginModal(false)}>
-        <Login />
+        <Login onSuccess={() => setShowLoginModal(false)} />
       </Modal>
 
       {/* User Selector Modal */}
@@ -230,7 +206,6 @@ function MenuComponent({ url }: MenuProps) {
   );
 }
 
-// -------- Wrap Menu with CartProvider --------
 export default function Menu({ url }: MenuProps) {
   return <MenuComponent url={url} />;
 }

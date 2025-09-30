@@ -91,9 +91,7 @@ const Item: React.FC<CartItemProps> = ({ cartItem, canChange = true }) => {
               <p className="px-2 text-gray-500 select-none">x{cartItem.quantity}</p>
             )}
 
-            <div className="text-base font-medium text-gray-900 dark:text-gray-100">
-              £{(item.price * cartItem.quantity).toFixed(2)}  {/* Use `item.price` * `cartItem.quantity` */}
-            </div>
+
           </div>
         </div>
       </div>

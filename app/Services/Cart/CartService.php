@@ -12,9 +12,10 @@ class CartService
 {
     public function getCartForRequest(Request $request, UserContextService $userContext): Cart
     {
-        $userId = $userContext->getTargetUserId($request);
+        $userId = $userContext->getTargetUser($request)->id;
         return $userId ? $this->getCartForUser($userId) : $this->getEmptyCart();
     }
+
 
     public function getCartForUser(int $userId): Cart
     {
