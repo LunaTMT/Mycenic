@@ -1,98 +1,67 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useCart } from "./CartContext";
-import { PromoCode } from "@/types/Cart/PromoCode";
+import { Promotion } from "@/types/Cart/Promotion";
 
-interface PromoContextType {
-  promo: PromoCode | null;
-  setPromo: React.Dispatch<React.SetStateAction<PromoCode | null>>;
-  isPromoValid: boolean;
-  applyPromoCode: (code?: string) => Promise<"success" | "error" | "same">;
+interface PromotionContextType {
+  promotion: Promotion | null;
+  applyPromotion: (code: string) => Promise<boolean>;
+  clearPromotion: () => void;
 }
 
-const PromoContext = createContext<PromoContextType | undefined>(undefined);
+const PromotionContext = createContext<PromotionContextType | undefined>(undefined);
 
-export const usePromo = (): PromoContextType => {
-  const context = useContext(PromoContext);
-  if (!context) throw new Error("usePromo must be used within PromoProvider");
+export const usePromotion = () => {
+  const context = useContext(PromotionContext);
+  if (!context) throw new Error("usePromotion must be used within PromotionProvider");
   return context;
 };
 
-interface PromoProviderProps {
-  children: React.ReactNode;
-}
-
-export const PromoProvider: React.FC<PromoProviderProps> = ({ children }) => {
+export const PromotionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { cart } = useCart();
-  const [promo, setPromo] = useState<PromoCode | null>(null);
-  const [isPromoValid, setIsPromoValid] = useState<boolean>(false);
-  const [lastAppliedCode, setLastAppliedCode] = useState<string>("");
+  const [promotion, setPromotion] = useState<Promotion | null>(null);
 
-  // Initialize from cart if promo exists, fallback to localStorage
+  // Load promotion from cart or localStorage on mount
   useEffect(() => {
-    if (cart?.promo) {
-      setPromo(cart.promo);
-      setIsPromoValid(true);
-      setLastAppliedCode(cart.promo.code);
+    if (cart?.promotion) {
+      setPromotion(cart.promotion);
     } else {
-      const savedPromo = localStorage.getItem("promo");
-      if (savedPromo) {
+      const saved = localStorage.getItem("promotion");
+      if (saved) {
         try {
-          const parsed: PromoCode = JSON.parse(savedPromo);
-          setPromo(parsed);
-          setIsPromoValid(true);
-          setLastAppliedCode(parsed.code);
+          setPromotion(JSON.parse(saved));
         } catch {
-          localStorage.removeItem("promo");
+          localStorage.removeItem("promotion");
         }
       }
     }
   }, [cart]);
 
-  const applyPromoCode = async (code?: string): Promise<"success" | "error" | "same"> => {
-    const codeToApply = code?.trim() ?? promo?.code.trim();
-    if (!codeToApply) return "error";
-
-    // Prevent re-applying the same code
-    if (codeToApply === lastAppliedCode) return "same";
-
+  const applyPromotion = async (code: string): Promise<boolean> => {
+    if (!code.trim()) return false;
     try {
-      const response = await axios.post("/promo-code/validate", { promo_code: codeToApply });
-
-      if (response.data.success) {
-        const promoData: PromoCode = response.data.promo;
-
-        setPromo(promoData);
-        setIsPromoValid(true);
-        setLastAppliedCode(promoData.code);
-
-        localStorage.setItem("promo", JSON.stringify(promoData));
-        return "success";
-      } else {
-        setPromo(null);
-        setIsPromoValid(false);
-        localStorage.removeItem("promo");
-        return "error";
+      const { data } = await axios.post("/promotion/validate", { code: code.trim() });
+      if (data.success) {
+        setPromotion(data.promotion);
+        localStorage.setItem("promotion", JSON.stringify(data.promotion));
+        return true;
       }
-    } catch (err) {
-      console.error("Error applying promo code:", err);
-      setPromo(null);
-      setIsPromoValid(false);
-      localStorage.removeItem("promo");
-      return "error";
+      clearPromotion();
+      return false;
+    } catch {
+      clearPromotion();
+      return false;
     }
   };
 
+  const clearPromotion = () => {
+    setPromotion(null);
+    localStorage.removeItem("promotion");
+  };
+
   return (
-    <PromoContext.Provider
-      value={{
-        promo,
-        setPromo,
-        isPromoValid,
-        applyPromoCode,
-      }}
-    >
+    <PromotionContext.Provider value={{ promotion, applyPromotion, clearPromotion }}>
       {children}
-    </PromoContext.Provider>
+    </PromotionContext.Provider>
   );
 };

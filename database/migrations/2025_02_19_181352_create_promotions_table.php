@@ -4,21 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePromoCodesTable extends Migration
+class CreatePromotionsTable extends Migration
 {
     public function up()
     {
-        Schema::create('promo_codes', function (Blueprint $table) {
+        Schema::create('promotions', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique();
-            $table->integer('discount'); // Discount in percentage or flat value
-            $table->timestamp('expires_at')->nullable(); // Optional expiry date
+            $table->integer('discount'); // Discount as a percentage
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('promo_codes');
+        Schema::dropIfExists('promotions');
     }
 }

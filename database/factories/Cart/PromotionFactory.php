@@ -2,13 +2,13 @@
 
 namespace Database\Factories\Cart;
 
-use App\Models\Cart\PromoCode;
+use App\Models\Cart\Promotion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-class PromoCodeFactory extends Factory
+class PromotionFactory extends Factory
 {
-    protected $model = PromoCode::class;
+    protected $model = Promotion::class;
 
     public function definition(): array
     {

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ArrowIcon from "@/Components/Icon/ArrowIcon";
-import { usePromo } from "@/Contexts/Shop/Cart/PromoContext";
+import { usePromotion } from "@/Contexts/Shop/Cart/PromoContext";
 import { toast } from "react-toastify";
 
-const PromoCode: React.FC = () => {
+const Promotion: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [inputCode, setInputCode] = useState("");
 
-  const { promoCode, setPromoCode, applyPromoCode } = usePromo();
+  const { promotion, applyPromotion, clearPromotion } = usePromotion();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsDropdownOpen(true), 100);
@@ -18,15 +19,22 @@ const PromoCode: React.FC = () => {
   const toggleDropdown = () => setIsDropdownOpen(prev => !prev);
 
   const handleApply = async () => {
-    if (!promoCode.trim()) return;
-
+    if (!inputCode.trim()) return;
     setLoading(true);
-    const result = await applyPromoCode();
+    const success = await applyPromotion(inputCode);
     setLoading(false);
 
-    if (result === "success") toast.success("Promo code applied successfully!");
-    else if (result === "error") toast.error("Invalid promo code.");
-    else if (result === "same") toast.info("Promo code already applied.");
+    if (success) {
+      toast.success("Promotion applied!");
+      setInputCode("");
+    } else {
+      toast.error("Invalid promotion code.");
+    }
+  };
+
+  const handleClear = () => {
+    clearPromotion();
+    toast.info("Promotion removed.");
   };
 
   return (
@@ -41,7 +49,7 @@ const PromoCode: React.FC = () => {
       <AnimatePresence>
         {isDropdownOpen && (
           <motion.div
-            key="promoDropdown"
+            key="promotionDropdown"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -58,18 +66,30 @@ const PromoCode: React.FC = () => {
             >
               <input
                 type="text"
-                value={promoCode}
-                onChange={e => setPromoCode(e.target.value)}
+                value={inputCode}
+                onChange={e => setInputCode(e.target.value)}
+                placeholder={promotion ? `Applied: ${promotion.code}` : "Enter promotion code"}
                 className="w-full h-10 border-r-0 rounded-l-lg pl-4 border bg-transparent dark:border-white/20 border-black/20 focus:outline-none focus:ring-0"
+                disabled={loading}
               />
-              <button
-                onClick={handleApply}
-                className={`w-[30%] h-10 border dark:border-white/20 border-black/20 rounded-r-lg text-sm font-medium transition-colors
-                  ${promoCode.trim().length > 0 ? "text-black dark:text-white" : "text-gray-400"}`}
-                disabled={loading || promoCode.trim().length === 0}
-              >
-                Apply
-              </button>
+              {promotion ? (
+                <button
+                  onClick={handleClear}
+                  className="w-[30%] h-10 border dark:border-white/20 border-black/20 rounded-r-lg text-sm font-medium text-red-600"
+                  disabled={loading}
+                >
+                  Remove
+                </button>
+              ) : (
+                <button
+                  onClick={handleApply}
+                  className={`w-[30%] h-10 border dark:border-white/20 border-black/20 rounded-r-lg text-sm font-medium transition-colors
+                    ${inputCode.trim().length > 0 ? "text-black dark:text-white" : "text-gray-400"}`}
+                  disabled={loading || inputCode.trim().length === 0}
+                >
+                  {loading ? "..." : "Apply"}
+                </button>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -78,4 +98,4 @@ const PromoCode: React.FC = () => {
   );
 };
 
-export default PromoCode;
+export default Promotion;

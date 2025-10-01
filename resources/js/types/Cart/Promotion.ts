@@ -1,4 +1,4 @@
-export interface PromoCode {
+export interface Promotion {
   id: number;
   code: string;
   discount: number;

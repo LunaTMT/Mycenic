@@ -9,7 +9,7 @@ import { NavProvider } from './Contexts/Layout/NavContext';
 import { DarkModeProvider } from './Contexts/Layout/DarkModeContext';
 import { UserProvider } from './Contexts/User/UserContext';
 import { CartProvider } from './Contexts/Shop/Cart/CartContext';
-import { PromoProvider } from './Contexts/Shop/Cart/PromoContext';
+import { PromotionProvider } from './Contexts/Shop/Cart/PromoContext';
 import { CheckoutProvider } from './Contexts/Shop/Cart/CheckoutContext';
 import { ShippingProvider } from './Contexts/User/ShippingContext';
 
@@ -35,13 +35,13 @@ createInertiaApp({
           <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
             <UserProvider>
               <CartProvider>        
-                <PromoProvider>     
+                <PromotionProvider>     
                   <ShippingProvider>
                     <CheckoutProvider>
                       <App {...props} />
                     </CheckoutProvider>
                   </ShippingProvider>
-                </PromoProvider>
+                </PromotionProvider>
               </CartProvider>
             </UserProvider>
           </GoogleOAuthProvider>

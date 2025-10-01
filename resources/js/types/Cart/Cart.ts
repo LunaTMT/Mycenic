@@ -1,7 +1,19 @@
 import { Item } from "../Item";
-import { PromoCode } from "./PromoCode";
+import { Promotion } from "./Promotion";
+import { Timestamps } from "../Timestamps";
 
 export type CartStatus = "active" | "checked_out";
+
+
+
+// Numeric amounts for cart totals
+export interface Amounts {
+  subtotal: number;
+  total: number;
+  shipping_cost: number;
+  weight: number;
+  discount?: number;
+}
 
 export interface CartItem {
   id: number;
@@ -10,22 +22,17 @@ export interface CartItem {
   item_id: number;
   quantity: number;
   selected_options?: Record<string, any> | null;
-  created_at: string;
-  updated_at: string;
+  timestamps: Timestamps;
   item: Item;
 }
 
-
 export interface Cart {
   id: number;
-  subtotal: number;
-  total: number;
-  discount?: number | null;
-  promo_code?: PromoCode | null; // <-- add relation
-  shipping_cost?: number | null;
   status: CartStatus;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string | null;
+  promotion?: Promotion | null;
+
+  timestamps: Timestamps;
+  amounts: Amounts;
+
   items: CartItem[];
 }

@@ -9,7 +9,7 @@ use App\Models\{Item, Order, User};
 // Controllers grouped by folders
 use App\Http\Controllers\About\AboutController;
 use App\Http\Controllers\Auth\{AuthenticatedSessionController, SocialAuthController};
-use App\Http\Controllers\Cart\{CartController, CheckoutController, PromoCodeController};
+use App\Http\Controllers\Cart\{CartController, CheckoutController, PromotionController};
 use App\Http\Controllers\Email\EmailController;
 
 use App\Http\Controllers\Shipping\ShippingController;
@@ -156,7 +156,7 @@ Route::middleware('auth')->prefix('orders')->group(function () {
 | Promo Code Routes
 |--------------------------------------------------------------------------
 */
-Route::post('/promo-code/validate', [PromoCodeController::class, 'validatePromoCode'])->name('promo.validate');
+Route::post('/promotion/validate', [PromotionController::class, 'validatePromotion'])->name('promo.validate');
 
 
 /*

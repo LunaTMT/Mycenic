@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\User\User;
 use App\Models\Cart\Cart;
 use App\Models\Cart\CartItem;
-use App\Models\Cart\PromoCode;
+use App\Models\Cart\Promotion;
 use App\Models\Item;
 
 class CartSeeder extends Seeder
@@ -24,12 +24,12 @@ class CartSeeder extends Seeder
             // Active Cart
             $activeCart = Cart::factory()->for($user)->create(['status' => 'active']);
             $this->fillCartWithItems($activeCart, $items);
-            $this->maybeAttachPromoCode($activeCart);
+            $this->maybeAttachPromotion($activeCart);
 
             // Checked-out Cart
             $checkedOutCart = Cart::factory()->for($user)->checkedOut()->create();
             $this->fillCartWithItems($checkedOutCart, $items);
-            $this->maybeAttachPromoCode($checkedOutCart);
+            $this->maybeAttachPromotion($checkedOutCart);
         });
     }
 
@@ -53,19 +53,15 @@ class CartSeeder extends Seeder
             ]);
         }
 
-        $cart->subtotal = $cart->items->sum(fn($i) => $i->item->price * $i->quantity);
-        $cart->total = $cart->subtotal + $cart->shipping_cost - $cart->discount;
-        $cart->save();
+        $cart->recalculateTotals();
     }
 
-    private function maybeAttachPromoCode(Cart $cart): void
+    private function maybeAttachPromotion(Cart $cart): void
     {
         if (rand(1, 100) <= 75) { // 75% chance
-            $promo = PromoCode::factory()->create();
-            $cart->promo_code_id = $promo->id;
-            $cart->discount = $promo->discount;
-            $cart->total = $cart->subtotal + $cart->shipping_cost - $cart->discount;
-            $cart->save();
+            $promotion = Promotion::factory()->create();
+            $cart->promotion_id = $promotion->id;
+            $cart->recalculateTotals();
         }
     }
 }

@@ -1,5 +1,6 @@
 import { Review } from "./Review";
 import { Image } from "./Image";
+import { Timestamps } from "./Timestamps";
 
 export interface Item {
   id: number;
@@ -16,8 +17,5 @@ export interface Item {
   average_rating?: number;
   reviews_count?: number;
   thumbnail?: string;
-  stripe_product_id?: string | null;
-  stripe_price_id?: string | null;
-  created_at: string;
-  updated_at: string;
+  timestamps: Timestamps;
 }

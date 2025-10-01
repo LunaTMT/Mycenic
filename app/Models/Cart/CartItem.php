@@ -10,8 +10,15 @@ class CartItem extends Model
 {
     use HasFactory;
 
+    public $timestamps = false; // Disable timestamps
+
     protected $fillable = ['cart_id', 'item_id', 'quantity', 'selected_options'];
-    protected $casts = ['selected_options' => 'array'];
+
+    protected $casts = [
+        'selected_options' => 'array',
+    ];
+
+    protected $hidden = ['cart_id']; // Hide cart_id from JSON
 
     public function cart() { return $this->belongsTo(Cart::class); }
     public function item() { return $this->belongsTo(Item::class); }

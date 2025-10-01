@@ -11,10 +11,9 @@ return new class extends Migration
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('promo_code_id')->nullable()->constrained('promo_codes')->nullOnDelete();
+            $table->foreignId('promotion_id')->nullable()->constrained('promotions')->nullOnDelete();
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
-            $table->decimal('discount', 10, 2)->nullable();
             $table->decimal('shipping_cost', 10, 2)->nullable();
             $table->decimal('weight', 8, 2)->default(0);
             $table->enum('status', ['active', 'checked_out'])->default('active');
@@ -28,7 +27,6 @@ return new class extends Migration
             $table->foreignId('item_id')->constrained('items')->cascadeOnDelete();
             $table->integer('quantity')->default(1);
             $table->json('selected_options')->nullable();
-            $table->timestamps();
         });
     }
 
@@ -38,3 +36,4 @@ return new class extends Migration
         Schema::dropIfExists('carts');
     }
 };
+

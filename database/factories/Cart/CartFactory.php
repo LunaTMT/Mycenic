@@ -16,7 +16,6 @@ class CartFactory extends Factory
             'user_id' => User::inRandomOrder()->first()->id ?? null,
             'subtotal' => 0,
             'total' => 0,
-            'discount' => 0,
             'shipping_cost' => 0,
             'status' => 'active',
         ];

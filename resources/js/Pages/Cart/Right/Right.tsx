@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
-import PromoCode from "./PromoCode";
+import PromoCode from "./Promotion";
 import OrderNote from "./OrderNote";
 import ShippingAddress from "./Shipping/ShippingAddress";
 import ShippingOptions from "./Shipping/ShippingOptions";
@@ -14,7 +14,7 @@ import { useShipping } from "@/Contexts/User/ShippingContext";
 import { useCart } from "@/Contexts/Shop/Cart/CartContext";
 import { useUser } from "@/Contexts/User/UserContext";
 import { useCheckout } from "@/Contexts/Shop/Cart/CheckoutContext";
-import { usePromo } from "@/Contexts/Shop/Cart/PromoContext";
+import { usePromotion } from "@/Contexts/Shop/Cart/PromoContext";
 
 import PrimaryButton from "@/Components/Buttons/PrimaryButton";
 import SecondaryButton from "@/Components/Buttons/SecondaryButton";
@@ -23,16 +23,17 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY!);
 
 const RightContent: React.FC = () => {
   const { subtotal, cart } = useCart();
-  const { discountPercentage } = usePromo();
   const { selectedAddress, shippingCost } = useShipping();
   const { user } = useUser();
   const { step, nextStep, prevStep } = useCheckout();
+  const { promotion } = usePromotion();
 
   const paymentRef = useRef<PaymentPageRef>(null);
 
   const cartIsEmpty = (cart?.items ?? []).length === 0;
 
   // --- CALCULATE DISCOUNT + TOTAL ---
+  const discountPercentage = promotion?.discount ?? 0;
   const discountAmount = subtotal * (discountPercentage / 100);
   const total = subtotal - discountAmount + (shippingCost || 0);
 
@@ -136,6 +137,6 @@ const RightContent: React.FC = () => {
   );
 };
 
-const Right: React.FC = () => <RightContent />;
+const   Right: React.FC = () => <RightContent />;
 
 export default Right;
